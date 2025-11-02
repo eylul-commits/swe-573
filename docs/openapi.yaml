@@ -28,6 +28,16 @@ components:
         role: { type: string, enum: [USER, ADMIN] }
         balance_hours: { type: integer }
         created_at: { type: string, format: date-time }
+        updated_at: { type: string, format: date-time }
+
+    UserUpdate:
+      type: object
+      properties:
+        name: { type: string }
+        bio: { type: string }
+        province: { type: string }
+        district: { type: string }
+    
     Offer:
       type: object
       properties:
@@ -41,11 +51,47 @@ components:
         province: { type: string }
         district: { type: string }
         status: { type: string, enum: [ACTIVE, EXPIRED, ARCHIVED] }
+        created_at: { type: string, format: date-time }
+        updated_at: { type: string, format: date-time }
         tag_ids:
           type: array
           description: "List of associated semantic tag IDs."
           items:
             type: integer
+    
+    OfferCreate:
+      type: object
+      required: [title, description, duration_hours, start_date, end_date, province, district]
+      properties:
+        title: { type: string }
+        description: { type: string }
+        duration_hours: { type: integer }
+        start_date: { type: string, format: date }
+        end_date: { type: string, format: date }
+        province: { type: string }
+        district: { type: string }
+        tag_ids:
+          type: array
+          description: "List of associated semantic tag IDs."
+          items:
+            type: integer
+    
+    OfferUpdate:
+      type: object
+      properties:
+        title: { type: string }
+        description: { type: string }
+        duration_hours: { type: integer }
+        start_date: { type: string, format: date }
+        end_date: { type: string, format: date }
+        province: { type: string }
+        district: { type: string }
+        status: { type: string, enum: [ACTIVE, EXPIRED, ARCHIVED] }
+        tag_ids:
+          type: array
+          items:
+            type: integer
+    
     Request:
       type: object
       properties:
@@ -59,17 +105,70 @@ components:
         province: { type: string }
         district: { type: string }
         status: { type: string, enum: [ACTIVE, EXPIRED, ARCHIVED] }
-      tag_ids:
+        created_at: { type: string, format: date-time }
+        updated_at: { type: string, format: date-time }
+        tag_ids:
           type: array
           description: "List of associated semantic tag IDs."
           items:
             type: integer
+    
+    RequestCreate:
+      type: object
+      required: [title, description, duration_hours, start_date, end_date, province, district]
+      properties:
+        title: { type: string }
+        description: { type: string }
+        duration_hours: { type: integer }
+        start_date: { type: string, format: date }
+        end_date: { type: string, format: date }
+        province: { type: string }
+        district: { type: string }
+        tag_ids:
+          type: array
+          description: "List of associated semantic tag IDs."
+          items:
+            type: integer
+    
+    RequestUpdate:
+      type: object
+      properties:
+        title: { type: string }
+        description: { type: string }
+        duration_hours: { type: integer }
+        start_date: { type: string, format: date }
+        end_date: { type: string, format: date }
+        province: { type: string }
+        district: { type: string }
+        status: { type: string, enum: [ACTIVE, EXPIRED, ARCHIVED] }
+        tag_ids:
+          type: array
+          items:
+            type: integer
+    
     Tag:
       type: object
       properties:
         id: { type: integer }
         name: { type: string }
         wikidata_id: { type: string }
+    
+    Badge:
+      type: object
+      properties:
+        id: { type: integer }
+        name: { type: string }
+        description: { type: string }
+        icon_url: { type: string }
+    
+    BadgeCreate:
+      type: object
+      required: [name, description]
+      properties:
+        name: { type: string }
+        description: { type: string }
+        icon_url: { type: string }
+    
     Handshake:
       type: object
       properties:
@@ -79,6 +178,16 @@ components:
         provider_id: { type: integer }
         status: { type: string, enum: [PENDING, CONFIRMED, COMPLETED, CANCELLED] }
         agreed_hours: { type: integer }
+        created_at: { type: string, format: date-time }
+        completed_at: { type: string, format: date-time, nullable: true }
+    
+    HandshakeCreate:
+      type: object
+      required: [offer_id, agreed_hours]
+      properties:
+        offer_id: { type: integer }
+        agreed_hours: { type: integer }
+    
     Transaction:
       type: object
       properties:
@@ -88,6 +197,7 @@ components:
         handshake_id: { type: integer }
         amount: { type: integer }
         description: { type: string }
+        created_at: { type: string, format: date-time }
     Rating:
       type: object
       properties:
@@ -100,15 +210,65 @@ components:
         communicative: { type: integer }
         preparedness: { type: integer }
         comment: { type: string }
+        created_at: { type: string, format: date-time }
+    
+    RatingCreate:
+      type: object
+      required: [handshake_id, ratee_id, punctuality, friendliness, communicative, preparedness]
+      properties:
+        handshake_id: { type: integer }
+        ratee_id: { type: integer }
+        punctuality: { type: integer, minimum: 1, maximum: 5 }
+        friendliness: { type: integer, minimum: 1, maximum: 5 }
+        communicative: { type: integer, minimum: 1, maximum: 5 }
+        preparedness: { type: integer, minimum: 1, maximum: 5 }
+        comment: { type: string }
+    
     Message:
       type: object
       properties:
         id: { type: integer }
         sender_id: { type: integer }
         receiver_id: { type: integer }
-        handshake_id: { type: integer }
+        offer_id: { type: integer, nullable: true }
+        request_id: { type: integer, nullable: true }
+        handshake_id: { type: integer, nullable: true }
         content: { type: string }
         created_at: { type: string, format: date-time }
+    
+    MessageCreate:
+      type: object
+      required: [receiver_id, content]
+      properties:
+        receiver_id: { type: integer }
+        offer_id: 
+          type: integer
+          nullable: true
+          description: "Optional: ID of the offer this message is about"
+        request_id:
+          type: integer
+          nullable: true
+          description: "Optional: ID of the request this message is about"
+        handshake_id:
+          type: integer
+          nullable: true
+          description: "Optional: ID of the handshake this message is about"
+        content: { type: string }
+    
+    # Error schemas
+    Error:
+      type: object
+      properties:
+        error:
+          type: string
+          description: Error message
+        code:
+          type: string
+          description: Error code
+        details:
+          type: object
+          description: Additional error details
+    
 ####### I am adding these just to show my internal architecture:
     OfferTag:
       type: object
@@ -135,8 +295,8 @@ components:
       type: object
       properties:
         id: { type: integer }
-        offer_id: { type: integer }
-        request_id: { type: integer }
+        offer_id: { type: integer, nullable: true, description: "ID of the offer (if question is about an offer)" }
+        request_id: { type: integer, nullable: true, description: "ID of the request (if question is about a request)" }
         asker_id: { type: integer }
         content: { type: string }
         created_at: { type: string, format: date-time }
@@ -215,6 +375,7 @@ paths:
     post:
       tags: [Authentication]
       summary: Register a new user
+      security: []
       requestBody:
         required: true
         content:
@@ -223,8 +384,8 @@ paths:
               type: object
               required: [email, password]
               properties:
-                email: { type: string }
-                password: { type: string }
+                email: { type: string, format: email }
+                password: { type: string, minLength: 8 }
                 name: { type: string }
                 province: { type: string }
                 district: { type: string }
@@ -235,11 +396,24 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/User'
+        '400':
+          description: Bad request - Invalid input
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '409':
+          description: Conflict - Email already exists
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
 
   /auth/login:
     post:
       tags: [Authentication]
       summary: Authenticate user
+      security: []
       requestBody:
         required: true
         content:
@@ -248,7 +422,7 @@ paths:
               type: object
               required: [email, password]
               properties:
-                email: { type: string }
+                email: { type: string, format: email }
                 password: { type: string }
       responses:
         '200':
@@ -261,6 +435,18 @@ paths:
                   token: { type: string }
                   user:
                     $ref: '#/components/schemas/User'
+        '400':
+          description: Bad request - Invalid input
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '401':
+          description: Unauthorized - Invalid credentials
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
 
   /users:
     get:
@@ -298,17 +484,28 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/User'
+        '404':
+          description: User not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
     put:
       tags: [Users]
       summary: Update user profile
       requestBody:
+        required: true
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/User'
+              $ref: '#/components/schemas/UserUpdate'
       responses:
         '200':
           description: Updated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/User'
     delete:
       tags: [Users]
       summary: Delete user (admin)
@@ -320,6 +517,40 @@ paths:
     get:
       tags: [Offers]
       summary: List offers
+      parameters:
+        - name: province
+          in: query
+          schema:
+            type: string
+          description: Filter by province
+        - name: district
+          in: query
+          schema:
+            type: string
+          description: Filter by district
+        - name: status
+          in: query
+          schema:
+            type: string
+            enum: [ACTIVE, EXPIRED, ARCHIVED]
+          description: Filter by status
+        - name: tag_id
+          in: query
+          schema:
+            type: integer
+          description: Filter by tag ID
+        - name: limit
+          in: query
+          schema:
+            type: integer
+            default: 50
+          description: Maximum number of results
+        - name: offset
+          in: query
+          schema:
+            type: integer
+            default: 0
+          description: Number of results to skip
       responses:
         '200':
           description: List of offers
@@ -332,15 +563,32 @@ paths:
     post:
       tags: [Offers]
       summary: Create an offer
+      description: Create a new offer. The provider_id is automatically set from the authenticated user.
       requestBody:
         required: true
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/Offer'
+              $ref: '#/components/schemas/OfferCreate'
       responses:
         '201':
           description: Offer created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Offer'
+        '400':
+          description: Bad request - Invalid input
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
 
   /offers/{id}:
     parameters:
@@ -364,12 +612,28 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Offer'
+        '404':
+          description: Offer not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
     put:
       tags: [Offers]
       summary: Update an offer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/OfferUpdate'
       responses:
         '200':
           description: Offer updated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Offer'
     delete:
       tags: [Offers]
       summary: Delete or archive an offer
@@ -381,6 +645,40 @@ paths:
     get:
       tags: [Requests]
       summary: List requests
+      parameters:
+        - name: province
+          in: query
+          schema:
+            type: string
+          description: Filter by province
+        - name: district
+          in: query
+          schema:
+            type: string
+          description: Filter by district
+        - name: status
+          in: query
+          schema:
+            type: string
+            enum: [ACTIVE, EXPIRED, ARCHIVED]
+          description: Filter by status
+        - name: tag_id
+          in: query
+          schema:
+            type: integer
+          description: Filter by tag ID
+        - name: limit
+          in: query
+          schema:
+            type: integer
+            default: 50
+          description: Maximum number of results
+        - name: offset
+          in: query
+          schema:
+            type: integer
+            default: 0
+          description: Number of results to skip
       responses:
         '200':
           description: List of requests
@@ -393,14 +691,32 @@ paths:
     post:
       tags: [Requests]
       summary: Create a request
+      description: Create a new request. The seeker_id is automatically set from the authenticated user.
       requestBody:
+        required: true
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/Request'
+              $ref: '#/components/schemas/RequestCreate'
       responses:
         '201':
           description: Request created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Request'
+        '400':
+          description: Bad request - Invalid input
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
           
   /requests/{id}:
     parameters:
@@ -419,12 +735,28 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Request'
+        '404':
+          description: Request not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
     put:
       tags: [Requests]
       summary: Update a request
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RequestUpdate'
       responses:
         '200':
           description: Request updated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Request'
     delete:
       tags: [Requests]
       summary: Delete or archive a request
@@ -436,6 +768,30 @@ paths:
     get:
       tags: [Handshakes]
       summary: List handshakes
+      parameters:
+        - name: status
+          in: query
+          schema:
+            type: string
+            enum: [PENDING, CONFIRMED, COMPLETED, CANCELLED]
+          description: Filter by status
+        - name: user_id
+          in: query
+          schema:
+            type: integer
+          description: Filter by user (either seeker or provider)
+        - name: limit
+          in: query
+          schema:
+            type: integer
+            default: 50
+          description: Maximum number of results
+        - name: offset
+          in: query
+          schema:
+            type: integer
+            default: 0
+          description: Number of results to skip
       responses:
         '200':
           description: Handshake list
@@ -448,14 +804,20 @@ paths:
     post:
       tags: [Handshakes]
       summary: Create handshake
+      description: Create a new handshake for an offer. The seeker and provider IDs are derived from the authenticated user and the offer.
       requestBody:
+        required: true
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/Handshake'
+              $ref: '#/components/schemas/HandshakeCreate'
       responses:
         '201':
           description: Created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Handshake'
 
   /handshakes/{id}:
     parameters:
@@ -464,10 +826,21 @@ paths:
       required: true
       schema:
         type: integer
+    get:
+      tags: [Handshakes]
+      summary: Get handshake by ID
+      responses:
+        '200':
+          description: Handshake detail
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Handshake'
     put:
       tags: [Handshakes]
       summary: Update handshake status
       requestBody:
+        required: true
         content:
           application/json:
             schema:
@@ -479,11 +852,33 @@ paths:
       responses:
         '200':
           description: Status updated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Handshake'
 
   /transactions:
     get:
       tags: [Transactions]
       summary: List transactions
+      parameters:
+        - name: user_id
+          in: query
+          schema:
+            type: integer
+          description: Filter by user (either sender or receiver)
+        - name: limit
+          in: query
+          schema:
+            type: integer
+            default: 50
+          description: Maximum number of results
+        - name: offset
+          in: query
+          schema:
+            type: integer
+            default: 0
+          description: Number of results to skip
       responses:
         '200':
           description: Transaction list
@@ -493,19 +888,43 @@ paths:
                 type: array
                 items:
                   $ref: '#/components/schemas/Transaction'
+  
+  /transactions/{id}:
+    parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: integer
+    get:
+      tags: [Transactions]
+      summary: Get transaction by ID
+      responses:
+        '200':
+          description: Transaction detail
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Transaction'
 
   /ratings:
     post:
       tags: [Ratings]
       summary: Submit rating
+      description: Submit a rating for a user after a handshake. The rater_id is derived from the authenticated user.
       requestBody:
+        required: true
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/Rating'
+              $ref: '#/components/schemas/RatingCreate'
       responses:
         '201':
           description: Rating created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Rating'
 
   /ratings/{user_id}:
     get:
@@ -542,14 +961,22 @@ paths:
     post:
       tags: [Messages]
       summary: Send message
+      description: |
+        Send a message to another user. The sender_id is derived from the authenticated user.
+        You can optionally associate the message with an offer, request, or handshake by providing the corresponding ID.
       requestBody:
+        required: true
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/Message'
+              $ref: '#/components/schemas/MessageCreate'
       responses:
         '201':
           description: Message sent
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Message'
           
   
   /tags:
@@ -602,12 +1029,7 @@ paths:
               schema:
                 type: array
                 items:
-                  type: object
-                  properties:
-                    id: { type: integer }
-                    name: { type: string }
-                    description: { type: string }
-                    icon_url: { type: string }
+                  $ref: '#/components/schemas/Badge'
     post:
       tags: [Badges]
       summary: Create a new badge (admin only)
@@ -617,30 +1039,14 @@ paths:
         content:
           application/json:
             schema:
-              type: object
-              required: [name, description]
-              properties:
-                name:
-                  type: string
-                  example: "Helper Bee"
-                description:
-                  type: string
-                  example: "Awarded for completing 10 volunteer hours"
-                icon_url:
-                  type: string
-                  example: "https://cdn.thehive.community/badges/helper-bee.png"
+              $ref: '#/components/schemas/BadgeCreate'
       responses:
         '201':
           description: Badge created
           content:
             application/json:
               schema:
-                type: object
-                properties:
-                  id: { type: integer }
-                  name: { type: string }
-                  description: { type: string }
-                  icon_url: { type: string }
+                $ref: '#/components/schemas/Badge'
                 
   # Adding my Join Tables:
   
@@ -725,24 +1131,14 @@ paths:
               schema:
                 type: array
                 items:
-                  type: object
-                  properties:
-                    id:
-                      type: integer
-                      example: 3
-                    name:
-                      type: string
-                      example: "Helper Bee"
-                    description:
-                      type: string
-                      example: "Awarded for completing 10 volunteer hours"
-                    icon_url:
-                      type: string
-                      example: "https://cdn.thehive.community/badges/helper-bee.png"
-                    earned_at:
-                      type: string
-                      format: date-time
-                      example: "2025-02-15T10:30:00Z"
+                  allOf:
+                    - $ref: '#/components/schemas/Badge'
+                    - type: object
+                      properties:
+                        earned_at:
+                          type: string
+                          format: date-time
+                          example: "2025-02-15T10:30:00Z"
   
     post:
       tags: [Badges]
