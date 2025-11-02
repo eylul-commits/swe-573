@@ -41,6 +41,11 @@ components:
         province: { type: string }
         district: { type: string }
         status: { type: string, enum: [ACTIVE, EXPIRED, ARCHIVED] }
+        tag_ids:
+          type: array
+          description: "List of associated semantic tag IDs."
+          items:
+            type: integer
     Request:
       type: object
       properties:
@@ -54,6 +59,11 @@ components:
         province: { type: string }
         district: { type: string }
         status: { type: string, enum: [ACTIVE, EXPIRED, ARCHIVED] }
+      tag_ids:
+          type: array
+          description: "List of associated semantic tag IDs."
+          items:
+            type: integer
     Tag:
       type: object
       properties:
