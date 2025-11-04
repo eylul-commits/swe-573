@@ -1,0 +1,27 @@
+services:
+  postgres:  # Database service
+    image: postgres:16-alpine  
+    environment:  # Database configuration
+      POSTGRES_DB: thehive
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+    ports:
+      - "5432:5432"  # take port 5432 inside the container and make it available on port 5432 of my local machine
+    volumes:
+      - postgres_data:/var/lib/postgresql/data  # persist database data
+
+  backend:  # My backendSpring Boot application
+    build: ./backend  # Build from backend directory
+    environment:  # Application configuration
+      DB_HOST: postgres
+      DB_NAME: thehive
+      DB_USER: postgres
+      DB_PASSWORD: postgres
+      JWT_SECRET: your-secret-key-change-this-in-production
+    ports:
+      - "8080:8080"  # take port 8080 inside the container and make it available on port 8080 locally
+    depends_on:
+      - postgres  # wait for database to start
+
+volumes:
+  postgres_data:  # needed (?) for database persistence
