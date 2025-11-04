@@ -9,6 +9,7 @@ services:
       - "5432:5432"  # take port 5432 inside the container and make it available on port 5432 of my local machine
     volumes:
       - postgres_data:/var/lib/postgresql/data  # persist database data
+      - ./backend/src/main/resources/schema.sql:/docker-entrypoint-initdb.d/schema.sql  # initialize database schema, soldaki local, sağdaki container
 
   backend:  # My backendSpring Boot application
     build: ./backend  # Build from backend directory

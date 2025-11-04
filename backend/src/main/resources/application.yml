@@ -10,12 +10,13 @@ spring:
   
   jpa:
     hibernate:
-      ddl-auto: update
+      ddl-auto: none  # schema.sql for database, şemayı değiştirmesin
     show-sql: true
     properties:
       hibernate:
         dialect: org.hibernate.dialect.PostgreSQLDialect
         format_sql: true
+    open-in-view: false
 
 server:
   port: 8080
