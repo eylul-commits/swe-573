@@ -24,5 +24,14 @@ services:
     depends_on:
       - postgres  # wait for database to start
 
+  frontend:  # Vue.js frontend application
+    build: ./frontend  # Build from frontend directory
+    ports:
+      - "3000:80"  # map container port 80 to local port 3000
+    depends_on:
+      - backend  # wait for backend to start
+    environment:
+      - VITE_API_URL=http://localhost:8080  # backend API URL
+
 volumes:
   postgres_data:  # needed (?) for database persistence

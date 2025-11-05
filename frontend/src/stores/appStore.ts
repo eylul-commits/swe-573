@@ -1,0 +1,69 @@
+/**
+ * App Store (Pinia)
+ * 
+ * Provides global state and data access throughout the application.
+ * This replaces the React Context from the original application.
+ */
+
+import { defineStore } from 'pinia'
+import { ref, computed } from 'vue'
+import type { User, Service, Notification, Conversation } from '../types'
+import {
+  getCurrentUser,
+  getAllNotifications,
+  getUnreadNotificationsCount,
+  getAllConversations,
+  getUnreadMessageCount,
+} from '../services/dataService'
+
+export const useAppStore = defineStore('app', () => {
+  // State
+  const currentUser = ref<User>(getCurrentUser())
+  const notifications = ref<Notification[]>([])
+  const unreadNotificationsCount = ref(0)
+  const conversations = ref<Conversation[]>([])
+  const unreadMessagesCount = ref(0)
+  const currentPage = ref('home')
+  const selectedServiceId = ref<string | null>(null)
+
+  // Actions
+  const refreshNotifications = () => {
+    notifications.value = getAllNotifications()
+    unreadNotificationsCount.value = getUnreadNotificationsCount()
+  }
+
+  const refreshConversations = () => {
+    conversations.value = getAllConversations()
+    unreadMessagesCount.value = getUnreadMessageCount()
+  }
+
+  const setCurrentPage = (page: string) => {
+    currentPage.value = page
+  }
+
+  const setSelectedServiceId = (id: string | null) => {
+    selectedServiceId.value = id
+  }
+
+  // Initialize data on store creation
+  refreshNotifications()
+  refreshConversations()
+
+  return {
+    // State
+    currentUser,
+    notifications,
+    unreadNotificationsCount,
+    conversations,
+    unreadMessagesCount,
+    currentPage,
+    selectedServiceId,
+    
+    // Actions
+    refreshNotifications,
+    refreshConversations,
+    setCurrentPage,
+    setSelectedServiceId,
+  }
+})
+
