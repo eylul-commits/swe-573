@@ -68,11 +68,11 @@ VALUES
 (1, 1, 1, 'Happy to be part of this community!', NOW()),
 (2, 1, 2, 'Glad to have you here, Alice!', NOW()),
 (3, 2, 2, 'Always start with small commitments to build trust.', NOW()),
-(4, 2, 1, 'That's good advice — thank you, Bob!', NOW()),
-(5, 3, 3, 'We've rolled out minor bug fixes and performance improvements.', NOW()),
+(4, 2, 1, 'That''s good advice — thank you, Bob!', NOW()),
+(5, 3, 3, 'We''ve rolled out minor bug fixes and performance improvements.', NOW()),
 (6, 3, 1, 'App feels smoother now, nice work!', NOW()),
 (7, 4, 2, 'Anyone joining the community cleanup on Saturday?', NOW()),
-(8, 4, 1, 'I'll be there with some friends!', NOW()),
+(8, 4, 1, 'I''ll be there with some friends!', NOW()),
 (9, 4, 3, 'Great initiative, folks. Keep it up.', NOW());
 
 -- MESSAGES
