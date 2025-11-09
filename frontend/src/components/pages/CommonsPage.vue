@@ -136,7 +136,6 @@ import {
 } from 'lucide-vue-next'
 import Button from '../ui/Button.vue'
 import Input from '../ui/Input.vue'
-import Badge from '../ui/Badge.vue'
 import Card from '../ui/Card.vue'
 import Tabs from '../ui/Tabs.vue'
 import TabsList from '../ui/TabsList.vue'
@@ -145,7 +144,6 @@ import TabsContent from '../ui/TabsContent.vue'
 import ThreadCard from '../ThreadCard.vue'
 import EmptyState from '../EmptyState.vue'
 import { getAllForumTopics, filterTopics } from '../../services/forumService'
-import { formatDistanceToNow } from '../../utils/dateUtils'
 import type { ForumTopic } from '../../types/forum'
 
 const searchQuery = ref('')

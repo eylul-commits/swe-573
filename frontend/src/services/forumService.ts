@@ -5,7 +5,6 @@ import type {
   CreateForumTopicRequest,
   CreateForumPostRequest,
 } from '../types/forum';
-import { formatDistanceToNow } from '../utils/dateUtils';
 
 
  //Get all forum topics
