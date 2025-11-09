@@ -21,27 +21,13 @@ public class DataLoader {
                 // Check if users exist
                 Integer userCount = jdbcTemplate.queryForObject("SELECT COUNT(*) FROM users", Integer.class);
                 
-                if (userCount == null || userCount == 0) {
-                    // Create a default test user using JDBC
-                    jdbcTemplate.update(
-                        "INSERT INTO users (email, password_hash, name, bio, province, district, role, balance_hours) " +
-                        "VALUES (?, ?, ?, ?, ?, ?, CAST(? AS user_role), ?)",
-                        "test@example.com",
-                        "$2a$10$dummyHashForTestUser",
-                        "Test User",
-                        "Default test user for development",
-                        "Istanbul",
-                        "Beşiktaş",
-                        "USER",
-                        3
-                    );
-                    
-                    log.info("✓ Created default test user");
+                if (userCount != null && userCount > 0) {
+                    log.info("✓ Database already initialized with {} users. Skipping data loader.", userCount);
                 } else {
-                    log.info("✓ Users already exist in database (count: {}). Skipping initialization.", userCount);
+                    log.info("✓ Database is empty. Initial data should be loaded from data.sql");
                 }
             } catch (Exception e) {
-                log.error("Failed to initialize test user: {}", e.getMessage(), e);
+                log.error("Failed to check database initialization: {}", e.getMessage(), e);
             }
         };
     }
