@@ -10,7 +10,10 @@
               Community discussions, questions, and shared experiences
             </p>
           </div>
-          <Button class="bg-amber-500 hover:bg-amber-600 text-white">
+          <Button 
+            @click="showNewThreadDialog = true"
+            class="bg-amber-500 hover:bg-amber-600 text-white"
+          >
             <Plus class="w-4 h-4 mr-2" />
             New Thread
           </Button>
@@ -45,10 +48,6 @@
                 <div class="flex justify-between">
                   <span class="text-gray-600">Active Today</span>
                   <span class="text-gray-900">{{ forumTopics.length }}</span>
-                </div>
-                <div class="flex justify-between">
-                  <span class="text-gray-600">Members</span>
-                  <span class="text-gray-900">142</span>
                 </div>
               </div>
             </div>
@@ -122,6 +121,62 @@
         </div>
       </div>
     </div>
+
+    <Dialog v-model="showNewThreadDialog">
+      <DialogContent>
+        <DialogHeader>
+          <DialogTitle>Create New Thread</DialogTitle>
+          <DialogDescription>
+            Start a new discussion in The Commons. Share your thoughts, ask questions, or engage with the community.
+          </DialogDescription>
+        </DialogHeader>
+
+        <form @submit.prevent="handleCreateThread" class="px-6 py-4 space-y-4">
+          <div>
+            <label for="title" class="block text-sm font-medium text-gray-700 mb-1">
+              Title
+            </label>
+            <Input
+              id="title"
+              v-model="newThread.title"
+              type="text"
+              placeholder="Enter thread title..."
+              required
+            />
+          </div>
+
+          <div>
+            <label for="content" class="block text-sm font-medium text-gray-700 mb-1">
+              Content
+            </label>
+            <Textarea
+              id="content"
+              v-model="newThread.content"
+              placeholder="Write your message..."
+              rows="6"
+              required
+            />
+          </div>
+
+          <DialogFooter>
+            <Button
+              type="button"
+              @click="showNewThreadDialog = false"
+              class="bg-gray-200 hover:bg-gray-300 text-gray-700"
+            >
+              Cancel
+            </Button>
+            <Button
+              type="submit"
+              :disabled="isSubmitting"
+              class="bg-amber-500 hover:bg-amber-600 text-white"
+            >
+              {{ isSubmitting ? 'Creating...' : 'Create Thread' }}
+            </Button>
+          </DialogFooter>
+        </form>
+      </DialogContent>
+    </Dialog>
   </div>
 </template>
 
@@ -143,13 +198,26 @@ import TabsTrigger from '../ui/TabsTrigger.vue'
 import TabsContent from '../ui/TabsContent.vue'
 import ThreadCard from '../ThreadCard.vue'
 import EmptyState from '../EmptyState.vue'
-import { getAllForumTopics, filterTopics } from '../../services/forumService'
+import Dialog from '../ui/Dialog.vue'
+import DialogContent from '../ui/DialogContent.vue'
+import DialogHeader from '../ui/DialogHeader.vue'
+import DialogTitle from '../ui/DialogTitle.vue'
+import DialogDescription from '../ui/DialogDescription.vue'
+import DialogFooter from '../ui/DialogFooter.vue'
+import Textarea from '../ui/Textarea.vue'
+import { getAllForumTopics, filterTopics, createForumTopic } from '../../services/forumService'
 import type { ForumTopic } from '../../types/forum'
 
 const searchQuery = ref('')
 const forumTopics = ref<ForumTopic[]>([])
 const loading = ref(true)
 const error = ref<string | null>(null)
+const showNewThreadDialog = ref(false)
+const isSubmitting = ref(false)
+const newThread = ref({
+  title: '',
+  content: ''
+})
 
 // Load forum topics from API
 const loadForumTopics = async () => {
@@ -180,6 +248,33 @@ const popularTopics = computed(() => {
 })
 
 const unansweredTopics = computed(() => {
-  return filteredTopics.value.filter((topic) => topic.postCount < 5)
+  return filteredTopics.value.filter((topic: ForumTopic) => topic.postCount < 5)
 })
+
+// Handle creating a new thread
+const handleCreateThread = async () => {
+  if (!newThread.value.title.trim() || !newThread.value.content.trim()) {
+    return
+  }
+
+  try {
+    isSubmitting.value = true
+    const createdTopic = await createForumTopic({
+      title: newThread.value.title,
+      initialPostContent: newThread.value.content
+    })
+    
+    // Add the new topic to the list
+    forumTopics.value.unshift(createdTopic)
+    
+    // Reset form and close dialog
+    newThread.value = { title: '', content: '' }
+    showNewThreadDialog.value = false
+  } catch (err) {
+    console.error('Error creating thread:', err)
+    alert('Failed to create thread. Please try again.')
+  } finally {
+    isSubmitting.value = false
+  }
+}
 </script>

@@ -1,5 +1,5 @@
 <template>
-  <Card class="p-4 hover:shadow-md transition-shadow cursor-pointer">
+  <Card class="p-4 hover:shadow-md transition-shadow cursor-pointer" @click="handleClick">
     <div class="flex gap-4">
       <!-- Avatar -->
       <Avatar class="w-10 h-10 flex-shrink-0">
@@ -54,10 +54,17 @@ import AvatarImage from './ui/AvatarImage.vue'
 import Card from './ui/Card.vue'
 import type { ForumTopic } from '../types/forum'
 import { formatDistanceToNow } from '../utils/dateUtils'
+import { useAppStore } from '../stores/appStore'
 
-defineProps<{
+const props = defineProps<{
   topic: ForumTopic
 }>()
+
+const appStore = useAppStore()
+
+const handleClick = () => {
+  appStore.setSelectedThreadId(props.topic.id)
+}
 </script>
 
 <style scoped>

@@ -25,6 +25,7 @@ export const useAppStore = defineStore('app', () => {
   const unreadMessagesCount = ref(0)
   const currentPage = ref('home')
   const selectedServiceId = ref<string | null>(null)
+  const selectedThreadId = ref<number | null>(null)
 
   // Actions
   const refreshNotifications = () => {
@@ -45,6 +46,10 @@ export const useAppStore = defineStore('app', () => {
     selectedServiceId.value = id
   }
 
+  const setSelectedThreadId = (id: number | null) => {
+    selectedThreadId.value = id
+  }
+
   // Initialize data on store creation
   refreshNotifications()
   refreshConversations()
@@ -58,12 +63,14 @@ export const useAppStore = defineStore('app', () => {
     unreadMessagesCount,
     currentPage,
     selectedServiceId,
+    selectedThreadId,
     
     // Actions
     refreshNotifications,
     refreshConversations,
     setCurrentPage,
     setSelectedServiceId,
+    setSelectedThreadId,
   }
 })
 

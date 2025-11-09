@@ -27,6 +27,7 @@ import MessagingPage from './components/pages/MessagingPage.vue'
 import NotificationsPage from './components/pages/NotificationsPage.vue'
 import RequestsPage from './components/pages/RequestsPage.vue'
 import ServiceDetailsPage from './components/pages/ServiceDetailsPage.vue'
+import ThreadDetailsPage from './components/pages/ThreadDetailsPage.vue'
 import CreateOfferPage from './components/pages/CreateOfferPage.vue'
 import ProfilePage from './components/pages/ProfilePage.vue'
 import SettingsPage from './components/pages/SettingsPage.vue'
@@ -36,12 +37,18 @@ const appStore = useAppStore()
 const handleNavigate = (page: string) => {
   appStore.setCurrentPage(page)
   appStore.setSelectedServiceId(null)
+  appStore.setSelectedThreadId(null)
 }
 
 const currentPageComponent = computed(() => {
-  // If a service is selected, show the details page
+  // If a service is selected, show the service details page
   if (appStore.selectedServiceId) {
     return ServiceDetailsPage
+  }
+
+  // If a thread is selected, show the thread details page
+  if (appStore.selectedThreadId) {
+    return ThreadDetailsPage
   }
 
   switch (appStore.currentPage) {
