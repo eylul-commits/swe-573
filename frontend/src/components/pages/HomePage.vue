@@ -317,7 +317,7 @@ import SelectTrigger from '../ui/SelectTrigger.vue'
 import SelectValue from '../ui/SelectValue.vue'
 import SelectContent from '../ui/SelectContent.vue'
 import SelectItem from '../ui/SelectItem.vue'
-import { getAllServices, getAllTags, getCommunityStats, filterServices, getUserBadge } from '../../services/dataService'
+import { getAllServices, getAllTags, getCommunityStats, filterServices } from '../../services/dataService'
 import { useAppStore } from '../../stores/appStore'
 import type { BadgeType } from '../../types'
 

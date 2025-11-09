@@ -1,4 +1,4 @@
-import { mockServices, getUserBadge } from "./mockServices";
+import { mockServices } from "./mockServices";
 import { mockUsers } from "./mockUsers";
 import type { Service, User } from "../types";
 
@@ -6,7 +6,7 @@ export interface ServiceRequest {
   id: string;
   serviceId: string;
   service: Service;
-  requester: User & {
+  requester: Omit<User, 'badge'> & {
     badge: { emoji: string; label: string };
   };
   proposedDate: string;
@@ -18,7 +18,7 @@ export interface ServiceRequest {
 
 const getBadgeDisplay = (
   hoursGiven: number,
-  hoursReceived: number,
+  _hoursReceived: number,
   balance: number
 ): { emoji: string; label: string } => {
   if (hoursGiven >= 40) return { emoji: "🏆", label: "Top Contributor" };

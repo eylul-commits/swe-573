@@ -3,7 +3,7 @@ export default {
   darkMode: ["class"],
   content: [
     './index.html',
-    './src-vue/**/*.{vue,js,ts,jsx,tsx}',
+    './src/**/*.{vue,js,ts,jsx,tsx}',
   ],
   theme: {
     extend: {

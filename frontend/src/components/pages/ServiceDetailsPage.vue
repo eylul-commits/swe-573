@@ -288,7 +288,6 @@ import Badge from '../ui/Badge.vue'
 import Button from '../ui/Button.vue'
 import Avatar from '../ui/Avatar.vue'
 import AvatarImage from '../ui/AvatarImage.vue'
-import Separator from '../ui/Separator.vue'
 import Tabs from '../ui/Tabs.vue'
 import TabsContent from '../ui/TabsContent.vue'
 import TabsList from '../ui/TabsList.vue'
@@ -325,7 +324,7 @@ const serviceImages: Record<string, string> = {
 }
 
 // Helper function to determine user badge
-const getUserBadge = (hoursGiven: number, hoursReceived: number, balance: number) => {
+const getUserBadge = (hoursGiven: number, _hoursReceived: number, balance: number) => {
   if (hoursGiven >= 40) return { emoji: "🏆", label: "Top Contributor" }
   if (hoursGiven >= 20) return { emoji: "⭐", label: "Active Member" }
   if (Math.abs(balance) <= 5 && hoursGiven >= 10) return { emoji: "⚖️", label: "Balanced Exchanger" }

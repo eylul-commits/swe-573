@@ -90,7 +90,6 @@
 <script setup lang="ts">
 import { ref, computed } from 'vue'
 import { Clock, Check, X } from 'lucide-vue-next'
-import Card from '../ui/Card.vue'
 import Tabs from '../ui/Tabs.vue'
 import TabsList from '../ui/TabsList.vue'
 import TabsTrigger from '../ui/TabsTrigger.vue'

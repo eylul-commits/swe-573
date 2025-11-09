@@ -214,7 +214,7 @@ export const filterServices = (
 // Helper to determine user badge
 export const getUserBadge = (
   hoursGiven: number,
-  hoursReceived: number,
+  _hoursReceived: number,
   balance: number
 ): string => {
   if (hoursGiven >= 40) return "top-contributor";

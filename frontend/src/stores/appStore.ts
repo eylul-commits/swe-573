@@ -6,8 +6,8 @@
  */
 
 import { defineStore } from 'pinia'
-import { ref, computed } from 'vue'
-import type { User, Service, Notification, Conversation } from '../types'
+import { ref } from 'vue'
+import type { User, Notification, Conversation } from '../types'
 import {
   getCurrentUser,
   getAllNotifications,
