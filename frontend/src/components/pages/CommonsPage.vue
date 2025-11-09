@@ -34,37 +34,17 @@
         <!-- Sidebar -->
         <div class="lg:col-span-1">
           <Card class="p-4">
-            <h3 class="font-semibold text-gray-900 mb-3">Categories</h3>
-            <div class="space-y-1">
-              <button
-                v-for="category in categories"
-                :key="category.name"
-                @click="selectedCategory = category.name"
-                :class="[
-                  'w-full text-left px-3 py-2 rounded-lg transition-colors flex items-center justify-between',
-                  selectedCategory === category.name
-                    ? 'bg-amber-50 text-amber-700'
-                    : 'hover:bg-gray-50 text-gray-700',
-                ]"
-              >
-                <span>{{ category.name }}</span>
-                <Badge variant="secondary" class="text-xs">
-                  {{ category.count }}
-                </Badge>
-              </button>
-            </div>
-
             <!-- Quick Stats -->
-            <div class="mt-6 pt-6 border-t border-gray-200">
+            <div>
               <h3 class="font-semibold text-gray-900 mb-3">Forum Stats</h3>
               <div class="space-y-2 text-sm">
                 <div class="flex justify-between">
-                  <span class="text-gray-600">Total Threads</span>
-                  <span class="text-gray-900">47</span>
+                  <span class="text-gray-600">Total Topics</span>
+                  <span class="text-gray-900">{{ forumTopics.length }}</span>
                 </div>
                 <div class="flex justify-between">
                   <span class="text-gray-600">Active Today</span>
-                  <span class="text-gray-900">23</span>
+                  <span class="text-gray-900">{{ forumTopics.length }}</span>
                 </div>
                 <div class="flex justify-between">
                   <span class="text-gray-600">Members</span>
@@ -77,7 +57,21 @@
 
         <!-- Main Content -->
         <div class="lg:col-span-3">
-          <Tabs default-value="recent" class="w-full">
+          <!-- Loading State -->
+          <Card v-if="loading" class="p-8 text-center">
+            <div class="text-gray-600">Loading forum topics...</div>
+          </Card>
+
+          <!-- Error State -->
+          <Card v-else-if="error" class="p-8 text-center">
+            <div class="text-red-600 mb-4">{{ error }}</div>
+            <Button @click="loadForumTopics" variant="outline">
+              Try Again
+            </Button>
+          </Card>
+
+          <!-- Threads Content -->
+          <Tabs v-else default-value="recent" class="w-full">
             <TabsList class="w-full justify-start mb-4">
               <TabsTrigger value="recent" class="flex items-center gap-2">
                 <Clock class="w-4 h-4" />
@@ -96,32 +90,32 @@
             <!-- Recent Tab -->
             <TabsContent value="recent" class="space-y-3">
               <ThreadCard
-                v-for="thread in filteredThreads"
-                :key="thread.id"
-                :thread="thread"
+                v-for="topic in filteredTopics"
+                :key="topic.id"
+                :topic="topic"
               />
-              <EmptyState v-if="filteredThreads.length === 0" message="No threads found" />
+              <EmptyState v-if="filteredTopics.length === 0" message="No topics found" />
             </TabsContent>
 
             <!-- Popular Tab -->
             <TabsContent value="popular" class="space-y-3">
               <ThreadCard
-                v-for="thread in popularThreads"
-                :key="thread.id"
-                :thread="thread"
+                v-for="topic in popularTopics"
+                :key="topic.id"
+                :topic="topic"
               />
             </TabsContent>
 
             <!-- Unanswered Tab -->
             <TabsContent value="unanswered" class="space-y-3">
               <ThreadCard
-                v-for="thread in unansweredThreads"
-                :key="thread.id"
-                :thread="thread"
+                v-for="topic in unansweredTopics"
+                :key="topic.id"
+                :topic="topic"
               />
               <EmptyState
-                v-if="unansweredThreads.length === 0"
-                message="All threads have responses!"
+                v-if="unansweredTopics.length === 0"
+                message="All topics have responses!"
               />
             </TabsContent>
           </Tabs>
@@ -132,7 +126,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed } from 'vue'
+import { ref, computed, onMounted } from 'vue'
 import {
   Plus,
   Search,
@@ -150,20 +144,44 @@ import TabsTrigger from '../ui/TabsTrigger.vue'
 import TabsContent from '../ui/TabsContent.vue'
 import ThreadCard from '../ThreadCard.vue'
 import EmptyState from '../EmptyState.vue'
-import { forumThreads, categories, filterThreads } from '../../data/mockForumThreads'
+import { getAllForumTopics, filterTopics } from '../../services/forumService'
+import { formatDistanceToNow } from '../../utils/dateUtils'
+import type { ForumTopic } from '../../types/forum'
 
 const searchQuery = ref('')
-const selectedCategory = ref('All')
+const forumTopics = ref<ForumTopic[]>([])
+const loading = ref(true)
+const error = ref<string | null>(null)
 
-const filteredThreads = computed(() => {
-  return filterThreads(forumThreads, searchQuery.value, selectedCategory.value)
+// Load forum topics from API
+const loadForumTopics = async () => {
+  try {
+    loading.value = true
+    error.value = null
+    const topics = await getAllForumTopics()
+    forumTopics.value = topics
+  } catch (err) {
+    error.value = err instanceof Error ? err.message : 'Failed to load forum topics'
+    console.error('Error loading forum topics:', err)
+  } finally {
+    loading.value = false
+  }
+}
+
+// Load on mount
+onMounted(() => {
+  loadForumTopics()
 })
 
-const popularThreads = computed(() => {
-  return [...filteredThreads.value].sort((a, b) => b.likes - a.likes)
+const filteredTopics = computed(() => {
+  return filterTopics(forumTopics.value, searchQuery.value)
 })
 
-const unansweredThreads = computed(() => {
-  return filteredThreads.value.filter((thread) => thread.replies < 5)
+const popularTopics = computed(() => {
+  return [...filteredTopics.value].sort((a, b) => b.likes - a.likes)
+})
+
+const unansweredTopics = computed(() => {
+  return filteredTopics.value.filter((topic) => topic.postCount < 5)
 })
 </script>

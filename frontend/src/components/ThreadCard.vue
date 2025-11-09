@@ -3,46 +3,43 @@
     <div class="flex gap-4">
       <!-- Avatar -->
       <Avatar class="w-10 h-10 flex-shrink-0">
-        <AvatarImage :src="thread.author.avatar" />
+        <AvatarImage :src="topic.author.avatar || 'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=100&h=100&fit=crop'" />
       </Avatar>
 
       <!-- Content -->
       <div class="flex-1 min-w-0">
         <div class="flex items-start justify-between gap-2 mb-2">
           <div class="flex items-center gap-2 flex-wrap">
-            <Pin v-if="thread.isPinned" class="w-4 h-4 text-amber-500 flex-shrink-0" />
+            <Pin v-if="topic.isPinned" class="w-4 h-4 text-amber-500 flex-shrink-0" />
             <h3 class="text-gray-900 hover:text-amber-600 transition-colors font-medium">
-              {{ thread.title }}
+              {{ topic.title }}
             </h3>
           </div>
-          <Badge variant="outline" class="flex-shrink-0 text-xs">
-            {{ thread.category }}
-          </Badge>
         </div>
 
         <p class="text-gray-600 text-sm mb-3 line-clamp-2">
-          {{ thread.excerpt }}
+          {{ topic.excerpt }}
         </p>
 
         <div class="flex items-center gap-4 text-sm text-gray-500">
           <div class="flex items-center gap-1">
-            <span>{{ thread.author.name }}</span>
-            <span class="text-xs">{{ thread.author.badge }}</span>
+            <span>{{ topic.author.name }}</span>
+            <span class="text-xs">{{ topic.author.badge }}</span>
           </div>
           <div class="flex items-center gap-1">
             <Eye class="w-4 h-4" />
-            {{ thread.views }}
+            {{ topic.views }}
           </div>
           <div class="flex items-center gap-1">
             <MessageCircle class="w-4 h-4" />
-            {{ thread.replies }}
+            {{ topic.postCount }}
           </div>
           <div class="flex items-center gap-1">
             <ThumbsUp class="w-4 h-4" />
-            {{ thread.likes }}
+            {{ topic.likes }}
           </div>
           <div class="ml-auto text-xs">
-            {{ thread.lastActivity }}
+            {{ formatDistanceToNow(topic.lastActivity) }}
           </div>
         </div>
       </div>
@@ -54,12 +51,12 @@
 import { Pin, Eye, MessageCircle, ThumbsUp } from 'lucide-vue-next'
 import Avatar from './ui/Avatar.vue'
 import AvatarImage from './ui/AvatarImage.vue'
-import Badge from './ui/Badge.vue'
 import Card from './ui/Card.vue'
-import type { ForumThread } from '../data/mockForumThreads'
+import type { ForumTopic } from '../types/forum'
+import { formatDistanceToNow } from '../utils/dateUtils'
 
 defineProps<{
-  thread: ForumThread
+  topic: ForumTopic
 }>()
 </script>
 
