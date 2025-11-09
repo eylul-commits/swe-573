@@ -159,15 +159,16 @@ public class ForumService {
         dto.setName(user.getName() != null ? user.getName() : user.getEmail());
         dto.setAvatar(null); // Could be added to User entity later
         
-        if (user.getBadges() != null && !user.getBadges().isEmpty()) {
-            // Get the last badge from the set
-            //TODO: Burayı değiştireceğim, earned_at timestamp'e göre prioritizasyon yapacağım
-            var badgesList = new java.util.ArrayList<>(user.getBadges());
-            var badge = badgesList.get(badgesList.size() - 1);
-            dto.setBadge(badge.getName());
+        if (user.getUserBadges() != null && !user.getUserBadges().isEmpty()) {
+            // Get the most recent badge based on earned_at timestamp
+            var latestBadge = user.getUserBadges().stream()
+                .max((ub1, ub2) -> ub1.getEarnedAt().compareTo(ub2.getEarnedAt()))
+                .map(userBadge -> userBadge.getBadge().getName())
+                .orElse("Newcomer");
+            dto.setBadge(latestBadge);
         } else {
             // Default badge for users with no badges
-            dto.setBadge("Newcomer");
+            dto.setBadge("Newcomer2");
         }
         
         return dto;

@@ -63,12 +63,7 @@ public class User {
     @OneToMany(mappedBy = "seeker", cascade = CascadeType.ALL)
     private Set<Request> requests = new HashSet<>();
 
-    @ManyToMany
-    @JoinTable(
-        name = "user_badges",
-        joinColumns = @JoinColumn(name = "user_id"),
-        inverseJoinColumns = @JoinColumn(name = "badge_id")
-    )
-    private Set<Badge> badges = new HashSet<>();
+    @OneToMany(mappedBy = "user", cascade = CascadeType.ALL, orphanRemoval = true)
+    private Set<UserBadge> userBadges = new HashSet<>();
 }
 

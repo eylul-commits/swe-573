@@ -29,7 +29,7 @@ public class Badge {
     private String iconUrl;
 
     // Relationships
-    @ManyToMany(mappedBy = "badges")
-    private Set<User> users = new HashSet<>();
+    @OneToMany(mappedBy = "badge", cascade = CascadeType.ALL, orphanRemoval = true)
+    private Set<UserBadge> userBadges = new HashSet<>();
 }
 

@@ -1,9 +1,7 @@
 package com.thehive.service;
 
 import com.thehive.model.dto.*;
-import com.thehive.model.entity.ForumPost;
-import com.thehive.model.entity.ForumTopic;
-import com.thehive.model.entity.User;
+import com.thehive.model.entity.*;
 import com.thehive.repository.ForumPostRepository;
 import com.thehive.repository.ForumTopicRepository;
 import com.thehive.repository.UserRepository;
@@ -52,7 +50,7 @@ class ForumServiceTest {
         testUser.setName("Test User");
         testUser.setEmail("test@example.com");
         testUser.setBalanceHours(15);
-        testUser.setBadges(new java.util.HashSet<>()); // Empty badges by default
+        testUser.setUserBadges(new java.util.HashSet<>()); // Empty badges by default
 
         // Create test topic
         testTopic = new ForumTopic();
@@ -420,7 +418,7 @@ class ForumServiceTest {
     @Test
     void convertToAuthorDTO_ShouldUseDefaultBadgeWhenNoBadgesInDatabase() {
         // Arrange - user with no badges
-        testUser.setBadges(new java.util.HashSet<>());
+        testUser.setUserBadges(new java.util.HashSet<>());
         when(topicRepository.findById(1)).thenReturn(Optional.of(testTopic));
         when(postRepository.findByTopicId(1)).thenReturn(Arrays.asList(testPost));
 
@@ -434,14 +432,20 @@ class ForumServiceTest {
     @Test
     void convertToAuthorDTO_ShouldUseDatabaseBadgeWhenAvailable() {
         // Arrange - user with a badge
-        com.thehive.model.entity.Badge badge = new com.thehive.model.entity.Badge();
+        Badge badge = new Badge();
         badge.setId(1);
         badge.setName("Top Contributor");
         badge.setIconUrl("/images/badges/top-contributor.png");
         
-        java.util.Set<com.thehive.model.entity.Badge> badges = new java.util.HashSet<>();
-        badges.add(badge);
-        testUser.setBadges(badges);
+        UserBadge userBadge = new UserBadge();
+        userBadge.setId(new UserBadgeId(testUser.getId(), badge.getId()));
+        userBadge.setUser(testUser);
+        userBadge.setBadge(badge);
+        userBadge.setEarnedAt(LocalDateTime.now());
+        
+        java.util.Set<UserBadge> userBadges = new java.util.HashSet<>();
+        userBadges.add(userBadge);
+        testUser.setUserBadges(userBadges);
         
         when(topicRepository.findById(1)).thenReturn(Optional.of(testTopic));
         when(postRepository.findByTopicId(1)).thenReturn(Arrays.asList(testPost));
@@ -456,14 +460,20 @@ class ForumServiceTest {
     @Test
     void convertToAuthorDTO_ShouldAlwaysUseBadgeName() {
         // Arrange - user with a badge
-        com.thehive.model.entity.Badge badge = new com.thehive.model.entity.Badge();
+        Badge badge = new Badge();
         badge.setId(1);
         badge.setName("Active Member");
         badge.setIconUrl("/images/badges/active-member.png");
         
-        java.util.Set<com.thehive.model.entity.Badge> badges = new java.util.HashSet<>();
-        badges.add(badge);
-        testUser.setBadges(badges);
+        UserBadge userBadge = new UserBadge();
+        userBadge.setId(new UserBadgeId(testUser.getId(), badge.getId()));
+        userBadge.setUser(testUser);
+        userBadge.setBadge(badge);
+        userBadge.setEarnedAt(LocalDateTime.now());
+        
+        java.util.Set<UserBadge> userBadges = new java.util.HashSet<>();
+        userBadges.add(userBadge);
+        testUser.setUserBadges(userBadges);
         
         when(topicRepository.findById(1)).thenReturn(Optional.of(testTopic));
         when(postRepository.findByTopicId(1)).thenReturn(Arrays.asList(testPost));
