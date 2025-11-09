@@ -173,7 +173,11 @@
       <!-- Services in Your Area -->
       <div class="mb-8">
         <h3 class="text-gray-900 mb-4">Services in Your Area</h3>
-        <div v-if="nearbyServices.length === 0" class="text-center py-12 text-gray-500">
+        <div v-if="loading" class="text-center py-12 text-gray-500">
+          <Clock class="w-12 h-12 mx-auto mb-3 text-gray-400 animate-spin" />
+          <p class="text-lg">Loading services...</p>
+        </div>
+        <div v-else-if="nearbyServices.length === 0" class="text-center py-12 text-gray-500">
           <MapPin class="w-12 h-12 mx-auto mb-3 text-gray-400" />
           <p class="text-lg">No services found in your area</p>
           <p class="text-sm">Try adjusting your filters or search query</p>
@@ -231,7 +235,11 @@
       <!-- Services You Might Be Interested In -->
       <div v-if="!hasActiveFilters" class="mb-8">
         <h3 class="text-gray-900 mb-4">Services You Might Be Interested In</h3>
-        <div v-if="recommendedServices.length === 0" class="text-center py-12 text-gray-500">
+        <div v-if="loading" class="text-center py-12 text-gray-500">
+          <Clock class="w-12 h-12 mx-auto mb-3 text-gray-400 animate-spin" />
+          <p class="text-lg">Loading services...</p>
+        </div>
+        <div v-else-if="recommendedServices.length === 0" class="text-center py-12 text-gray-500">
           <Tag class="w-12 h-12 mx-auto mb-3 text-gray-400" />
           <p class="text-lg">No recommended services available</p>
         </div>
@@ -281,7 +289,11 @@
       <!-- Community Stats -->
       <Card class="p-6 mt-8 bg-gray-50">
         <h3 class="text-gray-900 mb-4">Community Stats</h3>
-        <div class="grid grid-cols-2 md:grid-cols-4 gap-6">
+        <div v-if="loading" class="text-center py-8 text-gray-500">
+          <Clock class="w-8 h-8 mx-auto mb-2 text-gray-400 animate-spin" />
+          <p>Loading stats...</p>
+        </div>
+        <div v-else class="grid grid-cols-2 md:grid-cols-4 gap-6">
           <div>
             <div class="text-3xl text-gray-900">{{ communityStats.activeMembers }}</div>
             <div class="text-sm text-gray-600">Active Members</div>
@@ -305,7 +317,7 @@
 </template>
 
 <script setup lang="ts">
-import { computed, reactive, ref } from 'vue'
+import { computed, reactive, ref, onMounted } from 'vue'
 import { Search, MapPin, Clock, Tag, Award } from 'lucide-vue-next'
 import Input from '../ui/Input.vue'
 import Button from '../ui/Button.vue'
@@ -317,17 +329,25 @@ import SelectTrigger from '../ui/SelectTrigger.vue'
 import SelectValue from '../ui/SelectValue.vue'
 import SelectContent from '../ui/SelectContent.vue'
 import SelectItem from '../ui/SelectItem.vue'
-import { getAllServices, getAllTags, getCommunityStats, filterServices } from '../../services/dataService'
+import { getActiveServices, getAllTags, getCommunityStats, filterServices } from '../../services/marketplaceService'
 import { useAppStore } from '../../stores/appStore'
-import type { BadgeType } from '../../types'
+import type { BadgeType, Service, CommunityStats } from '../../types'
 
 const appStore = useAppStore()
-const allServices = getAllServices()
-const allTags = getAllTags()
-const communityStats = getCommunityStats()
+const allServices = ref<Service[]>([])
+const allTags = ref<string[]>([])
+const communityStats = ref<CommunityStats>({
+  activeMembers: 0,
+  hoursExchanged: 0,
+  activeServices: 0,
+  completedThisMonth: 0
+})
 
 // Hero search state
 const heroSearch = ref('')
+
+// Loading state
+const loading = ref(true)
 
 // Filter state
 const filters = reactive<{
@@ -340,8 +360,27 @@ const filters = reactive<{
   badge: ''
 })
 
+// Load data on component mount
+onMounted(async () => {
+  loading.value = true
+  try {
+    const [services, tags, stats] = await Promise.all([
+      getActiveServices(),
+      getAllTags(),
+      getCommunityStats()
+    ])
+    allServices.value = services
+    allTags.value = tags
+    communityStats.value = stats
+  } catch (error) {
+    console.error('Failed to load data:', error)
+  } finally {
+    loading.value = false
+  }
+})
+
 // Get popular tags (top 10 most used)
-const popularTags = computed(() => allTags.slice(0, 10))
+const popularTags = computed(() => allTags.value.slice(0, 10))
 
 // Check if any filters are active
 const hasActiveFilters = computed(() => {
@@ -351,10 +390,10 @@ const hasActiveFilters = computed(() => {
 // Apply filters to services
 const filteredServices = computed(() => {
   if (!hasActiveFilters.value) {
-    return allServices
+    return allServices.value
   }
 
-  return filterServices({
+  return filterServices(allServices.value, {
     searchQuery: filters.searchQuery || undefined,
     location: filters.location || undefined,
     badge: filters.badge && filters.badge !== 'all' ? filters.badge : undefined

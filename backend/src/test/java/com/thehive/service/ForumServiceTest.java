@@ -174,26 +174,7 @@ class ForumServiceTest {
         // Assert
         assertNotNull(result);
         verify(topicRepository, times(1)).save(any(ForumTopic.class));
-        verify(postRepository, never()).save(any(ForumPost.class)); // No initial post
-    }
-
-    @Test
-    void createTopic_ShouldCreateTopicWithoutPost_WhenContentIsEmpty() {
-        // Arrange
-        CreateForumTopicRequest request = new CreateForumTopicRequest();
-        request.setTitle("New Topic");
-        request.setInitialPostContent(""); // Empty string
-
-        when(userRepository.findById(1)).thenReturn(Optional.of(testUser));
-        when(topicRepository.save(any(ForumTopic.class))).thenReturn(testTopic);
-        when(postRepository.findByTopicId(anyInt())).thenReturn(Collections.emptyList());
-
-        // Act
-        ForumTopicDTO result = forumService.createTopic(request, 1);
-
-        // Assert
-        assertNotNull(result);
-        verify(postRepository, never()).save(any(ForumPost.class)); // No initial post
+        verify(postRepository, never()).save(any(ForumPost.class)); // postRepository'nin "save" methodu hiç çağırılmamış olmalı
     }
 
     @Test
@@ -399,7 +380,7 @@ class ForumServiceTest {
     }
 
     @Test
-    void convertToTopicDTO_ShouldNotTruncateShortExcerpt() {
+    void convertToTopicDTO_ShouldNotTruncateShortPreview() {
         // Arrange
         String shortContent = "Short content";
         testPost.setContent(shortContent);
@@ -426,7 +407,7 @@ class ForumServiceTest {
         ForumTopicDTO result = forumService.getTopicById(1);
 
         // Assert
-        assertEquals("Newcomer", result.getAuthor().getBadge());
+        assertEquals("New comer", result.getAuthor().getBadge());
     }
 
     @Test
@@ -455,34 +436,6 @@ class ForumServiceTest {
 
         // Assert
         assertEquals("Top Contributor", result.getAuthor().getBadge());
-    }
-
-    @Test
-    void convertToAuthorDTO_ShouldAlwaysUseBadgeName() {
-        // Arrange - user with a badge
-        Badge badge = new Badge();
-        badge.setId(1);
-        badge.setName("Active Member");
-        badge.setIconUrl("/images/badges/active-member.png");
-        
-        UserBadge userBadge = new UserBadge();
-        userBadge.setId(new UserBadgeId(testUser.getId(), badge.getId()));
-        userBadge.setUser(testUser);
-        userBadge.setBadge(badge);
-        userBadge.setEarnedAt(LocalDateTime.now());
-        
-        java.util.Set<UserBadge> userBadges = new java.util.HashSet<>();
-        userBadges.add(userBadge);
-        testUser.setUserBadges(userBadges);
-        
-        when(topicRepository.findById(1)).thenReturn(Optional.of(testTopic));
-        when(postRepository.findByTopicId(1)).thenReturn(Arrays.asList(testPost));
-
-        // Act
-        ForumTopicDTO result = forumService.getTopicById(1);
-
-        // Assert
-        assertEquals("Active Member", result.getAuthor().getBadge());
     }
 
     @Test

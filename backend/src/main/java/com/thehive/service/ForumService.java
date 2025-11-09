@@ -164,11 +164,11 @@ public class ForumService {
             var latestBadge = user.getUserBadges().stream()
                 .max((ub1, ub2) -> ub1.getEarnedAt().compareTo(ub2.getEarnedAt()))
                 .map(userBadge -> userBadge.getBadge().getName())
-                .orElse("Newcomer");
+                .orElse("New comer");
             dto.setBadge(latestBadge);
         } else {
             // Default badge for users with no badges
-            dto.setBadge("Newcomer2");
+            dto.setBadge("New comer");
         }
         
         return dto;
