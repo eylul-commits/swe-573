@@ -25,6 +25,7 @@ components:
         bio: { type: string }
         province: { type: string }
         district: { type: string }
+        geohash: { type: string }
         role: { type: string, enum: [USER, ADMIN] }
         balance_hours: { type: integer }
         created_at: { type: string, format: date-time }
@@ -37,6 +38,7 @@ components:
         bio: { type: string }
         province: { type: string }
         district: { type: string }
+        geohash: { type: string }
     
     Offer:
       type: object
@@ -50,6 +52,7 @@ components:
         end_date: { type: string, format: date }
         province: { type: string }
         district: { type: string }
+        geohash: { type: string }
         status: { type: string, enum: [ACTIVE, EXPIRED, ARCHIVED] }
         created_at: { type: string, format: date-time }
         updated_at: { type: string, format: date-time }
@@ -70,6 +73,7 @@ components:
         end_date: { type: string, format: date }
         province: { type: string }
         district: { type: string }
+        geohash: { type: string }
         tag_ids:
           type: array
           description: "List of associated semantic tag IDs."
@@ -86,6 +90,7 @@ components:
         end_date: { type: string, format: date }
         province: { type: string }
         district: { type: string }
+        geohash: { type: string }
         status: { type: string, enum: [ACTIVE, EXPIRED, ARCHIVED] }
         tag_ids:
           type: array
@@ -104,6 +109,7 @@ components:
         end_date: { type: string, format: date }
         province: { type: string }
         district: { type: string }
+        geohash: { type: string }
         status: { type: string, enum: [ACTIVE, EXPIRED, ARCHIVED] }
         created_at: { type: string, format: date-time }
         updated_at: { type: string, format: date-time }
@@ -124,6 +130,7 @@ components:
         end_date: { type: string, format: date }
         province: { type: string }
         district: { type: string }
+        geohash: { type: string }
         tag_ids:
           type: array
           description: "List of associated semantic tag IDs."
@@ -140,6 +147,7 @@ components:
         end_date: { type: string, format: date }
         province: { type: string }
         district: { type: string }
+        geohash: { type: string }
         status: { type: string, enum: [ACTIVE, EXPIRED, ARCHIVED] }
         tag_ids:
           type: array
@@ -389,6 +397,7 @@ paths:
                 name: { type: string }
                 province: { type: string }
                 district: { type: string }
+                geohash: { type: string }
       responses:
         '201':
           description: User created

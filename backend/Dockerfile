@@ -7,8 +7,8 @@ WORKDIR /app
 COPY pom.xml .
 # copy the source code directory
 COPY src ./src
-# build the application JAR file, skip tests
-RUN mvn clean package -DskipTests
+# build the application JAR file, to skip tests: -DskipTests, testleri aktive ettim
+RUN mvn clean package 
 
 #run the application
 # use a Java 17 runtime image

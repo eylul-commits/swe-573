@@ -121,6 +121,7 @@ public class MarketplaceService {
         dto.setEndDate(offer.getEndDate());
         dto.setProvince(offer.getProvince());
         dto.setDistrict(offer.getDistrict());
+        dto.setGeohash(offer.getGeohash());
         dto.setStatus(offer.getStatus());
         dto.setCreatedAt(offer.getCreatedAt());
         dto.setUpdatedAt(offer.getUpdatedAt());
@@ -141,6 +142,7 @@ public class MarketplaceService {
         dto.setEndDate(request.getEndDate());
         dto.setProvince(request.getProvince());
         dto.setDistrict(request.getDistrict());
+        dto.setGeohash(request.getGeohash());
         dto.setStatus(request.getStatus());
         dto.setCreatedAt(request.getCreatedAt());
         dto.setUpdatedAt(request.getUpdatedAt());
@@ -162,6 +164,7 @@ public class MarketplaceService {
         dto.setEndDate(offer.getEndDate());
         dto.setProvince(offer.getProvince());
         dto.setDistrict(offer.getDistrict());
+        dto.setGeohash(offer.getGeohash());
         dto.setLocation(formatLocation(offer.getProvince(), offer.getDistrict()));
         dto.setStatus(offer.getStatus() != null ? offer.getStatus().toString() : "ACTIVE");
         dto.setCreatedAt(offer.getCreatedAt());
@@ -184,6 +187,7 @@ public class MarketplaceService {
         dto.setEndDate(request.getEndDate());
         dto.setProvince(request.getProvince());
         dto.setDistrict(request.getDistrict());
+        dto.setGeohash(request.getGeohash());
         dto.setLocation(formatLocation(request.getProvince(), request.getDistrict()));
         dto.setStatus(request.getStatus() != null ? request.getStatus().toString() : "ACTIVE");
         dto.setCreatedAt(request.getCreatedAt());
@@ -199,7 +203,7 @@ public class MarketplaceService {
         AuthorDTO dto = new AuthorDTO();
         dto.setId(user.getId());
         dto.setName(user.getName() != null ? user.getName() : user.getEmail());
-        dto.setAvatar(null); // Could be added to User entity later
+        dto.setAvatar(null); // değişecek
         
         if (user.getUserBadges() != null && !user.getUserBadges().isEmpty()) {
             // Get the most recent badge based on earned_at timestamp

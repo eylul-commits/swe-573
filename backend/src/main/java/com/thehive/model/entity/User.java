@@ -43,6 +43,9 @@ public class User {
     @Column(length = 100)
     private String district;
 
+    @Column(length = 20)
+    private String geohash;
+
     @Enumerated(EnumType.STRING)
     @Column(columnDefinition = "user_role")
     private UserRole role = UserRole.USER;

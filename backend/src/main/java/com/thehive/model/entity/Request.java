@@ -49,6 +49,9 @@ public class Request {
     @Column(length = 100)
     private String district;
 
+    @Column(length = 20)
+    private String geohash;
+
     @Enumerated(EnumType.STRING)
     @Column(columnDefinition = "item_status")
     private ItemStatus status = ItemStatus.ACTIVE;

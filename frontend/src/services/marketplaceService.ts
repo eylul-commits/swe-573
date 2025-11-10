@@ -19,6 +19,7 @@ interface ServiceDTO {
   location: string;
   province: string;
   district: string;
+  geohash: string;
   status: string;
   createdAt: string;
   updatedAt: string;
@@ -36,6 +37,7 @@ interface OfferDTO {
   endDate: string;
   province: string;
   district: string;
+  geohash: string;
   status: string;
   createdAt: string;
   updatedAt: string;
@@ -52,6 +54,7 @@ interface RequestDTO {
   endDate: string;
   province: string;
   district: string;
+  geohash: string;
   status: string;
   createdAt: string;
   updatedAt: string;

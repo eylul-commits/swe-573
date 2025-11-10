@@ -21,6 +21,7 @@ public class OfferDTO {
     private LocalDate endDate;
     private String province;
     private String district;
+    private String geohash;
     private ItemStatus status;
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;

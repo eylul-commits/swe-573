@@ -26,6 +26,7 @@ public class ServiceDTO {
     private String location; // combined province + district
     private String province;
     private String district;
+    private String geohash;
     private String status;
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;

@@ -95,6 +95,7 @@ class MarketplaceServiceTest {
         testOffer.setEndDate(LocalDate.now().plusMonths(1));
         testOffer.setProvince("Istanbul");
         testOffer.setDistrict("Kadikoy");
+        testOffer.setGeohash("sxk3");
         testOffer.setStatus(ItemStatus.ACTIVE);
         testOffer.setCreatedAt(LocalDateTime.now());
         testOffer.setUpdatedAt(LocalDateTime.now());
@@ -114,6 +115,7 @@ class MarketplaceServiceTest {
         testRequest.setEndDate(LocalDate.now().plusWeeks(2));
         testRequest.setProvince("Ankara");
         testRequest.setDistrict("Cankaya");
+        testRequest.setGeohash("syet");
         testRequest.setStatus(ItemStatus.ACTIVE);
         testRequest.setCreatedAt(LocalDateTime.now());
         testRequest.setUpdatedAt(LocalDateTime.now());
@@ -462,6 +464,7 @@ class MarketplaceServiceTest {
         offer2.setDurationHours(1);
         offer2.setProvince("Izmir");
         offer2.setDistrict("Karsiyaka");
+        offer2.setGeohash("sxnf");
         offer2.setStatus(ItemStatus.ACTIVE);
         offer2.setCreatedAt(LocalDateTime.now());
         offer2.setUpdatedAt(LocalDateTime.now());
@@ -475,6 +478,7 @@ class MarketplaceServiceTest {
         request2.setDurationHours(2);
         request2.setProvince("Izmir");
         request2.setDistrict("Bornova");
+        request2.setGeohash("sxng");
         request2.setStatus(ItemStatus.ACTIVE);
         request2.setCreatedAt(LocalDateTime.now());
         request2.setUpdatedAt(LocalDateTime.now());

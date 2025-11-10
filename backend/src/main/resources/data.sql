@@ -1,21 +1,21 @@
 -- Initial data for The Hive platform
 
 -- USERS
-INSERT INTO users (id, email, password_hash, name, bio, province, district, role, balance_hours, created_at, updated_at)
+INSERT INTO users (id, email, password_hash, name, bio, province, district, geohash, role, balance_hours, created_at, updated_at)
 VALUES
-(1, 'alice@example.com', 'hash123', 'Alice Aydın', 'Love volunteering!', 'Istanbul', 'Kadıköy', 'USER', 3, NOW(), NOW()),
-(2, 'bob@example.com', 'hash456', 'Bob Balcı', 'Community builder', 'Ankara', 'Çankaya', 'USER', 5, NOW(), NOW()),
-(3, 'admin@example.com', 'hash789', 'Admin User', 'Platform moderator', 'Istanbul', 'Beşiktaş', 'ADMIN', 10, NOW(), NOW());
+(1, 'alice@example.com', 'hash123', 'Alice Aydın', 'Love volunteering!', 'Istanbul', 'Kadıköy', 'sxk3', 'USER', 3, NOW(), NOW()),
+(2, 'bob@example.com', 'hash456', 'Bob Balcı', 'Community builder', 'Ankara', 'Çankaya', 'syet', 'USER', 5, NOW(), NOW()),
+(3, 'admin@example.com', 'hash789', 'Admin User', 'Platform moderator', 'Istanbul', 'Beşiktaş', 'sxk9', 'ADMIN', 10, NOW(), NOW());
 
 -- OFFERS
-INSERT INTO offers (id, provider_id, title, description, duration_hours, start_date, end_date, province, district, status, created_at, updated_at)
+INSERT INTO offers (id, provider_id, title, description, duration_hours, start_date, end_date, province, district, geohash, status, created_at, updated_at)
 VALUES
-(1, 1, 'Gardening Help', 'Assist with small garden maintenance.', 2, '2025-11-01', '2025-11-10', 'Istanbul', 'Kadıköy', 'ACTIVE', NOW(), NOW());
+(1, 1, 'Gardening Help', 'Assist with small garden maintenance.', 2, '2025-11-01', '2025-11-10', 'Istanbul', 'Kadıköy', 'sxk3', 'ACTIVE', NOW(), NOW());
 
 -- REQUESTS
-INSERT INTO requests (id, seeker_id, title, description, duration_hours, start_date, end_date, province, district, status, created_at, updated_at)
+INSERT INTO requests (id, seeker_id, title, description, duration_hours, start_date, end_date, province, district, geohash, status, created_at, updated_at)
 VALUES
-(1, 2, 'Dog Walking', 'Looking for someone to walk my dog.', 1, '2025-11-02', '2025-11-03', 'Ankara', 'Çankaya', 'ACTIVE', NOW(), NOW());
+(1, 2, 'Dog Walking', 'Looking for someone to walk my dog.', 1, '2025-11-02', '2025-11-03', 'Ankara', 'Çankaya', 'syet', 'ACTIVE', NOW(), NOW());
 
 -- SEMANTIC TAGS
 INSERT INTO semantic_tags (id, name, wikidata_id)

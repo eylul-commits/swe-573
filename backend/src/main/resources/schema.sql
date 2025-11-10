@@ -19,6 +19,7 @@ CREATE TABLE IF NOT EXISTS users (
     bio TEXT,
     province VARCHAR(100),
     district VARCHAR(100),
+    geohash VARCHAR(20),
     role user_role DEFAULT 'USER',
     balance_hours INT DEFAULT 3,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
@@ -36,6 +37,7 @@ CREATE TABLE IF NOT EXISTS offers (
     end_date DATE,
     province VARCHAR(100),
     district VARCHAR(100),
+    geohash VARCHAR(20),
     status item_status DEFAULT 'ACTIVE',
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
@@ -52,6 +54,7 @@ CREATE TABLE IF NOT EXISTS requests (
     end_date DATE,
     province VARCHAR(100),
     district VARCHAR(100),
+    geohash VARCHAR(20),
     status item_status DEFAULT 'ACTIVE',
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
