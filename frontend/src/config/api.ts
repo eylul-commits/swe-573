@@ -13,14 +13,22 @@ export const getDefaultHeaders = (): HeadersInit => {
     'Content-Type': 'application/json',
   };
 
-  // In production, you'd add authentication token here
-  // const token = localStorage.getItem('auth_token');
-  // if (token) {
-  //   headers['Authorization'] = `Bearer ${token}`;
-  // }
+  // Add authentication token if available
+  const token = localStorage.getItem('authToken');
+  if (token) {
+    headers['Authorization'] = `Bearer ${token}`;
+  }
 
-  // For now, using a default user ID header
-  headers['X-User-Id'] = '1';
+  // Add user ID header if available
+  const userStr = localStorage.getItem('currentUser');
+  if (userStr) {
+    try {
+      const user = JSON.parse(userStr);
+      headers['X-User-Id'] = user.id.toString();
+    } catch (e) {
+      // If parsing fails, don't add the header
+    }
+  }
 
   return headers;
 };

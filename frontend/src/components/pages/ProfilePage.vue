@@ -4,23 +4,23 @@
       <h1 class="text-gray-900 mb-6">Profile</h1>
       <Card class="p-6">
         <div class="flex items-center gap-4 mb-6">
-          <img :src="appStore.currentUser.avatar" :alt="appStore.currentUser.name" class="w-20 h-20 rounded-full" />
+          <img :src="appStore.currentUser?.avatar || '/default-avatar.png'" :alt="appStore.currentUser?.name || 'User'" class="w-20 h-20 rounded-full" />
           <div>
-            <div class="text-gray-900 text-xl">{{ appStore.currentUser.name }}</div>
-            <div class="text-gray-600">{{ appStore.currentUser.location }}</div>
+            <div class="text-gray-900 text-xl">{{ appStore.currentUser?.name || 'User' }}</div>
+            <div class="text-gray-600">{{ appStore.currentUser?.location || 'Location not set' }}</div>
           </div>
         </div>
         <div class="grid grid-cols-3 gap-4">
           <div>
-            <div class="text-2xl text-gray-900">{{ appStore.currentUser.timebankBalance }}h</div>
+            <div class="text-2xl text-gray-900">{{ appStore.currentUser?.timebankBalance ?? 0 }}h</div>
             <div class="text-sm text-gray-600">Balance</div>
           </div>
           <div>
-            <div class="text-2xl text-gray-900">{{ appStore.currentUser.hoursGiven }}h</div>
+            <div class="text-2xl text-gray-900">{{ appStore.currentUser?.hoursGiven ?? 0 }}h</div>
             <div class="text-sm text-gray-600">Given</div>
           </div>
           <div>
-            <div class="text-2xl text-gray-900">{{ appStore.currentUser.hoursReceived }}h</div>
+            <div class="text-2xl text-gray-900">{{ appStore.currentUser?.hoursReceived ?? 0 }}h</div>
             <div class="text-sm text-gray-600">Received</div>
           </div>
         </div>

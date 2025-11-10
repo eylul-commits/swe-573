@@ -1,15 +1,8 @@
-/**
- * App Store (Pinia)
- * 
- * Provides global state and data access throughout the application.
- * This replaces the React Context from the original application.
- */
-
 import { defineStore } from 'pinia'
-import { ref } from 'vue'
-import type { User, Notification, Conversation } from '../types'
+import { ref, computed } from 'vue'
+import type { Notification, Conversation } from '../types'
+import type { User } from '../services/authService'
 import {
-  getCurrentUser,
   getAllNotifications,
   getUnreadNotificationsCount,
   getAllConversations,
@@ -18,7 +11,8 @@ import {
 
 export const useAppStore = defineStore('app', () => {
   // State
-  const currentUser = ref<User>(getCurrentUser())
+  const currentUser = ref<User | null>(null)
+  const authToken = ref<string | null>(localStorage.getItem('authToken'))
   const notifications = ref<Notification[]>([])
   const unreadNotificationsCount = ref(0)
   const conversations = ref<Conversation[]>([])
@@ -27,7 +21,47 @@ export const useAppStore = defineStore('app', () => {
   const selectedServiceId = ref<string | null>(null)
   const selectedThreadId = ref<number | null>(null)
 
+  // Computed
+  const isAuthenticated = computed(() => !!authToken.value && !!currentUser.value)
+
   // Actions
+  const setCurrentUser = (user: User, token: string) => {
+    // map backend properties to frontend expected properties
+    const mappedUser: User = {
+      ...user,
+      timebankBalance: user.balanceHours,
+      hoursGiven: 0, // TODO: Get from backend
+      hoursReceived: 0, // TODO: Get from backend
+      location: user.district && user.province ? `${user.district}, ${user.province}` : undefined,
+    }
+    currentUser.value = mappedUser
+    authToken.value = token
+    localStorage.setItem('authToken', token)
+    localStorage.setItem('currentUser', JSON.stringify(mappedUser))
+  }
+
+  const logout = () => {
+    currentUser.value = null
+    authToken.value = null
+    localStorage.removeItem('authToken')
+    localStorage.removeItem('currentUser')
+    currentPage.value = 'home'
+  }
+
+  const loadUserFromStorage = () => {
+    const token = localStorage.getItem('authToken')
+    const userStr = localStorage.getItem('currentUser')
+    
+    if (token && userStr) {
+      try {
+        currentUser.value = JSON.parse(userStr)
+        authToken.value = token
+      } catch (e) {
+        logout()
+      }
+    }
+  }
+
   const refreshNotifications = () => {
     notifications.value = getAllNotifications()
     unreadNotificationsCount.value = getUnreadNotificationsCount()
@@ -51,12 +85,16 @@ export const useAppStore = defineStore('app', () => {
   }
 
   // Initialize data on store creation
-  refreshNotifications()
-  refreshConversations()
+  loadUserFromStorage()
+  if (isAuthenticated.value) {
+    refreshNotifications()
+    refreshConversations()
+  }
 
   return {
     // State
     currentUser,
+    authToken,
     notifications,
     unreadNotificationsCount,
     conversations,
@@ -65,7 +103,12 @@ export const useAppStore = defineStore('app', () => {
     selectedServiceId,
     selectedThreadId,
     
+    // Computed
+    isAuthenticated,
+    
     // Actions
+    setCurrentUser,
+    logout,
     refreshNotifications,
     refreshConversations,
     setCurrentPage,

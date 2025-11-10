@@ -68,6 +68,7 @@
         size="icon" 
         class="text-white hover:bg-gray-800 hover:text-white"
         :title="'Logout'"
+        @click="$emit('logout')"
       >
         <LogOut class="w-5 h-5" />
       </Button>
@@ -100,6 +101,7 @@ defineProps<{
 defineEmits<{
   navigate: [page: string]
   'view-notifications': []
+  logout: []
 }>()
 
 const appStore = useAppStore()

@@ -1,11 +1,16 @@
 <template>
-  <div class="flex h-screen bg-gray-50">
+  <!-- Show login page if not authenticated -->
+  <LoginPage v-if="!appStore.isAuthenticated" />
+  
+  <!-- Show main app if authenticated -->
+  <div v-else class="flex h-screen bg-gray-50">
     <!-- Icon Sidebar - Very narrow -->
     <div class="w-16 bg-gray-900 flex-shrink-0">
       <Sidebar 
         :current-page="appStore.currentPage" 
         @navigate="handleNavigate"
         @view-notifications="() => appStore.setCurrentPage('notifications')"
+        @logout="handleLogout"
       />
     </div>
 
@@ -20,6 +25,7 @@
 import { computed } from 'vue'
 import { useAppStore } from './stores/appStore'
 import Sidebar from './components/Sidebar.vue'
+import LoginPage from './components/pages/LoginPage.vue'
 import HomePage from './components/pages/HomePage.vue'
 import ExplorePage from './components/pages/ExplorePage.vue'
 import CommonsPage from './components/pages/CommonsPage.vue'
@@ -38,6 +44,10 @@ const handleNavigate = (page: string) => {
   appStore.setCurrentPage(page)
   appStore.setSelectedServiceId(null)
   appStore.setSelectedThreadId(null)
+}
+
+const handleLogout = () => {
+  appStore.logout()
 }
 
 const currentPageComponent = computed(() => {

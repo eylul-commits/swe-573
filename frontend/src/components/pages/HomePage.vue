@@ -52,7 +52,7 @@
             <div class="text-gray-600 mb-1">Your TimeBank Balance</div>
             <div class="flex items-center gap-3">
               <Clock class="w-6 h-6 text-amber-600" />
-              <span class="text-gray-900 text-2xl">{{ appStore.currentUser.timebankBalance }} hours</span>
+              <span class="text-gray-900 text-2xl">{{ appStore.currentUser?.timebankBalance ?? 0 }} hours</span>
             </div>
           </div>
           <div class="text-right mr-6">
@@ -60,11 +60,11 @@
             <div class="flex items-center gap-4">
               <div>
                 <div class="text-xs text-gray-500">Given</div>
-                <div class="text-emerald-600">+{{ appStore.currentUser.hoursGiven }}h</div>
+                <div class="text-emerald-600">+{{ appStore.currentUser?.hoursGiven ?? 0 }}h</div>
               </div>
               <div>
                 <div class="text-xs text-gray-500">Received</div>
-                <div class="text-blue-600">-{{ appStore.currentUser.hoursReceived }}h</div>
+                <div class="text-blue-600">-{{ appStore.currentUser?.hoursReceived ?? 0 }}h</div>
               </div>
             </div>
           </div>
