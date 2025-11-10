@@ -329,13 +329,15 @@ import SelectTrigger from '../ui/SelectTrigger.vue'
 import SelectValue from '../ui/SelectValue.vue'
 import SelectContent from '../ui/SelectContent.vue'
 import SelectItem from '../ui/SelectItem.vue'
-import { getActiveServices, getAllTags, getCommunityStats, filterServices } from '../../services/marketplaceService'
+import { getActiveServices, getAllTags, getCommunityStats, filterServices, getNearbyServices, getRecommendedServices } from '../../services/marketplaceService'
 import { useAppStore } from '../../stores/appStore'
 import type { BadgeType, Service, CommunityStats } from '../../types'
 
 const appStore = useAppStore()
 const allServices = ref<Service[]>([])
 const allTags = ref<string[]>([])
+const nearbyServicesData = ref<Service[]>([])
+const recommendedServicesData = ref<Service[]>([])
 const communityStats = ref<CommunityStats>({
   activeMembers: 0,
   hoursExchanged: 0,
@@ -364,14 +366,18 @@ const filters = reactive<{
 onMounted(async () => {
   loading.value = true
   try {
-    const [services, tags, stats] = await Promise.all([
+    const [services, tags, stats, nearby, recommended] = await Promise.all([
       getActiveServices(),
       getAllTags(),
-      getCommunityStats()
+      getCommunityStats(),
+      getNearbyServices(6),
+      getRecommendedServices(3)
     ])
     allServices.value = services
     allTags.value = tags
     communityStats.value = stats
+    nearbyServicesData.value = nearby
+    recommendedServicesData.value = recommended
   } catch (error) {
     console.error('Failed to load data:', error)
   } finally {
@@ -402,15 +408,24 @@ const filteredServices = computed(() => {
 
 // Sort services by distance and get nearby ones
 const nearbyServices = computed(() => {
-  return [...filteredServices.value]
-    .filter(s => s.distance)
-    .sort((a, b) => parseFloat(a.distance!) - parseFloat(b.distance!))
-    .slice(0, 6)
+  // If filters are active, use filtered results
+  if (hasActiveFilters.value) {
+    return [...filteredServices.value]
+      .filter(s => s.distance)
+      .sort((a, b) => parseFloat(a.distance!) - parseFloat(b.distance!))
+      .slice(0, 6)
+  }
+  // Otherwise use the smart nearby recommendations
+  return nearbyServicesData.value
 })
 
 // Get recommended services (different criteria)
 const recommendedServices = computed(() => {
-  return filteredServices.value.slice(0, 3)
+  // Don't show recommendations when filters are active
+  if (hasActiveFilters.value) {
+    return []
+  }
+  return recommendedServicesData.value
 })
 
 // Hero search

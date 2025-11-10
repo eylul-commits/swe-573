@@ -32,7 +32,7 @@ public class Report {
     private String message;
 
     @Enumerated(EnumType.STRING)
-    @Column(columnDefinition = "report_status")
+    @Column(length = 20)
     private ReportStatus status = ReportStatus.OPEN;
 
     @CreationTimestamp

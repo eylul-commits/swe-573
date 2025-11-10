@@ -283,3 +283,23 @@ export async function getCommunityStats(): Promise<{
   }
 }
 
+export async function getNearbyServices(limit: number = 6): Promise<Service[]> {
+  try {
+    const services = await api.get<ServiceDTO[]>(`/marketplace/services/nearby?limit=${limit}`);
+    return services.map(convertServiceDTOToService);
+  } catch (error) {
+    console.error('Failed to fetch nearby services:', error);
+    return [];
+  }
+}
+
+export async function getRecommendedServices(limit: number = 3): Promise<Service[]> {
+  try {
+    const services = await api.get<ServiceDTO[]>(`/marketplace/services/recommended?limit=${limit}`);
+    return services.map(convertServiceDTOToService);
+  } catch (error) {
+    console.error('Failed to fetch recommended services:', error);
+    return [];
+  }
+}
+

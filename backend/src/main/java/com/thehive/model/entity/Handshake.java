@@ -35,7 +35,7 @@ public class Handshake {
     private User provider;
 
     @Enumerated(EnumType.STRING)
-    @Column(columnDefinition = "handshake_status")
+    @Column(length = 20)
     private HandshakeStatus status = HandshakeStatus.PENDING;
 
     @Column(name = "agreed_hours")

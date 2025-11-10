@@ -1,14 +1,4 @@
--- Drop existing types if they exist
-DROP TYPE IF EXISTS user_role CASCADE;
-DROP TYPE IF EXISTS item_status CASCADE;
-DROP TYPE IF EXISTS handshake_status CASCADE;
-DROP TYPE IF EXISTS report_status CASCADE;
-
--- Create ENUM types
-CREATE TYPE user_role AS ENUM ('USER', 'ADMIN');
-CREATE TYPE item_status AS ENUM ('ACTIVE', 'EXPIRED', 'ARCHIVED');
-CREATE TYPE handshake_status AS ENUM ('PENDING', 'CONFIRMED', 'COMPLETED', 'CANCELLED');
-CREATE TYPE report_status AS ENUM ('OPEN', 'IN_REVIEW', 'RESOLVED');
+-- Note: Using VARCHAR for enum types for better JPA/Hibernate compatibility
 
 -- Users table
 CREATE TABLE IF NOT EXISTS users (
@@ -20,7 +10,7 @@ CREATE TABLE IF NOT EXISTS users (
     province VARCHAR(100),
     district VARCHAR(100),
     geohash VARCHAR(20),
-    role user_role DEFAULT 'USER',
+    role VARCHAR(20) DEFAULT 'USER',
     balance_hours INT DEFAULT 3,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
@@ -38,7 +28,7 @@ CREATE TABLE IF NOT EXISTS offers (
     province VARCHAR(100),
     district VARCHAR(100),
     geohash VARCHAR(20),
-    status item_status DEFAULT 'ACTIVE',
+    status VARCHAR(20) DEFAULT 'ACTIVE',
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
@@ -55,7 +45,7 @@ CREATE TABLE IF NOT EXISTS requests (
     province VARCHAR(100),
     district VARCHAR(100),
     geohash VARCHAR(20),
-    status item_status DEFAULT 'ACTIVE',
+    status VARCHAR(20) DEFAULT 'ACTIVE',
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
@@ -87,7 +77,7 @@ CREATE TABLE IF NOT EXISTS handshakes (
     offer_id INT NOT NULL,
     seeker_id INT NOT NULL,
     provider_id INT NOT NULL,
-    status handshake_status DEFAULT 'PENDING',
+    status VARCHAR(20) DEFAULT 'PENDING',
     agreed_hours INT,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     completed_at TIMESTAMP
@@ -159,7 +149,7 @@ CREATE TABLE IF NOT EXISTS reports (
     reporter_id INT NOT NULL,
     reported_user_id INT NOT NULL,
     message TEXT,
-    status report_status DEFAULT 'OPEN',
+    status VARCHAR(20) DEFAULT 'OPEN',
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     resolved_at TIMESTAMP
 );

@@ -47,7 +47,7 @@ public class User {
     private String geohash;
 
     @Enumerated(EnumType.STRING)
-    @Column(columnDefinition = "user_role")
+    @Column(length = 20)
     private UserRole role = UserRole.USER;
 
     @Column(name = "balance_hours")

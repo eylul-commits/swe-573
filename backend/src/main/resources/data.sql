@@ -10,22 +10,44 @@ VALUES
 -- OFFERS
 INSERT INTO offers (id, provider_id, title, description, duration_hours, start_date, end_date, province, district, geohash, status, created_at, updated_at)
 VALUES
-(1, 1, 'Gardening Help', 'Assist with small garden maintenance.', 2, '2025-11-01', '2025-11-10', 'Istanbul', 'Kadıköy', 'sxk3', 'ACTIVE', NOW(), NOW());
+(1, 1, 'Gardening Help', 'Assist with small garden maintenance.', 2, '2025-11-01', '2025-11-10', 'Istanbul', 'Kadıköy', 'sxk3', 'ACTIVE', NOW(), NOW()),
+(2, 2, 'Programming Tutoring', 'Help with Python and JavaScript basics.', 3, '2025-11-01', '2025-12-01', 'Istanbul', 'Kadıköy', 'sxk3', 'ACTIVE', NOW(), NOW()),
+(3, 3, 'Photography Services', 'Event and portrait photography.', 4, '2025-11-05', '2025-12-05', 'Istanbul', 'Beşiktaş', 'sxk9', 'ACTIVE', NOW(), NOW()),
+(4, 2, 'Language Exchange', 'Practice Turkish and English conversation.', 2, '2025-11-10', '2025-12-10', 'Istanbul', 'Şişli', 'sxk3', 'ACTIVE', NOW(), NOW()),
+(5, 3, 'Home Cooking Classes', 'Learn traditional Turkish dishes.', 3, '2025-11-01', '2025-11-30', 'Istanbul', 'Kadıköy', 'sxk3', 'ACTIVE', NOW(), NOW());
 
 -- REQUESTS
 INSERT INTO requests (id, seeker_id, title, description, duration_hours, start_date, end_date, province, district, geohash, status, created_at, updated_at)
 VALUES
-(1, 2, 'Dog Walking', 'Looking for someone to walk my dog.', 1, '2025-11-02', '2025-11-03', 'Ankara', 'Çankaya', 'syet', 'ACTIVE', NOW(), NOW());
+(1, 2, 'Dog Walking', 'Looking for someone to walk my dog.', 1, '2025-11-02', '2025-11-03', 'Ankara', 'Çankaya', 'syet', 'ACTIVE', NOW(), NOW()),
+(2, 3, 'Math Tutoring', 'Need help with high school mathematics.', 2, '2025-11-05', '2025-12-05', 'Istanbul', 'Kadıköy', 'sxk3', 'ACTIVE', NOW(), NOW()),
+(3, 2, 'Bike Repair', 'Need someone to fix my bicycle.', 1, '2025-11-08', '2025-11-15', 'Istanbul', 'Beşiktaş', 'sxk9', 'ACTIVE', NOW(), NOW());
 
 -- SEMANTIC TAGS
 INSERT INTO semantic_tags (id, name, wikidata_id)
 VALUES
 (1, 'Gardening', 'Q11023'),
-(2, 'Pets', 'Q144');
+(2, 'Pets', 'Q144'),
+(3, 'Programming', 'Q80006'),
+(4, 'Education', 'Q8434'),
+(5, 'Photography', 'Q11633'),
+(6, 'Language', 'Q34770'),
+(7, 'Cooking', 'Q38695'),
+(8, 'Mathematics', 'Q395'),
+(9, 'Repair', 'Q43015');
 
 -- TAG LINKS
 INSERT INTO offer_tags (offer_id, tag_id) VALUES (1, 1);
+INSERT INTO offer_tags (offer_id, tag_id) VALUES (2, 3);
+INSERT INTO offer_tags (offer_id, tag_id) VALUES (2, 4);
+INSERT INTO offer_tags (offer_id, tag_id) VALUES (3, 5);
+INSERT INTO offer_tags (offer_id, tag_id) VALUES (4, 6);
+INSERT INTO offer_tags (offer_id, tag_id) VALUES (4, 4);
+INSERT INTO offer_tags (offer_id, tag_id) VALUES (5, 7);
 INSERT INTO request_tags (request_id, tag_id) VALUES (1, 2);
+INSERT INTO request_tags (request_id, tag_id) VALUES (2, 8);
+INSERT INTO request_tags (request_id, tag_id) VALUES (2, 4);
+INSERT INTO request_tags (request_id, tag_id) VALUES (3, 9);
 
 -- HANDSHAKES
 INSERT INTO handshakes (id, offer_id, seeker_id, provider_id, status, agreed_hours, created_at, completed_at)

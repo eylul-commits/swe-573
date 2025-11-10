@@ -53,7 +53,7 @@ public class Offer {
     private String geohash;
 
     @Enumerated(EnumType.STRING)
-    @Column(columnDefinition = "item_status")
+    @Column(name = "status", length = 20)
     private ItemStatus status = ItemStatus.ACTIVE;
 
     @CreationTimestamp
