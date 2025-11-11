@@ -20,8 +20,7 @@
     "@radix-ui/colors": "^3.0.0",
     "leaflet": "^1.9.4",
     "ngeohash": "^0.6.3",
-    "stream-chat": "^8.40.2",
-    "stream-chat-vue": "^5.2.0"
+    "stream-chat": "^8.40.2"
   },
   "devDependencies": {
     "@vitejs/plugin-vue": "^5.0.4",

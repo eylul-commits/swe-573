@@ -109,6 +109,19 @@ export const useHandshakeStore = defineStore('handshake', () => {
     try {
       const handshake = await createHandshakeAPI(request);
       handshakes.value.push(handshake);
+
+      // Auto-create Stream Chat channel
+      try {
+        const { isStreamChatInitialized, createHandshakeChannel } = await import('../services/streamChatService');
+        if (isStreamChatInitialized()) {
+          await createHandshakeChannel(handshake);
+          console.log('Stream Chat channel created for handshake:', handshake.id);
+        }
+      } catch (chatError) {
+        console.error('Failed to create Stream Chat channel:', chatError);
+        // Don't fail the handshake creation if chat fails
+      }
+
       return handshake;
     } catch (e) {
       error.value = 'Failed to create handshake';
@@ -135,6 +148,17 @@ export const useHandshakeStore = defineStore('handshake', () => {
       if (selectedHandshake.value?.id === handshakeId) {
         selectedHandshake.value = handshake;
       }
+
+      // Update Stream Chat channel status
+      try {
+        const { isStreamChatInitialized, updateChannelStatus } = await import('../services/streamChatService');
+        if (isStreamChatInitialized() && handshake.status === 'CONFIRMED') {
+          await updateChannelStatus(handshakeId, 'CONFIRMED');
+        }
+      } catch (chatError) {
+        console.error('Failed to update Stream Chat channel:', chatError);
+      }
+
       return handshake;
     } catch (e) {
       error.value = 'Failed to confirm handshake';

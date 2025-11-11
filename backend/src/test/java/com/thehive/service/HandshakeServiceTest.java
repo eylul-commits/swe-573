@@ -161,7 +161,6 @@ class HandshakeServiceTest {
 
         when(handshakeRepository.findById(1)).thenReturn(Optional.of(handshake));
         when(handshakeRepository.save(any(Handshake.class))).thenAnswer(i -> i.getArgument(0));
-        when(ratingRepository.existsByHandshakeIdAndRaterId(1, 1)).thenReturn(false);
 
         // Act
         HandshakeDTO result = handshakeService.confirmHandshake(1, 1, request);
@@ -191,7 +190,6 @@ class HandshakeServiceTest {
             h.setCompletedAt(completionDate);
             return h;
         });
-        when(ratingRepository.existsByHandshakeIdAndRaterId(1, 2)).thenReturn(false);
 
         // Act - Provider confirms
         HandshakeDTO result = handshakeService.confirmHandshake(1, 2, request);
@@ -251,7 +249,6 @@ class HandshakeServiceTest {
         rating.setId(1);
 
         when(handshakeRepository.findById(1)).thenReturn(Optional.of(handshake));
-        when(ratingRepository.existsByHandshakeIdAndRaterId(1, 1)).thenReturn(false);
         when(userRepository.findById(2)).thenReturn(Optional.of(provider));
         when(userRepository.findById(1)).thenReturn(Optional.of(seeker));
         when(ratingRepository.save(any(Rating.class))).thenReturn(rating);
@@ -280,7 +277,6 @@ class HandshakeServiceTest {
         request.setPreparedness(5);
 
         when(handshakeRepository.findById(1)).thenReturn(Optional.of(handshake));
-        when(ratingRepository.existsByHandshakeIdAndRaterId(1, 1)).thenReturn(false);
 
         // Act & Assert
         assertThrows(IllegalStateException.class, 
@@ -327,7 +323,6 @@ class HandshakeServiceTest {
         Rating rating2 = new Rating();
 
         when(handshakeRepository.findById(1)).thenReturn(Optional.of(handshake));
-        when(ratingRepository.existsByHandshakeIdAndRaterId(1, 1)).thenReturn(false);
         when(userRepository.findById(2)).thenReturn(Optional.of(provider));
         when(userRepository.findById(1)).thenReturn(Optional.of(seeker));
         when(ratingRepository.save(any(Rating.class))).thenReturn(rating1);
@@ -351,7 +346,6 @@ class HandshakeServiceTest {
         // Arrange
         List<Handshake> handshakes = Arrays.asList(handshake);
         when(handshakeRepository.findBySeekerIdOrProviderId(1, 1)).thenReturn(handshakes);
-        when(ratingRepository.existsByHandshakeIdAndRaterId(1, 1)).thenReturn(false);
 
         // Act
         List<HandshakeDTO> result = handshakeService.getUserHandshakes(1);
@@ -368,7 +362,6 @@ class HandshakeServiceTest {
         List<Handshake> handshakes = Arrays.asList(handshake);
         when(handshakeRepository.findByUserIdAndStatus(1, HandshakeStatus.PENDING))
             .thenReturn(handshakes);
-        when(ratingRepository.existsByHandshakeIdAndRaterId(1, 1)).thenReturn(false);
 
         // Act
         List<HandshakeDTO> result = handshakeService.getUserPendingHandshakes(1);
@@ -386,7 +379,6 @@ class HandshakeServiceTest {
         List<Handshake> handshakes = Arrays.asList(handshake);
         when(handshakeRepository.findByUserIdAndStatus(1, HandshakeStatus.CONFIRMED))
             .thenReturn(handshakes);
-        when(ratingRepository.existsByHandshakeIdAndRaterId(1, 1)).thenReturn(false);
 
         // Act
         List<HandshakeDTO> result = handshakeService.getUserConfirmedHandshakes(1);
@@ -401,7 +393,6 @@ class HandshakeServiceTest {
     void getHandshakeById_Success() {
         // Arrange
         when(handshakeRepository.findById(1)).thenReturn(Optional.of(handshake));
-        when(ratingRepository.existsByHandshakeIdAndRaterId(1, 1)).thenReturn(false);
 
         // Act
         HandshakeDTO result = handshakeService.getHandshakeById(1, 1);
@@ -439,7 +430,6 @@ class HandshakeServiceTest {
         handshake.setCompletedAt(LocalDateTime.now().minusDays(1));
         
         when(handshakeRepository.findById(1)).thenReturn(Optional.of(handshake));
-        when(ratingRepository.existsByHandshakeIdAndRaterId(1, 1)).thenReturn(false);
 
         // Act
         HandshakeDTO result = handshakeService.getHandshakeById(1, 1);
@@ -455,7 +445,6 @@ class HandshakeServiceTest {
         handshake.setCompletedAt(LocalDateTime.now().plusDays(1));
         
         when(handshakeRepository.findById(1)).thenReturn(Optional.of(handshake));
-        when(ratingRepository.existsByHandshakeIdAndRaterId(1, 1)).thenReturn(false);
 
         // Act
         HandshakeDTO result = handshakeService.getHandshakeById(1, 1);

@@ -115,7 +115,6 @@
 </template>
 
 <script setup lang="ts">
-import { computed } from 'vue';
 import Card from './ui/Card.vue';
 import Badge from './ui/Badge.vue';
 import Button from './ui/Button.vue';

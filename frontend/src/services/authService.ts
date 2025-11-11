@@ -31,6 +31,7 @@ export interface User {
 export interface AuthResponse {
   token: string
   user: User
+  streamChatToken?: string
 }
 
 export async function login(credentials: LoginRequest): Promise<AuthResponse> {

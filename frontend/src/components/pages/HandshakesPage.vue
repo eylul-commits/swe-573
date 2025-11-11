@@ -109,9 +109,8 @@
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted, computed } from 'vue';
+import { ref, onMounted } from 'vue';
 import { useHandshakeStore } from '../../stores/handshakeStore';
-import { useAppStore } from '../../stores/appStore';
 import Button from '../ui/Button.vue';
 import Tabs from '../ui/Tabs.vue';
 import TabsList from '../ui/TabsList.vue';
@@ -126,7 +125,6 @@ import HandshakeList from '../HandshakeList.vue';
 import type { Handshake } from '../../types';
 
 const handshakeStore = useHandshakeStore();
-const appStore = useAppStore();
 
 const activeTab = ref('all');
 const loading = ref(false);

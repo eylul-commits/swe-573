@@ -1,5 +1,6 @@
 package com.thehive.service;
 
+import com.thehive.config.StreamChatConfig;
 import com.thehive.model.dto.AuthResponse;
 import com.thehive.model.dto.LoginRequest;
 import com.thehive.model.dto.RegisterRequest;
@@ -24,6 +25,7 @@ public class AuthService {
     private final PasswordEncoder passwordEncoder;
     private final JwtUtil jwtUtil;
     private final TimebankTransactionRepository timebankTransactionRepository;
+    private final StreamChatConfig streamChatConfig;
 
     @Transactional
     public AuthResponse register(RegisterRequest request) {
@@ -47,7 +49,10 @@ public class AuthService {
         // Convert to DTO
         UserDTO userDTO = convertToDTO(user);
 
-        return new AuthResponse(token, userDTO);
+        // Generate Stream Chat token
+        String streamChatToken = generateStreamChatToken(user);
+
+        return new AuthResponse(token, userDTO, streamChatToken);
     }
 
     @Transactional(readOnly = true)
@@ -67,7 +72,25 @@ public class AuthService {
         // Convert to DTO
         UserDTO userDTO = convertToDTO(user);
 
-        return new AuthResponse(token, userDTO);
+        // Generate Stream Chat token
+        String streamChatToken = generateStreamChatToken(user);
+
+        return new AuthResponse(token, userDTO, streamChatToken);
+    }
+
+    /**
+     * Generate Stream Chat token for user
+     */
+    private String generateStreamChatToken(User user) {
+        try {
+            if (streamChatConfig.isConfigured()) {
+                return streamChatConfig.generateUserToken(user.getId().toString());
+            }
+        } catch (Exception e) {
+            // Log error but don't fail the auth process
+            System.err.println("Failed to generate Stream Chat token: " + e.getMessage());
+        }
+        return null;
     }
 
     @Transactional(readOnly = true)

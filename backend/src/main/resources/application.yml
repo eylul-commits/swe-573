@@ -25,3 +25,7 @@ jwt:
   secret: ${JWT_SECRET:your-secret-key-change-this-in-production}
   expiration: 86400000
 
+stream:
+  chat:
+    secret: cdupahsskcsd4ubdexu566n64rdtbwduasgp3auymsjz56as5cv5wakkvxscf9hy
+

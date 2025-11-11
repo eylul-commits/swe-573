@@ -45,48 +45,58 @@
         <div class="text-gray-500">Loading messages...</div>
       </div>
 
-      <!-- Stream Chat Integration Point -->
-      <div v-else-if="!streamChatEnabled" class="space-y-4">
-        <!-- Fallback: Simple message display -->
+      <!-- Stream Chat Messages (Custom UI) -->
+      <div v-if="streamChatEnabled && channel" class="space-y-4">
         <div
-          v-for="message in messages"
+          v-for="message in streamMessages"
           :key="message.id"
           :class="[
             'flex',
-            message.isCurrentUser ? 'justify-end' : 'justify-start'
+            isCurrentUserMessage(message) ? 'justify-end' : 'justify-start'
           ]"
         >
           <div
             :class="[
               'max-w-[70%] rounded-lg px-4 py-2',
-              message.isCurrentUser
+              isCurrentUserMessage(message)
                 ? 'bg-amber-500 text-white'
                 : 'bg-gray-100 text-gray-900'
             ]"
           >
-            <p class="text-sm">{{ message.text }}</p>
-            <p class="text-xs mt-1 opacity-70">
-              {{ formatTime(message.timestamp) }}
+            <p v-if="!isCurrentUserMessage(message)" class="text-xs font-semibold mb-1">
+              {{ message.user?.name || 'User' }}
             </p>
+            <p class="text-sm whitespace-pre-wrap">{{ message.text }}</p>
+            <p :class="[
+              'text-xs mt-1',
+              isCurrentUserMessage(message) ? 'text-amber-100' : 'text-gray-500'
+            ]">
+              {{ formatTime(message.created_at) }}
+            </p>
+          </div>
+        </div>
+
+        <!-- Empty State for Stream Chat -->
+        <div v-if="!loading && streamMessages.length === 0" class="flex items-center justify-center h-full text-gray-500 text-center">
+          <div>
+            <p class="font-medium">No messages yet</p>
+            <p class="text-sm mt-1">Start the conversation!</p>
           </div>
         </div>
       </div>
 
-      <!-- Stream Chat will be mounted here -->
-      <div v-else id="stream-chat-container" class="h-full"></div>
-
-      <!-- Empty State -->
-      <div v-if="!loading && messages.length === 0 && !streamChatEnabled" class="flex items-center justify-center h-full text-gray-500 text-center">
+      <!-- Fallback: Stream Chat not enabled -->
+      <div v-else-if="!streamChatEnabled" class="flex items-center justify-center h-full text-gray-500 text-center">
         <div>
-          <p class="font-medium">No messages yet</p>
-          <p class="text-sm mt-1">Start the conversation!</p>
+          <p class="font-medium">Chat not available</p>
+          <p class="text-sm mt-1">Stream Chat is not enabled</p>
         </div>
       </div>
     </div>
 
-    <!-- Message Input -->
-    <div v-if="!streamChatEnabled" class="border-t border-gray-200 p-4">
-      <form @submit.prevent="sendMessage" class="flex gap-2">
+    <!-- Message Input (Stream Chat) -->
+    <div v-if="streamChatEnabled && channel" class="border-t border-gray-200 p-4">
+      <form @submit.prevent="sendStreamMessage" class="flex gap-2">
         <Input
           v-model="newMessage"
           placeholder="Type a message..."
@@ -102,6 +112,7 @@
         </Button>
       </form>
     </div>
+
 
     <!-- Stream Chat Instructions -->
     <div v-if="showStreamChatInfo" class="border-t border-gray-200 p-4 bg-blue-50">
@@ -122,6 +133,17 @@ import Button from './ui/Button.vue';
 import Input from './ui/Input.vue';
 import type { Handshake, AuthorSummary } from '../types';
 import { useAppStore } from '../stores/appStore';
+import {
+  getStreamChatClient,
+  getHandshakeChannel,
+  createHandshakeChannel,
+  markChannelAsRead,
+} from '../services/streamChatService';
+import type {
+  Channel as StreamChannel,
+  DefaultGenerics,
+  FormatMessageResponse,
+} from 'stream-chat';
 
 const props = defineProps<{
   handshake: Handshake | null;
@@ -139,14 +161,9 @@ const messagesContainer = ref<HTMLElement | null>(null);
 const newMessage = ref('');
 const loading = ref(false);
 const sending = ref(false);
-
-// Mock messages for demo (replace with Stream Chat)
-const messages = ref<Array<{
-  id: string;
-  text: string;
-  isCurrentUser: boolean;
-  timestamp: string;
-}>>([]);
+const chatClient = ref(getStreamChatClient());
+const channel = ref<StreamChannel | null>(null);
+const streamMessages = ref<FormatMessageResponse<DefaultGenerics>[]>([]);
 
 const otherUser = computed<AuthorSummary | null>(() => {
   if (!props.handshake || !appStore.currentUser) return null;
@@ -185,57 +202,101 @@ function formatDate(dateString: string | null): string {
   return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
 }
 
-function formatTime(timestamp: string): string {
-  const date = new Date(timestamp);
+function formatTime(timestamp: string | Date | null | undefined): string {
+  if (!timestamp) return '';
+  const date = typeof timestamp === 'string' ? new Date(timestamp) : timestamp;
   return date.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' });
 }
 
-async function sendMessage() {
-  if (!newMessage.value.trim() || sending.value) return;
+async function sendStreamMessage() {
+  if (!newMessage.value.trim() || sending.value || !channel.value) return;
 
   sending.value = true;
   
-  // Simulate sending (replace with Stream Chat API)
-  await new Promise(resolve => setTimeout(resolve, 500));
-  
-  messages.value.push({
-    id: `msg-${Date.now()}`,
-    text: newMessage.value,
-    isCurrentUser: true,
-    timestamp: new Date().toISOString(),
-  });
+  try {
+    await channel.value.sendMessage({
+      text: newMessage.value,
+    });
 
-  newMessage.value = '';
-  sending.value = false;
-
-  // Scroll to bottom
-  await nextTick();
-  if (messagesContainer.value) {
-    messagesContainer.value.scrollTop = messagesContainer.value.scrollHeight;
+    newMessage.value = '';
+    
+    // Scroll to bottom
+    await nextTick();
+    if (messagesContainer.value) {
+      messagesContainer.value.scrollTop = messagesContainer.value.scrollHeight;
+    }
+  } catch (error) {
+    console.error('Failed to send message:', error);
+  } finally {
+    sending.value = false;
   }
 }
 
-// Initialize Stream Chat when enabled
-watch(() => props.streamChatEnabled, (enabled: boolean | undefined) => {
-  if (enabled && props.handshake) {
-    initializeStreamChat();
+
+function isCurrentUserMessage(message: FormatMessageResponse<DefaultGenerics>): boolean {
+  return message.user?.id === appStore.currentUser?.id.toString();
+}
+
+// Initialize Stream Chat when enabled or handshake changes
+watch(() => [props.streamChatEnabled, props.handshake?.id], async () => {
+  if (props.streamChatEnabled && props.handshake) {
+    await initializeStreamChat();
   }
-});
+}, { immediate: true });
 
 async function initializeStreamChat() {
-  // This is where you'd initialize Stream Chat
-  // Example:
-  // const chatClient = StreamChat.getInstance('YOUR_API_KEY');
-  // const channel = chatClient.channel('messaging', `handshake-${props.handshake.id}`);
-  // await channel.watch();
-  // 
-  // Mount Stream Chat UI component here
-  console.log('Stream Chat would be initialized here with handshake:', props.handshake?.id);
+  if (!props.handshake) return;
+
+  loading.value = true;
+  
+  try {
+    chatClient.value = getStreamChatClient();
+    
+    if (!chatClient.value) {
+      console.warn('Stream Chat client not initialized. User may need to login.');
+      return;
+    }
+
+    // Get or create channel
+    let existingChannel = await getHandshakeChannel(props.handshake.id);
+    
+    if (!existingChannel) {
+      // Create new channel
+      existingChannel = await createHandshakeChannel(props.handshake);
+    }
+    
+    channel.value = existingChannel;
+    
+    // Load existing messages
+    const state = existingChannel.state;
+    if (state.messages) {
+      streamMessages.value = [...state.messages];
+    }
+    
+    // Listen for new messages
+    existingChannel.on('message.new', () => {
+      streamMessages.value = [...existingChannel.state.messages];
+      nextTick(() => {
+        if (messagesContainer.value) {
+          messagesContainer.value.scrollTop = messagesContainer.value.scrollHeight;
+        }
+      });
+    });
+    
+    // Mark as read
+    await markChannelAsRead(existingChannel);
+    
+    console.log('Stream Chat channel loaded:', existingChannel.id);
+  } catch (error) {
+    console.error('Failed to initialize Stream Chat:', error);
+  } finally {
+    loading.value = false;
+  }
 }
 
-onMounted(() => {
+onMounted(async () => {
   if (props.streamChatEnabled && props.handshake) {
-    initializeStreamChat();
+    await initializeStreamChat();
   }
 });
 </script>

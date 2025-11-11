@@ -148,6 +148,7 @@
 
 <script setup lang="ts">
 import { ref, onMounted, computed } from 'vue';
+import { storeToRefs } from 'pinia';
 import { MessageSquare, ArrowLeft, RefreshCw, Handshake as HandshakeIcon } from 'lucide-vue-next';
 import Avatar from '../ui/Avatar.vue';
 import AvatarImage from '../ui/AvatarImage.vue';
@@ -160,16 +161,18 @@ import ConfirmHandshakeModal from '../ConfirmHandshakeModal.vue';
 import RatingModal from '../RatingModal.vue';
 import { useHandshakeStore } from '../../stores/handshakeStore';
 import { useAppStore } from '../../stores/appStore';
+import { isStreamChatInitialized } from '../../services/streamChatService';
 import type { Handshake, AuthorSummary } from '../../types';
 
 const handshakeStore = useHandshakeStore();
 const appStore = useAppStore();
+const { streamChatReady } = storeToRefs(appStore);
 
 const selectedHandshake = ref<Handshake | null>(null);
 const loading = ref(false);
 const confirmModalOpen = ref(false);
 const ratingModalOpen = ref(false);
-const streamChatEnabled = ref(false); // Set to true when Stream Chat is configured
+const streamChatEnabled = computed(() => streamChatReady.value && isStreamChatInitialized());
 
 async function refreshHandshakes() {
   loading.value = true;

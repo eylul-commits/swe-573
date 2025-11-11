@@ -17,6 +17,7 @@ export const useAppStore = defineStore('app', () => {
   const unreadNotificationsCount = ref(0)
   const conversations = ref<Conversation[]>([])
   const unreadMessagesCount = ref(0)
+  const streamChatReady = ref(false)
   const currentPage = ref('home')
   const selectedServiceId = ref<string | null>(null)
   const selectedThreadId = ref<number | null>(null)
@@ -25,7 +26,7 @@ export const useAppStore = defineStore('app', () => {
   const isAuthenticated = computed(() => !!authToken.value && !!currentUser.value)
 
   // Actions
-  const setCurrentUser = (user: User, token: string) => {
+  const setCurrentUser = async (user: User, token: string, streamChatToken?: string) => {
     // map backend properties to frontend expected properties
     const mappedUser: User = {
       ...user,
@@ -38,14 +39,44 @@ export const useAppStore = defineStore('app', () => {
     authToken.value = token
     localStorage.setItem('authToken', token)
     localStorage.setItem('currentUser', JSON.stringify(mappedUser))
+
+    // Initialize Stream Chat if token provided
+    streamChatReady.value = false
+
+    if (streamChatToken) {
+      try {
+        const { initializeStreamChat } = await import('../services/streamChatService')
+        await initializeStreamChat(
+          user.id.toString(),
+          user.name || user.email,
+          streamChatToken
+        )
+        console.log('Stream Chat initialized successfully')
+        streamChatReady.value = true
+      } catch (error) {
+        console.error('Failed to initialize Stream Chat:', error)
+        streamChatReady.value = false
+      }
+    } else {
+      streamChatReady.value = false
+    }
   }
 
-  const logout = () => {
+  const logout = async () => {
+    // Disconnect from Stream Chat
+    try {
+      const { disconnectStreamChat } = await import('../services/streamChatService')
+      await disconnectStreamChat()
+    } catch (error) {
+      console.error('Failed to disconnect from Stream Chat:', error)
+    }
+
     currentUser.value = null
     authToken.value = null
     localStorage.removeItem('authToken')
     localStorage.removeItem('currentUser')
     currentPage.value = 'home'
+    streamChatReady.value = false
   }
 
   const loadUserFromStorage = () => {
@@ -99,6 +130,7 @@ export const useAppStore = defineStore('app', () => {
     unreadNotificationsCount,
     conversations,
     unreadMessagesCount,
+    streamChatReady,
     currentPage,
     selectedServiceId,
     selectedThreadId,
