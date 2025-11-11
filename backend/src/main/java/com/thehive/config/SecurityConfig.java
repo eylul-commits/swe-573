@@ -42,7 +42,6 @@ public class SecurityConfig {
     @Bean
     public CorsConfigurationSource corsConfigurationSource() {
         CorsConfiguration configuration = new CorsConfiguration();
-        // Match the origins from WebConfig
         configuration.setAllowedOrigins(Arrays.asList(
             "http://localhost:3000",                  // local dev
             "http://frontend:80",                     // Docker internal
