@@ -17,7 +17,7 @@
           selectedServiceId ? 'h-[45%]' : 'h-full'
         ]"
       >
-        <CommunityMap />
+        <CommunityMap :selected-service-id="selectedServiceId" />
       </div>
 
       <!-- Service Description & Comments - Only show when selected -->

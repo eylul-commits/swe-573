@@ -87,6 +87,9 @@ function convertServiceDTOToService(dto: ServiceDTO): Service {
     poster: convertAuthorToUser(dto.poster),
     createdAt: dto.createdAt,
     status: dto.status.toLowerCase() as any || 'active',
+    province: dto.province,
+    district: dto.district,
+    geohash: dto.geohash,
   };
 }
 
@@ -124,6 +127,9 @@ export async function getAllOffers(): Promise<Service[]> {
       poster: convertAuthorToUser(offer.provider),
       createdAt: offer.createdAt,
       status: offer.status.toLowerCase() as any || 'active',
+      province: offer.province,
+      district: offer.district,
+      geohash: offer.geohash,
     }));
   } catch (error) {
     console.error('Failed to fetch offers:', error);
@@ -145,6 +151,9 @@ export async function getActiveOffers(): Promise<Service[]> {
       poster: convertAuthorToUser(offer.provider),
       createdAt: offer.createdAt,
       status: offer.status.toLowerCase() as any || 'active',
+      province: offer.province,
+      district: offer.district,
+      geohash: offer.geohash,
     }));
   } catch (error) {
     console.error('Failed to fetch active offers:', error);
@@ -166,6 +175,9 @@ export async function getAllRequests(): Promise<Service[]> {
       poster: convertAuthorToUser(request.seeker),
       createdAt: request.createdAt,
       status: request.status.toLowerCase() as any || 'active',
+      province: request.province,
+      district: request.district,
+      geohash: request.geohash,
     }));
   } catch (error) {
     console.error('Failed to fetch requests:', error);
@@ -187,6 +199,9 @@ export async function getActiveRequests(): Promise<Service[]> {
       poster: convertAuthorToUser(request.seeker),
       createdAt: request.createdAt,
       status: request.status.toLowerCase() as any || 'active',
+      province: request.province,
+      district: request.district,
+      geohash: request.geohash,
     }));
   } catch (error) {
     console.error('Failed to fetch active requests:', error);

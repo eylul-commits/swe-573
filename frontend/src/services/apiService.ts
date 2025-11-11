@@ -151,6 +151,7 @@ function convertBackendServiceToFrontend(backendService: BackendServiceDTO): Ser
     endDate: backendService.endDate ?? undefined,
     province: backendService.province ?? undefined,
     district: backendService.district ?? undefined,
+    geohash: backendService.geohash ?? undefined,
   };
 }
 

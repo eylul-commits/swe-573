@@ -19,17 +19,23 @@
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted, onUnmounted, computed } from 'vue'
+import { ref, onMounted, onUnmounted, computed, watch } from 'vue'
 import L from 'leaflet'
 import geohash from 'ngeohash'
 import 'leaflet/dist/leaflet.css'
 import { getAllServices } from '../services/dataService'
 import type { Service } from '../types'
 
+const props = defineProps<{
+  selectedServiceId?: string | null
+}>()
+
 const mapContainer = ref<HTMLElement | null>(null)
 let map: L.Map | null = null
 const services = ref<Service[]>([])
 const markers = ref<L.Marker[]>([])
+const markersById = new Map<string, L.Marker>()
+let activeMarkerId: string | null = null
 
 const offerCount = computed(() => services.value.filter((s: Service) => s.type === 'OFFER').length)
 const requestCount = computed(() => services.value.filter((s: Service) => s.type === 'REQUEST').length)
@@ -73,10 +79,52 @@ const initMap = async () => {
   // Load services and add markers
   try {
     services.value = await getAllServices()
+    console.debug(`Loaded ${services.value.length} services for map`)
+    if (services.value.length > 0) {
+      console.debug('Sample service:', services.value[0])
+    }
     addMarkers()
   } catch (error) {
     console.error('Error loading services:', error)
   }
+}
+
+const focusOnService = (serviceId: string) => {
+  if (!map) return
+
+  const service = services.value.find((s) => s.id === serviceId)
+  if (!service) {
+    console.warn(`Service ${serviceId} not found in map data`)
+    return
+  }
+
+  if (!service.geohash) {
+    console.warn(`Selected service ${service.id} (${service.title}) has no geohash`)
+    return
+  }
+
+  const { latitude, longitude } = geohash.decode(service.geohash)
+  const targetLatLng: L.LatLngExpression = [latitude, longitude]
+  const currentZoom = map.getZoom()
+  const targetZoom = currentZoom < 13 ? 13 : currentZoom
+
+  map.whenReady(() => {
+    map!.flyTo(targetLatLng, targetZoom, { duration: 0.8 })
+
+    // Reset previous active marker styling
+    if (activeMarkerId && markersById.has(activeMarkerId)) {
+      markersById.get(activeMarkerId)!.setZIndexOffset(0)
+    }
+
+    const marker = markersById.get(serviceId)
+    if (marker) {
+      marker.openPopup()
+      marker.setZIndexOffset(1000)
+      activeMarkerId = serviceId
+    } else {
+      activeMarkerId = null
+    }
+  })
 }
 
 const addMarkers = () => {
@@ -87,6 +135,7 @@ const addMarkers = () => {
     marker.remove()
   })
   markers.value = []
+  markersById.clear()
 
   const bounds: L.LatLngBoundsExpression = []
 
@@ -94,13 +143,14 @@ const addMarkers = () => {
     // Check if service has geohash data
     const serviceGeohash = service.geohash
     if (!serviceGeohash) {
-      console.warn(`Service ${service.id} has no geohash`)
+      console.warn(`Service ${service.id} (${service.title}) has no geohash`)
       return
     }
 
     try {
       // Decode geohash to lat/lng
       const { latitude, longitude } = geohash.decode(serviceGeohash)
+      console.debug(`Decoded ${service.title}: ${serviceGeohash} -> [${latitude}, ${longitude}]`)
       
       // Create marker with custom icon
       const marker = L.marker([latitude, longitude], {
@@ -125,6 +175,7 @@ const addMarkers = () => {
       marker.bindPopup(popupContent)
       marker.addTo(map!)
       markers.value.push(marker)
+      markersById.set(service.id, marker)
 
       // Add to bounds for auto-fitting
       bounds.push([latitude, longitude])
@@ -135,9 +186,34 @@ const addMarkers = () => {
 
   // Fit map to show all markers
   if (bounds.length > 0 && map) {
-    map.fitBounds(bounds, { padding: [50, 50] })
+    console.debug(`Added ${markers.value.length} markers to map`)
+    if (props.selectedServiceId) {
+      focusOnService(props.selectedServiceId)
+    } else {
+      map.fitBounds(bounds, { padding: [50, 50] })
+    }
+  } else {
+    console.warn('No markers to display on map')
   }
 }
+
+watch(() => props.selectedServiceId, (newId, oldId) => {
+  if (!newId) {
+    if (oldId && markersById.has(oldId)) {
+      markersById.get(oldId)!.setZIndexOffset(0)
+    }
+    activeMarkerId = null
+    return
+  }
+
+  focusOnService(newId)
+})
+
+watch(services, () => {
+  if (props.selectedServiceId) {
+    focusOnService(props.selectedServiceId)
+  }
+})
 
 onMounted(() => {
   initMap()
