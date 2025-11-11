@@ -2,6 +2,8 @@ package com.thehive.service;
 
 import com.thehive.exception.ResourceNotFoundException;
 import com.thehive.model.dto.AuthorDTO;
+import com.thehive.model.dto.CreateOfferRequest;
+import com.thehive.model.dto.CreateRequestRequest;
 import com.thehive.model.dto.OfferDTO;
 import com.thehive.model.dto.RequestDTO;
 import com.thehive.model.dto.ServiceDTO;
@@ -11,6 +13,8 @@ import com.thehive.repository.OfferRepository;
 import com.thehive.repository.QuestionRepository;
 import com.thehive.repository.RatingRepository;
 import com.thehive.repository.RequestRepository;
+import com.thehive.repository.SemanticTagRepository;
+import com.thehive.repository.UserRepository;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -39,6 +43,12 @@ class MarketplaceServiceTest {
 
     @Mock
     private RatingRepository ratingRepository;
+
+    @Mock
+    private UserRepository userRepository;
+
+    @Mock
+    private SemanticTagRepository semanticTagRepository;
 
     @InjectMocks
     private MarketplaceService marketplaceService;
@@ -222,6 +232,200 @@ class MarketplaceServiceTest {
         verify(offerRepository, times(1)).findById(999);
     }
 
+    // ==================== CREATE OFFER TESTS ====================
+
+    @Test
+    void createOffer_ShouldSuccessfullyCreateOfferWithTags() {
+        // Arrange
+        CreateOfferRequest request = new CreateOfferRequest();
+        request.setTitle("Guitar Lessons");
+        request.setDescription("Learn to play guitar from beginner to advanced");
+        request.setDurationHours(2);
+        request.setStartDate(LocalDate.now());
+        request.setEndDate(LocalDate.now().plusMonths(1));
+        request.setProvince("Istanbul");
+        request.setDistrict("Besiktas");
+        request.setGeohash("sxk3uq9");
+        request.setTags(Arrays.asList("Music", "Teaching"));
+
+        Offer savedOffer = new Offer();
+        savedOffer.setId(10);
+        savedOffer.setProvider(testUser);
+        savedOffer.setTitle(request.getTitle());
+        savedOffer.setDescription(request.getDescription());
+        savedOffer.setDurationHours(request.getDurationHours());
+        savedOffer.setStartDate(request.getStartDate());
+        savedOffer.setEndDate(request.getEndDate());
+        savedOffer.setProvince(request.getProvince());
+        savedOffer.setDistrict(request.getDistrict());
+        savedOffer.setGeohash(request.getGeohash());
+        savedOffer.setStatus(ItemStatus.ACTIVE);
+        savedOffer.setCreatedAt(LocalDateTime.now());
+        savedOffer.setUpdatedAt(LocalDateTime.now());
+
+        SemanticTag musicTag = new SemanticTag();
+        musicTag.setId(10);
+        musicTag.setName("Music");
+
+        SemanticTag teachingTag = new SemanticTag();
+        teachingTag.setId(11);
+        teachingTag.setName("Teaching");
+
+        savedOffer.getTags().add(musicTag);
+        savedOffer.getTags().add(teachingTag);
+
+        when(userRepository.findById(1)).thenReturn(Optional.of(testUser));
+        when(semanticTagRepository.findByName("Music")).thenReturn(Optional.of(musicTag));
+        when(semanticTagRepository.findByName("Teaching")).thenReturn(Optional.of(teachingTag));
+        when(offerRepository.save(any(Offer.class))).thenReturn(savedOffer);
+
+        // Act
+        OfferDTO result = marketplaceService.createOffer(request, 1);
+
+        // Assert
+        assertNotNull(result);
+        assertEquals(10, result.getId());
+        assertEquals("Guitar Lessons", result.getTitle());
+        assertEquals("Learn to play guitar from beginner to advanced", result.getDescription());
+        assertEquals(2, result.getDurationHours());
+        assertEquals("Istanbul", result.getProvince());
+        assertEquals("Besiktas", result.getDistrict());
+        assertEquals("sxk3uq9", result.getGeohash());
+        assertEquals(ItemStatus.ACTIVE, result.getStatus());
+        assertEquals("Test User", result.getProvider().getName());
+        assertEquals(2, result.getTags().size());
+        assertTrue(result.getTags().contains("Music"));
+        assertTrue(result.getTags().contains("Teaching"));
+
+        verify(userRepository, times(1)).findById(1);
+        verify(semanticTagRepository, times(1)).findByName("Music");
+        verify(semanticTagRepository, times(1)).findByName("Teaching");
+        verify(offerRepository, times(1)).save(any(Offer.class));
+    }
+
+    @Test
+    void createOffer_ShouldCreateNewTagsWhenNotExist() {
+        // Arrange
+        CreateOfferRequest request = new CreateOfferRequest();
+        request.setTitle("Photography Sessions");
+        request.setDescription("Professional photography service");
+        request.setDurationHours(3);
+        request.setStartDate(LocalDate.now());
+        request.setEndDate(LocalDate.now().plusWeeks(2));
+        request.setProvince("Izmir");
+        request.setDistrict("Konak");
+        request.setGeohash("sxk2uq3");
+        request.setTags(Arrays.asList("Photography"));
+
+        SemanticTag newTag = new SemanticTag();
+        newTag.setId(20);
+        newTag.setName("Photography");
+
+        Offer savedOffer = new Offer();
+        savedOffer.setId(11);
+        savedOffer.setProvider(testUser);
+        savedOffer.setTitle(request.getTitle());
+        savedOffer.setDescription(request.getDescription());
+        savedOffer.setDurationHours(request.getDurationHours());
+        savedOffer.setStartDate(request.getStartDate());
+        savedOffer.setEndDate(request.getEndDate());
+        savedOffer.setProvince(request.getProvince());
+        savedOffer.setDistrict(request.getDistrict());
+        savedOffer.setGeohash(request.getGeohash());
+        savedOffer.setStatus(ItemStatus.ACTIVE);
+        savedOffer.setCreatedAt(LocalDateTime.now());
+        savedOffer.setUpdatedAt(LocalDateTime.now());
+        savedOffer.getTags().add(newTag);
+
+        when(userRepository.findById(1)).thenReturn(Optional.of(testUser));
+        when(semanticTagRepository.findByName("Photography")).thenReturn(Optional.empty());
+        when(semanticTagRepository.save(any(SemanticTag.class))).thenReturn(newTag);
+        when(offerRepository.save(any(Offer.class))).thenReturn(savedOffer);
+
+        // Act
+        OfferDTO result = marketplaceService.createOffer(request, 1);
+
+        // Assert
+        assertNotNull(result);
+        assertEquals("Photography Sessions", result.getTitle());
+        assertEquals(1, result.getTags().size());
+        assertTrue(result.getTags().contains("Photography"));
+
+        verify(semanticTagRepository, times(1)).findByName("Photography");
+        verify(semanticTagRepository, times(1)).save(any(SemanticTag.class));
+        verify(offerRepository, times(1)).save(any(Offer.class));
+    }
+
+    @Test
+    void createOffer_ShouldWorkWithoutTags() {
+        // Arrange
+        CreateOfferRequest request = new CreateOfferRequest();
+        request.setTitle("Garden Help");
+        request.setDescription("Help with gardening tasks");
+        request.setDurationHours(4);
+        request.setStartDate(LocalDate.now());
+        request.setEndDate(LocalDate.now().plusDays(7));
+        request.setProvince("Ankara");
+        request.setDistrict("Cankaya");
+        request.setGeohash("syethxk");
+        request.setTags(null);
+
+        Offer savedOffer = new Offer();
+        savedOffer.setId(12);
+        savedOffer.setProvider(testUser);
+        savedOffer.setTitle(request.getTitle());
+        savedOffer.setDescription(request.getDescription());
+        savedOffer.setDurationHours(request.getDurationHours());
+        savedOffer.setStartDate(request.getStartDate());
+        savedOffer.setEndDate(request.getEndDate());
+        savedOffer.setProvince(request.getProvince());
+        savedOffer.setDistrict(request.getDistrict());
+        savedOffer.setGeohash(request.getGeohash());
+        savedOffer.setStatus(ItemStatus.ACTIVE);
+        savedOffer.setCreatedAt(LocalDateTime.now());
+        savedOffer.setUpdatedAt(LocalDateTime.now());
+
+        when(userRepository.findById(1)).thenReturn(Optional.of(testUser));
+        when(offerRepository.save(any(Offer.class))).thenReturn(savedOffer);
+
+        // Act
+        OfferDTO result = marketplaceService.createOffer(request, 1);
+
+        // Assert
+        assertNotNull(result);
+        assertEquals("Garden Help", result.getTitle());
+        assertEquals(0, result.getTags().size());
+
+        verify(userRepository, times(1)).findById(1);
+        verify(semanticTagRepository, never()).findByName(anyString());
+        verify(offerRepository, times(1)).save(any(Offer.class));
+    }
+
+    @Test
+    void createOffer_ShouldThrowException_WhenUserNotFound() {
+        // Arrange
+        CreateOfferRequest request = new CreateOfferRequest();
+        request.setTitle("Test Offer");
+        request.setDescription("Test Description");
+        request.setDurationHours(2);
+        request.setStartDate(LocalDate.now());
+        request.setEndDate(LocalDate.now().plusDays(7));
+        request.setProvince("Istanbul");
+        request.setDistrict("Kadikoy");
+        request.setGeohash("sxk3uq9");
+        request.setTags(Arrays.asList("Test"));
+
+        when(userRepository.findById(999)).thenReturn(Optional.empty());
+
+        // Act & Assert
+        ResourceNotFoundException exception = assertThrows(ResourceNotFoundException.class,
+                () -> marketplaceService.createOffer(request, 999));
+
+        assertEquals("User not found with id: 999", exception.getMessage());
+        verify(userRepository, times(1)).findById(999);
+        verify(offerRepository, never()).save(any(Offer.class));
+    }
+
     // ==================== GET ALL REQUESTS TESTS ====================
 
     @Test
@@ -293,6 +497,200 @@ class MarketplaceServiceTest {
 
         assertEquals("Request not found with id: 999", exception.getMessage());
         verify(requestRepository, times(1)).findById(999);
+    }
+
+    // ==================== CREATE REQUEST TESTS ====================
+
+    @Test
+    void createRequest_ShouldSuccessfullyCreateRequestWithTags() {
+        // Arrange
+        CreateRequestRequest request = new CreateRequestRequest();
+        request.setTitle("Need Plumbing Help");
+        request.setDescription("Looking for someone to fix a leaky pipe");
+        request.setDurationHours(3);
+        request.setStartDate(LocalDate.now());
+        request.setEndDate(LocalDate.now().plusWeeks(1));
+        request.setProvince("Istanbul");
+        request.setDistrict("Besiktas");
+        request.setGeohash("sxk3uq9");
+        request.setTags(Arrays.asList("Plumbing", "Home Repair"));
+
+        Request savedRequest = new Request();
+        savedRequest.setId(10);
+        savedRequest.setSeeker(testUser);
+        savedRequest.setTitle(request.getTitle());
+        savedRequest.setDescription(request.getDescription());
+        savedRequest.setDurationHours(request.getDurationHours());
+        savedRequest.setStartDate(request.getStartDate());
+        savedRequest.setEndDate(request.getEndDate());
+        savedRequest.setProvince(request.getProvince());
+        savedRequest.setDistrict(request.getDistrict());
+        savedRequest.setGeohash(request.getGeohash());
+        savedRequest.setStatus(ItemStatus.ACTIVE);
+        savedRequest.setCreatedAt(LocalDateTime.now());
+        savedRequest.setUpdatedAt(LocalDateTime.now());
+
+        SemanticTag plumbingTag = new SemanticTag();
+        plumbingTag.setId(15);
+        plumbingTag.setName("Plumbing");
+
+        SemanticTag repairTag = new SemanticTag();
+        repairTag.setId(16);
+        repairTag.setName("Home Repair");
+
+        savedRequest.getTags().add(plumbingTag);
+        savedRequest.getTags().add(repairTag);
+
+        when(userRepository.findById(1)).thenReturn(Optional.of(testUser));
+        when(semanticTagRepository.findByName("Plumbing")).thenReturn(Optional.of(plumbingTag));
+        when(semanticTagRepository.findByName("Home Repair")).thenReturn(Optional.of(repairTag));
+        when(requestRepository.save(any(Request.class))).thenReturn(savedRequest);
+
+        // Act
+        RequestDTO result = marketplaceService.createRequest(request, 1);
+
+        // Assert
+        assertNotNull(result);
+        assertEquals(10, result.getId());
+        assertEquals("Need Plumbing Help", result.getTitle());
+        assertEquals("Looking for someone to fix a leaky pipe", result.getDescription());
+        assertEquals(3, result.getDurationHours());
+        assertEquals("Istanbul", result.getProvince());
+        assertEquals("Besiktas", result.getDistrict());
+        assertEquals("sxk3uq9", result.getGeohash());
+        assertEquals(ItemStatus.ACTIVE, result.getStatus());
+        assertEquals("Test User", result.getSeeker().getName());
+        assertEquals(2, result.getTags().size());
+        assertTrue(result.getTags().contains("Plumbing"));
+        assertTrue(result.getTags().contains("Home Repair"));
+
+        verify(userRepository, times(1)).findById(1);
+        verify(semanticTagRepository, times(1)).findByName("Plumbing");
+        verify(semanticTagRepository, times(1)).findByName("Home Repair");
+        verify(requestRepository, times(1)).save(any(Request.class));
+    }
+
+    @Test
+    void createRequest_ShouldCreateNewTagsWhenNotExist() {
+        // Arrange
+        CreateRequestRequest request = new CreateRequestRequest();
+        request.setTitle("Need Babysitter");
+        request.setDescription("Looking for childcare help");
+        request.setDurationHours(4);
+        request.setStartDate(LocalDate.now());
+        request.setEndDate(LocalDate.now().plusDays(5));
+        request.setProvince("Ankara");
+        request.setDistrict("Cankaya");
+        request.setGeohash("syethxk");
+        request.setTags(Arrays.asList("Childcare"));
+
+        SemanticTag newTag = new SemanticTag();
+        newTag.setId(25);
+        newTag.setName("Childcare");
+
+        Request savedRequest = new Request();
+        savedRequest.setId(11);
+        savedRequest.setSeeker(testUser);
+        savedRequest.setTitle(request.getTitle());
+        savedRequest.setDescription(request.getDescription());
+        savedRequest.setDurationHours(request.getDurationHours());
+        savedRequest.setStartDate(request.getStartDate());
+        savedRequest.setEndDate(request.getEndDate());
+        savedRequest.setProvince(request.getProvince());
+        savedRequest.setDistrict(request.getDistrict());
+        savedRequest.setGeohash(request.getGeohash());
+        savedRequest.setStatus(ItemStatus.ACTIVE);
+        savedRequest.setCreatedAt(LocalDateTime.now());
+        savedRequest.setUpdatedAt(LocalDateTime.now());
+        savedRequest.getTags().add(newTag);
+
+        when(userRepository.findById(1)).thenReturn(Optional.of(testUser));
+        when(semanticTagRepository.findByName("Childcare")).thenReturn(Optional.empty());
+        when(semanticTagRepository.save(any(SemanticTag.class))).thenReturn(newTag);
+        when(requestRepository.save(any(Request.class))).thenReturn(savedRequest);
+
+        // Act
+        RequestDTO result = marketplaceService.createRequest(request, 1);
+
+        // Assert
+        assertNotNull(result);
+        assertEquals("Need Babysitter", result.getTitle());
+        assertEquals(1, result.getTags().size());
+        assertTrue(result.getTags().contains("Childcare"));
+
+        verify(semanticTagRepository, times(1)).findByName("Childcare");
+        verify(semanticTagRepository, times(1)).save(any(SemanticTag.class));
+        verify(requestRepository, times(1)).save(any(Request.class));
+    }
+
+    @Test
+    void createRequest_ShouldWorkWithoutTags() {
+        // Arrange
+        CreateRequestRequest request = new CreateRequestRequest();
+        request.setTitle("Moving Help");
+        request.setDescription("Need help moving furniture");
+        request.setDurationHours(5);
+        request.setStartDate(LocalDate.now());
+        request.setEndDate(LocalDate.now().plusDays(2));
+        request.setProvince("Izmir");
+        request.setDistrict("Konak");
+        request.setGeohash("sxk2uq3");
+        request.setTags(null);
+
+        Request savedRequest = new Request();
+        savedRequest.setId(12);
+        savedRequest.setSeeker(testUser);
+        savedRequest.setTitle(request.getTitle());
+        savedRequest.setDescription(request.getDescription());
+        savedRequest.setDurationHours(request.getDurationHours());
+        savedRequest.setStartDate(request.getStartDate());
+        savedRequest.setEndDate(request.getEndDate());
+        savedRequest.setProvince(request.getProvince());
+        savedRequest.setDistrict(request.getDistrict());
+        savedRequest.setGeohash(request.getGeohash());
+        savedRequest.setStatus(ItemStatus.ACTIVE);
+        savedRequest.setCreatedAt(LocalDateTime.now());
+        savedRequest.setUpdatedAt(LocalDateTime.now());
+
+        when(userRepository.findById(1)).thenReturn(Optional.of(testUser));
+        when(requestRepository.save(any(Request.class))).thenReturn(savedRequest);
+
+        // Act
+        RequestDTO result = marketplaceService.createRequest(request, 1);
+
+        // Assert
+        assertNotNull(result);
+        assertEquals("Moving Help", result.getTitle());
+        assertEquals(0, result.getTags().size());
+
+        verify(userRepository, times(1)).findById(1);
+        verify(semanticTagRepository, never()).findByName(anyString());
+        verify(requestRepository, times(1)).save(any(Request.class));
+    }
+
+    @Test
+    void createRequest_ShouldThrowException_WhenUserNotFound() {
+        // Arrange
+        CreateRequestRequest request = new CreateRequestRequest();
+        request.setTitle("Test Request");
+        request.setDescription("Test Description");
+        request.setDurationHours(2);
+        request.setStartDate(LocalDate.now());
+        request.setEndDate(LocalDate.now().plusDays(7));
+        request.setProvince("Istanbul");
+        request.setDistrict("Kadikoy");
+        request.setGeohash("sxk3uq9");
+        request.setTags(Arrays.asList("Test"));
+
+        when(userRepository.findById(999)).thenReturn(Optional.empty());
+
+        // Act & Assert
+        ResourceNotFoundException exception = assertThrows(ResourceNotFoundException.class,
+                () -> marketplaceService.createRequest(request, 999));
+
+        assertEquals("User not found with id: 999", exception.getMessage());
+        verify(userRepository, times(1)).findById(999);
+        verify(requestRepository, never()).save(any(Request.class));
     }
 
     // ==================== GET ALL SERVICES TESTS ====================

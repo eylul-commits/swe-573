@@ -34,7 +34,7 @@ import NotificationsPage from './components/pages/NotificationsPage.vue'
 import RequestsPage from './components/pages/RequestsPage.vue'
 import ServiceDetailsPage from './components/pages/ServiceDetailsPage.vue'
 import ThreadDetailsPage from './components/pages/ThreadDetailsPage.vue'
-import CreateOfferPage from './components/pages/CreateOfferPage.vue'
+import CreateServicePage from './components/pages/CreateServicePage.vue'
 import ProfilePage from './components/pages/ProfilePage.vue'
 import SettingsPage from './components/pages/SettingsPage.vue'
 
@@ -67,7 +67,7 @@ const currentPageComponent = computed(() => {
     case 'explore':
       return ExplorePage
     case 'create-offer':
-      return CreateOfferPage
+      return CreateServicePage
     case 'notifications':
       return NotificationsPage
     case 'requests':

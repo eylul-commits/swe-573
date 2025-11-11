@@ -2,6 +2,8 @@ package com.thehive.service;
 
 import com.thehive.exception.ResourceNotFoundException;
 import com.thehive.model.dto.AuthorDTO;
+import com.thehive.model.dto.CreateOfferRequest;
+import com.thehive.model.dto.CreateRequestRequest;
 import com.thehive.model.dto.OfferDTO;
 import com.thehive.model.dto.RequestDTO;
 import com.thehive.model.dto.ServiceAnswerDTO;
@@ -22,6 +24,8 @@ import com.thehive.repository.OfferRepository;
 import com.thehive.repository.RequestRepository;
 import com.thehive.repository.QuestionRepository;
 import com.thehive.repository.RatingRepository;
+import com.thehive.repository.UserRepository;
+import com.thehive.repository.SemanticTagRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -39,6 +43,8 @@ public class MarketplaceService {
     private final RequestRepository requestRepository;
     private final QuestionRepository questionRepository;
     private final RatingRepository ratingRepository;
+    private final UserRepository userRepository;
+    private final SemanticTagRepository semanticTagRepository;
 
     @Transactional(readOnly = true)
     public List<OfferDTO> getAllOffers() {
@@ -61,6 +67,84 @@ public class MarketplaceService {
         Offer offer = offerRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Offer not found with id: " + id));
         return convertToOfferDTO(offer);
+    }
+
+    @Transactional
+    public OfferDTO createOffer(CreateOfferRequest request, Integer providerId) {
+        // Get the provider user
+        User provider = userRepository.findById(providerId)
+                .orElseThrow(() -> new ResourceNotFoundException("User not found with id: " + providerId));
+
+        // Create new offer
+        Offer offer = new Offer();
+        offer.setProvider(provider);
+        offer.setTitle(request.getTitle());
+        offer.setDescription(request.getDescription());
+        offer.setDurationHours(request.getDurationHours());
+        offer.setStartDate(request.getStartDate());
+        offer.setEndDate(request.getEndDate());
+        offer.setProvince(request.getProvince());
+        offer.setDistrict(request.getDistrict());
+        offer.setGeohash(request.getGeohash());
+        offer.setStatus(ItemStatus.ACTIVE);
+
+        // Handle tags
+        if (request.getTags() != null && !request.getTags().isEmpty()) {
+            for (String tagName : request.getTags()) {
+                SemanticTag tag = semanticTagRepository.findByName(tagName)
+                        .orElseGet(() -> {
+                            SemanticTag newTag = new SemanticTag();
+                            newTag.setName(tagName);
+                            return semanticTagRepository.save(newTag);
+                        });
+                offer.getTags().add(tag);
+            }
+        }
+
+        // Save the offer
+        Offer savedOffer = offerRepository.save(offer);
+
+        // Convert to DTO and return
+        return convertToOfferDTO(savedOffer);
+    }
+
+    @Transactional
+    public RequestDTO createRequest(CreateRequestRequest request, Integer seekerId) {
+        // Get the seeker user
+        User seeker = userRepository.findById(seekerId)
+                .orElseThrow(() -> new ResourceNotFoundException("User not found with id: " + seekerId));
+
+        // Create new request
+        Request newRequest = new Request();
+        newRequest.setSeeker(seeker);
+        newRequest.setTitle(request.getTitle());
+        newRequest.setDescription(request.getDescription());
+        newRequest.setDurationHours(request.getDurationHours());
+        newRequest.setStartDate(request.getStartDate());
+        newRequest.setEndDate(request.getEndDate());
+        newRequest.setProvince(request.getProvince());
+        newRequest.setDistrict(request.getDistrict());
+        newRequest.setGeohash(request.getGeohash());
+        newRequest.setStatus(ItemStatus.ACTIVE);
+
+        // Handle tags
+        if (request.getTags() != null && !request.getTags().isEmpty()) {
+            for (String tagName : request.getTags()) {
+                SemanticTag tag = semanticTagRepository.findByName(tagName)
+                        .orElseGet(() -> {
+                            SemanticTag newTag = new SemanticTag();
+                            newTag.setName(tagName);
+                            return semanticTagRepository.save(newTag);
+                        });
+                newRequest.getTags().add(tag);
+            }
+        }
+
+        // Save the request
+        Request savedRequest = requestRepository.save(newRequest);
+
+        // Convert to DTO and return
+        return convertToRequestDTO(savedRequest);
     }
 
     @Transactional(readOnly = true)

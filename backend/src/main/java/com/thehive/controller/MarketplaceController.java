@@ -1,5 +1,7 @@
 package com.thehive.controller;
 
+import com.thehive.model.dto.CreateOfferRequest;
+import com.thehive.model.dto.CreateRequestRequest;
 import com.thehive.model.dto.OfferDTO;
 import com.thehive.model.dto.RequestDTO;
 import com.thehive.model.dto.ServiceDTO;
@@ -7,7 +9,9 @@ import com.thehive.model.dto.ServiceQuestionDTO;
 import com.thehive.model.dto.ServiceRatingsResponseDTO;
 import com.thehive.service.MarketplaceService;
 import com.thehive.service.RecommendationService;
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
@@ -39,6 +43,14 @@ public class MarketplaceController {
         return ResponseEntity.ok(offer);
     }
 
+    @PostMapping("/offers")
+    public ResponseEntity<OfferDTO> createOffer(
+            @Valid @RequestBody CreateOfferRequest request,
+            @RequestHeader(value = "X-User-Id", defaultValue = "1") Integer userId) {
+        OfferDTO offer = marketplaceService.createOffer(request, userId);
+        return ResponseEntity.status(HttpStatus.CREATED).body(offer);
+    }
+
     @GetMapping("/requests")
     public ResponseEntity<List<RequestDTO>> getAllRequests() {
         List<RequestDTO> requests = marketplaceService.getAllRequests();
@@ -55,6 +67,14 @@ public class MarketplaceController {
     public ResponseEntity<RequestDTO> getRequestById(@PathVariable Integer id) {
         RequestDTO request = marketplaceService.getRequestById(id);
         return ResponseEntity.ok(request);
+    }
+
+    @PostMapping("/requests")
+    public ResponseEntity<RequestDTO> createRequest(
+            @Valid @RequestBody CreateRequestRequest request,
+            @RequestHeader(value = "X-User-Id", defaultValue = "1") Integer userId) {
+        RequestDTO createdRequest = marketplaceService.createRequest(request, userId);
+        return ResponseEntity.status(HttpStatus.CREATED).body(createdRequest);
     }
 
     @GetMapping("/services")

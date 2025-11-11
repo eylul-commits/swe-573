@@ -318,3 +318,75 @@ export async function getRecommendedServices(limit: number = 3): Promise<Service
   }
 }
 
+export interface CreateOfferPayload {
+  title: string;
+  description: string;
+  durationHours: number;
+  startDate: string;
+  endDate: string;
+  province: string;
+  district: string;
+  geohash: string;
+  tags: string[];
+}
+
+export interface CreateRequestPayload {
+  title: string;
+  description: string;
+  durationHours: number;
+  startDate: string;
+  endDate: string;
+  province: string;
+  district: string;
+  geohash: string;
+  tags: string[];
+}
+
+export async function createOffer(payload: CreateOfferPayload): Promise<Service | null> {
+  try {
+    const offer = await api.post<OfferDTO>('/marketplace/offers', payload);
+    return {
+      id: offer.id.toString(),
+      type: 'OFFER' as const,
+      title: offer.title,
+      description: offer.description,
+      location: `${offer.district}, ${offer.province}`,
+      tags: offer.tags || [],
+      timebank: offer.durationHours ? `${offer.durationHours}h` : '0h',
+      poster: convertAuthorToUser(offer.provider),
+      createdAt: offer.createdAt,
+      status: offer.status.toLowerCase() as any || 'active',
+      province: offer.province,
+      district: offer.district,
+      geohash: offer.geohash,
+    };
+  } catch (error) {
+    console.error('Failed to create offer:', error);
+    throw error;
+  }
+}
+
+export async function createRequest(payload: CreateRequestPayload): Promise<Service | null> {
+  try {
+    const request = await api.post<RequestDTO>('/marketplace/requests', payload);
+    return {
+      id: request.id.toString(),
+      type: 'REQUEST' as const,
+      title: request.title,
+      description: request.description,
+      location: `${request.district}, ${request.province}`,
+      tags: request.tags || [],
+      timebank: request.durationHours ? `${request.durationHours}h` : '0h',
+      poster: convertAuthorToUser(request.seeker),
+      createdAt: request.createdAt,
+      status: request.status.toLowerCase() as any || 'active',
+      province: request.province,
+      district: request.district,
+      geohash: request.geohash,
+    };
+  } catch (error) {
+    console.error('Failed to create request:', error);
+    throw error;
+  }
+}
+
