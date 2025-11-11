@@ -10,7 +10,7 @@ import { cn } from '../../utils/cn'
 
 const props = withDefaults(
   defineProps<{
-    variant?: 'default' | 'secondary' | 'destructive' | 'outline' | 'custom'
+    variant?: 'default' | 'secondary' | 'destructive' | 'outline' | 'custom' | 'success' | 'warning' | 'error'
   }>(),
   {
     variant: 'default',
@@ -26,6 +26,9 @@ const badgeClass = computed(() => {
     default: 'border-transparent bg-primary text-primary-foreground hover:bg-primary/80',
     secondary: 'border-transparent bg-secondary text-secondary-foreground hover:bg-secondary/80',
     destructive: 'border-transparent bg-destructive text-destructive-foreground hover:bg-destructive/80',
+    success: 'border-transparent bg-green-500 text-white hover:bg-green-600',
+    warning: 'border-transparent bg-amber-500 text-white hover:bg-amber-600',
+    error: 'border-transparent bg-red-500 text-white hover:bg-red-600',
     outline: 'text-foreground',
     custom: 'border-transparent', // No default colors, use custom classes
   }

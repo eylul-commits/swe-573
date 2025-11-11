@@ -181,3 +181,41 @@ export interface ServiceFilters {
   distance?: number;
 }
 
+// Handshake types
+export type HandshakeStatus = "PENDING" | "CONFIRMED" | "COMPLETED" | "CANCELLED";
+
+export interface Handshake {
+  id: number;
+  offerId: number;
+  offerTitle: string;
+  seeker: AuthorSummary;
+  provider: AuthorSummary;
+  status: HandshakeStatus;
+  agreedHours: number;
+  seekerConfirmed: boolean;
+  providerConfirmed: boolean;
+  createdAt: string;
+  completedAt: string | null;
+  canRate: boolean;
+}
+
+export interface CreateHandshakeRequest {
+  offerId: number;
+  providerId: number;
+  agreedHours: number;
+}
+
+export interface ConfirmHandshakeRequest {
+  completedAt: string;
+}
+
+export interface CreateRatingRequest {
+  handshakeId: number;
+  rateeId: number;
+  punctuality: number;
+  friendliness: number;
+  communicative: number;
+  preparedness: number;
+  comment?: string;
+}
+
