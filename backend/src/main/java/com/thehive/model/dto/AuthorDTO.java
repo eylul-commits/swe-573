@@ -12,6 +12,10 @@ public class AuthorDTO {
     private String name;
     private String avatar;
     private String badge;
+    private String bio;
+    private String province;
+    private String district;
+    private Integer balanceHours;
 }
 
 

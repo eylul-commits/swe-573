@@ -24,7 +24,7 @@
         <div class="grid grid-cols-2 gap-4 mb-4">
           <div class="flex items-center gap-2 text-sm text-gray-600">
             <MapPin class="w-4 h-4" />
-            <span>{{ service.location }}, Istanbul</span>
+            <span>{{ service.location }}</span>
           </div>
           <div class="flex items-center gap-2 text-sm text-gray-600">
             <Clock class="w-4 h-4 text-amber-600" />
@@ -33,14 +33,14 @@
           <div class="flex items-center gap-2 text-sm text-gray-600">
             <Calendar class="w-4 h-4" />
             <span>
-              {{ getStartDate(serviceId) }}
+              {{ formattedStartDate }}
             </span>
           </div>
           <div class="text-sm text-gray-600">
-            {{ getSchedule(serviceId) }}
+            {{ scheduleText }}
           </div>
           <div class="text-sm text-gray-500 col-span-2">
-            Posted {{ getPostedTime(serviceId) }}
+            Posted {{ postedTime }}
           </div>
         </div>
       </div>
@@ -110,12 +110,12 @@
             <div>
               <div class="text-gray-900">{{ service.poster.name }}</div>
               <div class="flex items-center gap-3 text-sm text-gray-500 mt-1">
-                <span class="text-emerald-600">{{ service.poster.hoursGiven }}h given</span>
+                <span class="text-emerald-600">{{ posterBalance }}h balance</span>
                 <span>•</span>
-                <span class="text-blue-600">{{ service.poster.hoursReceived }}h received</span>
+                <span class="text-blue-600">{{ posterBadgeLabel }}</span>
               </div>
               <p class="text-sm text-gray-600 mt-2 max-w-lg">
-                {{ getPosterDescription(serviceId) }}
+                {{ posterDescription }}
               </p>
             </div>
           </div>
@@ -163,7 +163,7 @@
               <Button 
                 @click="handleAskQuestion"
                 class="bg-gray-900 hover:bg-gray-800 text-white w-full"
-                :disabled="!questionText.trim()"
+                :disabled="isLoading || !questionText.trim()"
               >
                 <Send class="w-4 h-4 mr-2" />
                 Send Question
@@ -248,7 +248,7 @@
                       </div>
                     </div>
                     
-                    <p class="text-sm text-gray-600">{{ review.text }}</p>
+                    <p class="text-sm text-gray-600">{{ review.comment }}</p>
                   </div>
                 </div>
                 <Separator />
@@ -288,176 +288,230 @@ import TabsContent from './ui/TabsContent.vue'
 import TabsList from './ui/TabsList.vue'
 import TabsTrigger from './ui/TabsTrigger.vue'
 import Textarea from './ui/Textarea.vue'
-import { getServiceById } from '../services/dataService'
-import type { Service } from '../types'
+import { getServiceById, getServiceRatings, getServiceQuestions } from '../services/dataService'
+import { formatDistanceToNow, formatDate } from '../utils/dateUtils'
+import type { Service, ServiceRatingsResponse, ServiceQuestion as ServiceQuestionDTO } from '../types'
 
 interface ServiceInfoProps {
   serviceId: string
   onViewFullDetails?: (serviceId: string) => void
 }
 
+interface AverageRatings {
+  showedUp: number
+  friendly: number
+  communicative: number
+  prepared: number
+}
+
+interface UiReview {
+  id: string
+  author: string
+  avatar: string
+  date: string
+  comment: string
+  ratings: {
+    showedUp: number
+    friendly: number
+    communicative: number
+    prepared: number
+  }
+}
+
+interface UiQuestion {
+  id: string
+  author: string
+  avatar: string
+  date: string
+  question: string
+  answer?: string
+  answeredBy?: string
+  answeredDate?: string
+}
+
 const props = defineProps<ServiceInfoProps>()
 
 const service = ref<Service | undefined>()
+const questionText = ref("")
+const reviews = ref<UiReview[]>([])
+const questions = ref<UiQuestion[]>([])
+const averageRatings = ref<AverageRatings | null>(null)
+const totalReviews = ref(0)
+const isLoading = ref(false)
 
-watch(() => props.serviceId, async (newId: string) => {
-  if (newId) {
-    try {
-      const fetchedService = await getServiceById(newId)
-      service.value = fetchedService || undefined
-    } catch (error) {
-      console.error(`Error fetching service ${newId}:`, error)
-      service.value = undefined
+let activeRequestId = 0
+
+const avatarFallback = (name: string) => {
+  const encoded = encodeURIComponent(name || 'Community Member')
+  return `https://ui-avatars.com/api/?name=${encoded}&background=E2E8F0&color=1F2937`
+}
+
+const resetData = () => {
+  service.value = undefined
+  reviews.value = []
+  questions.value = []
+  averageRatings.value = null
+  totalReviews.value = 0
+}
+
+const mapRatingsResponse = (response: ServiceRatingsResponse | null) => {
+  if (!response) {
+    averageRatings.value = null
+    totalReviews.value = 0
+    reviews.value = []
+    return
+  }
+
+  totalReviews.value = response.summary.totalReviews
+
+  if (response.summary.totalReviews > 0) {
+    averageRatings.value = {
+      showedUp: response.summary.punctuality,
+      friendly: response.summary.friendliness,
+      communicative: response.summary.communicative,
+      prepared: response.summary.preparedness,
     }
   } else {
-    service.value = undefined
+    averageRatings.value = null
   }
-}, { immediate: true })
 
-const questionText = ref("")
-
-// Mock reviews data - in real app this would come from a database
-const allReviews: Record<string, any[]> = {
-  "2": [
-    {
-      id: "1",
-      author: "Mehmet Demir",
-      avatar: "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=100&h=100&fit=crop",
-      date: "2 weeks ago",
-      ratings: {
-        showedUp: 5,
-        friendly: 5,
-        communicative: 5,
-        prepared: 5,
-      },
-      text: "Wonderful experience! Highly professional and exactly what I was looking for.",
+  reviews.value = response.ratings.map((rating) => ({
+    id: rating.id,
+    author: rating.rater.name,
+    avatar: rating.rater.avatar || avatarFallback(rating.rater.name),
+    date: formatDistanceToNow(rating.createdAt),
+    comment: rating.comment ?? '',
+    ratings: {
+      showedUp: rating.punctuality,
+      friendly: rating.friendliness,
+      communicative: rating.communicative,
+      prepared: rating.preparedness,
     },
-    {
-      id: "2",
-      author: "Zeynep Kaya",
-      avatar: "https://images.unsplash.com/photo-1438761681033-6461ffad8d80?w=100&h=100&fit=crop",
-      date: "1 month ago",
-      ratings: {
-        showedUp: 5,
-        friendly: 5,
-        communicative: 4,
-        prepared: 5,
-      },
-      text: "Such a warm and patient person. Would definitely exchange services again!",
-    },
-    {
-      id: "3",
-      author: "Can Özdemir",
-      avatar: "https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=100&h=100&fit=crop",
-      date: "2 months ago",
-      ratings: {
-        showedUp: 5,
-        friendly: 5,
-        communicative: 3,
-        prepared: 4,
-      },
-      text: "Great experience! Very punctual and reliable. A true community gem!",
-    },
-  ],
-  "1": [
-    {
-      id: "4",
-      author: "Ali Yılmaz",
-      avatar: "https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=100&h=100&fit=crop",
-      date: "1 week ago",
-      ratings: {
-        showedUp: 4,
-        friendly: 5,
-        communicative: 4,
-        prepared: 4,
-      },
-      text: "Very helpful and patient. Took time to explain everything clearly.",
-    },
-  ],
-  "9": [], // New service with no reviews yet
+  }))
 }
 
-// Mock questions data
-const allQuestions: Record<string, any[]> = {
-  "2": [
-    {
-      id: "q1",
-      author: "Murat Demir",
-      avatar: "https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=100&h=100&fit=crop",
-      date: "3 days ago",
-      question: "Do you have experience reading stories to children aged 5-7?",
-      answer: "Yes! I have been reading to children in this age group for over 3 years. I have a collection of age-appropriate books and love interactive storytelling.",
-      answeredBy: "Ayşe Yılmaz",
-      answeredDate: "3 days ago",
-    },
-    {
-      id: "q2",
-      author: "Ebru Kaya",
-      avatar: "https://images.unsplash.com/photo-1438761681033-6461ffad8d80?w=100&h=100&fit=crop",
-      date: "1 week ago",
-      question: "What languages can you read stories in?",
-      answer: "I can read stories in both Turkish and English fluently. I also know some basic German if needed!",
-      answeredBy: "Ayşe Yılmaz",
-      answeredDate: "1 week ago",
-    },
-  ],
-  "9": [
-    {
-      id: "q3",
-      author: "Ahmet Yılmaz",
-      avatar: "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=100&h=100&fit=crop",
-      date: "2 days ago",
-      question: "Do you have any portfolio of your previous garden designs?",
-      answer: null, // Unanswered question
-    },
-    {
-      id: "q4",
-      author: "Elif Demir",
-      avatar: "https://images.unsplash.com/photo-1487412720507-e7ab37603c6f?w=100&h=100&fit=crop",
-      date: "5 hours ago",
-      question: "Can you help with small balcony spaces? Mine is only about 3 square meters.",
-      answer: null,
-    },
-  ],
+const mapQuestionsResponse = (response: ServiceQuestionDTO[]) => {
+  questions.value = response.map((question) => ({
+    id: question.id,
+    author: question.author.name,
+    avatar: question.author.avatar || avatarFallback(question.author.name),
+    date: formatDistanceToNow(question.createdAt),
+    question: question.content,
+    answer: question.answer?.content ?? undefined,
+    answeredBy: question.answer?.responder.name ?? undefined,
+    answeredDate: question.answer ? formatDistanceToNow(question.answer.createdAt) : undefined,
+  }))
 }
 
-const reviews = computed(() => allReviews[props.serviceId] || [])
-const questions = computed(() => allQuestions[props.serviceId] || [])
-const totalReviews = computed(() => reviews.value.length)
+const loadServiceData = async (serviceId: string) => {
+  const currentRequest = ++activeRequestId
 
-// Calculate average ratings for each criteria only if there are reviews
-const averageRatings = computed(() => {
-  if (totalReviews.value === 0) return null
-  
-  return {
-    showedUp: reviews.value.reduce((sum: number, r: any) => sum + r.ratings.showedUp, 0) / totalReviews.value,
-    friendly: reviews.value.reduce((sum: number, r: any) => sum + r.ratings.friendly, 0) / totalReviews.value,
-    communicative: reviews.value.reduce((sum: number, r: any) => sum + r.ratings.communicative, 0) / totalReviews.value,
-    prepared: reviews.value.reduce((sum: number, r: any) => sum + r.ratings.prepared, 0) / totalReviews.value,
+  if (!serviceId) {
+    resetData()
+    return
   }
+
+  isLoading.value = true
+
+  try {
+    const [fetchedService, ratingsResponse, questionsResponse] = await Promise.all([
+      getServiceById(serviceId),
+      getServiceRatings(serviceId),
+      getServiceQuestions(serviceId),
+    ])
+
+    if (currentRequest !== activeRequestId) {
+      return
+    }
+
+    if (!fetchedService) {
+      resetData()
+      return
+    }
+
+    service.value = fetchedService
+    mapRatingsResponse(ratingsResponse)
+    mapQuestionsResponse(questionsResponse)
+  } catch (error) {
+    if (currentRequest === activeRequestId) {
+      console.error(`Error loading service info for ${serviceId}:`, error)
+      resetData()
+    }
+  } finally {
+    if (currentRequest === activeRequestId) {
+      isLoading.value = false
+    }
+  }
+}
+
+watch(
+  () => props.serviceId,
+  (newId: string) => {
+    void loadServiceData(newId)
+  },
+  { immediate: true }
+)
+
+const formattedStartDate = computed(() => {
+  if (!service.value?.startDate) {
+    return 'Start date not specified'
+  }
+  return `Starts ${formatDate(service.value.startDate)}`
 })
 
-const getStartDate = (serviceId: string) => {
-  if (serviceId === "9") return "Starting Nov 1, 2025"
-  if (serviceId === "2") return "Starting Oct 25, 2025"
-  return "Starting Oct 28, 2025"
-}
+const scheduleText = computed(() => {
+  const start = service.value?.startDate
+  const end = service.value?.endDate
 
-const getSchedule = (serviceId: string) => {
-  if (serviceId === "9") return "One-time consultation"
-  if (serviceId === "2") return "Weekly, Saturdays"
-  return "Flexible scheduling"
-}
+  if (start && end) {
+    if (start === end) {
+      return `Scheduled for ${formatDate(start)}`
+    }
+    return `${formatDate(start)} - ${formatDate(end)}`
+  }
 
-const getPostedTime = (serviceId: string) => {
-  return serviceId === "9" ? "3 hours ago" : "2 hours ago"
-}
+  if (start) {
+    return `Starts ${formatDate(start)}`
+  }
 
-const getPosterDescription = (serviceId: string) => {
-  return serviceId === "9" 
-    ? "New to The Hive and excited to share skills and connect with the community!"
-    : "Active community member sharing skills and building connections through The Hive."
-}
+  if (end) {
+    return `Available until ${formatDate(end)}`
+  }
+
+  return 'Schedule not specified'
+})
+
+const postedTime = computed(() => {
+  if (!service.value?.createdAt) {
+    return 'some time ago'
+  }
+  return formatDistanceToNow(service.value.createdAt)
+})
+
+const posterDescription = computed(() => {
+  if (!service.value?.poster?.bio) {
+    return 'Community member sharing skills through The Hive.'
+  }
+  return service.value.poster.bio
+})
+
+const posterBalance = computed(() => service.value?.poster?.timebankBalance ?? 0)
+
+const posterBadgeLabel = computed(() => {
+  const badge = service.value?.poster?.badge
+  if (!badge) return 'Newcomer'
+
+  switch (badge) {
+    case 'top-contributor':
+      return 'Top Contributor'
+    case 'active':
+      return 'Active Member'
+    case 'balanced':
+      return 'Balanced Exchanger'
+    default:
+      return 'Newcomer'
+  }
+})
 
 const handleAskQuestion = () => {
   if (questionText.value.trim()) {

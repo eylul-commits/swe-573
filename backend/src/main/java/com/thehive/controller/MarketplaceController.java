@@ -3,6 +3,8 @@ package com.thehive.controller;
 import com.thehive.model.dto.OfferDTO;
 import com.thehive.model.dto.RequestDTO;
 import com.thehive.model.dto.ServiceDTO;
+import com.thehive.model.dto.ServiceQuestionDTO;
+import com.thehive.model.dto.ServiceRatingsResponseDTO;
 import com.thehive.service.MarketplaceService;
 import com.thehive.service.RecommendationService;
 import lombok.RequiredArgsConstructor;
@@ -71,6 +73,18 @@ public class MarketplaceController {
     public ResponseEntity<ServiceDTO> getServiceById(@PathVariable Integer id) {
         ServiceDTO service = marketplaceService.getServiceById(id);
         return ResponseEntity.ok(service);
+    }
+
+    @GetMapping("/services/{id}/questions")
+    public ResponseEntity<List<ServiceQuestionDTO>> getServiceQuestions(@PathVariable Integer id) {
+        List<ServiceQuestionDTO> questions = marketplaceService.getQuestionsForService(id);
+        return ResponseEntity.ok(questions);
+    }
+
+    @GetMapping("/services/{id}/ratings")
+    public ResponseEntity<ServiceRatingsResponseDTO> getServiceRatings(@PathVariable Integer id) {
+        ServiceRatingsResponseDTO ratings = marketplaceService.getRatingsForService(id);
+        return ResponseEntity.ok(ratings);
     }
 
     @GetMapping("/services/nearby")

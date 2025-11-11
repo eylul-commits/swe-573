@@ -14,6 +14,8 @@ import {
   Conversation,
   CommunityStats,
   ServiceFilters,
+  ServiceRatingsResponse,
+  ServiceQuestion,
 } from "../types";
 import {
   mockServices,
@@ -43,6 +45,8 @@ import {
   fetchActiveServices,
   fetchServiceById as fetchServiceByIdAPI,
   fetchAllTags,
+  fetchServiceRatings,
+  fetchServiceQuestions,
 } from "./apiService";
 
 // Cache for services to avoid repeated API calls
@@ -220,6 +224,37 @@ export const createReview = (review: Omit<Review, "id">): Review => {
   };
   mockReviews.push(newReview);
   return newReview;
+};
+
+export const getServiceRatings = async (
+  serviceId: string
+): Promise<ServiceRatingsResponse> => {
+  try {
+    return await fetchServiceRatings(serviceId);
+  } catch (error) {
+    console.error(`Failed to load ratings for service ${serviceId}:`, error);
+    return {
+      ratings: [],
+      summary: {
+        punctuality: 0,
+        friendliness: 0,
+        communicative: 0,
+        preparedness: 0,
+        totalReviews: 0,
+      },
+    };
+  }
+};
+
+export const getServiceQuestions = async (
+  serviceId: string
+): Promise<ServiceQuestion[]> => {
+  try {
+    return await fetchServiceQuestions(serviceId);
+  } catch (error) {
+    console.error(`Failed to load questions for service ${serviceId}:`, error);
+    return [];
+  }
 };
 
 // =============================================================================

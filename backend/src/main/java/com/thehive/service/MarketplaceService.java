@@ -4,19 +4,30 @@ import com.thehive.exception.ResourceNotFoundException;
 import com.thehive.model.dto.AuthorDTO;
 import com.thehive.model.dto.OfferDTO;
 import com.thehive.model.dto.RequestDTO;
+import com.thehive.model.dto.ServiceAnswerDTO;
 import com.thehive.model.dto.ServiceDTO;
+import com.thehive.model.dto.ServiceQuestionDTO;
+import com.thehive.model.dto.ServiceRatingDTO;
+import com.thehive.model.dto.ServiceRatingSummaryDTO;
+import com.thehive.model.dto.ServiceRatingsResponseDTO;
 import com.thehive.model.entity.Offer;
 import com.thehive.model.entity.Request;
 import com.thehive.model.entity.SemanticTag;
+import com.thehive.model.entity.Answer;
+import com.thehive.model.entity.Question;
+import com.thehive.model.entity.Rating;
 import com.thehive.model.entity.User;
 import com.thehive.model.enums.ItemStatus;
 import com.thehive.repository.OfferRepository;
 import com.thehive.repository.RequestRepository;
+import com.thehive.repository.QuestionRepository;
+import com.thehive.repository.RatingRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -26,6 +37,8 @@ public class MarketplaceService {
 
     private final OfferRepository offerRepository;
     private final RequestRepository requestRepository;
+    private final QuestionRepository questionRepository;
+    private final RatingRepository ratingRepository;
 
     @Transactional(readOnly = true)
     public List<OfferDTO> getAllOffers() {
@@ -129,6 +142,44 @@ public class MarketplaceService {
         throw new ResourceNotFoundException("Service not found with id: " + id);
     }
 
+    @Transactional(readOnly = true)
+    public List<ServiceQuestionDTO> getQuestionsForService(Integer serviceId) {
+        List<Question> questions;
+
+        if (offerRepository.existsById(serviceId)) {
+            questions = questionRepository.findByOfferId(serviceId);
+        } else if (requestRepository.existsById(serviceId)) {
+            questions = questionRepository.findByRequestId(serviceId);
+        } else {
+            throw new ResourceNotFoundException("Service not found with id: " + serviceId);
+        }
+
+        return questions.stream()
+                .map(this::convertToServiceQuestionDTO)
+                .collect(Collectors.toList());
+    }
+
+    @Transactional(readOnly = true)
+    public ServiceRatingsResponseDTO getRatingsForService(Integer serviceId) {
+        if (offerRepository.existsById(serviceId)) {
+            List<Rating> ratings = ratingRepository.findByHandshakeOfferId(serviceId);
+            List<ServiceRatingDTO> ratingDTOs = ratings.stream()
+                    .map(this::convertToServiceRatingDTO)
+                    .collect(Collectors.toList());
+
+            ServiceRatingSummaryDTO summary = calculateRatingSummary(ratings);
+            return new ServiceRatingsResponseDTO(ratingDTOs, summary);
+        }
+
+        if (requestRepository.existsById(serviceId)) {
+            // Requests currently do not have direct ratings
+            return new ServiceRatingsResponseDTO(Collections.emptyList(),
+                    new ServiceRatingSummaryDTO(0, 0, 0, 0, 0));
+        }
+
+        throw new ResourceNotFoundException("Service not found with id: " + serviceId);
+    }
+
     // Helper methods to convert entities to DTOs
     private OfferDTO convertToOfferDTO(Offer offer) {
         OfferDTO dto = new OfferDTO();
@@ -170,6 +221,83 @@ public class MarketplaceService {
                 .map(SemanticTag::getName)
                 .collect(Collectors.toList()));
         return dto;
+    }
+
+    private ServiceQuestionDTO convertToServiceQuestionDTO(Question question) {
+        ServiceQuestionDTO dto = new ServiceQuestionDTO();
+        dto.setId(question.getId());
+        dto.setAuthor(convertToAuthorDTO(question.getAsker()));
+        dto.setContent(question.getContent());
+        dto.setCreatedAt(question.getCreatedAt());
+
+        Answer answer = question.getAnswer();
+        if (answer != null) {
+            dto.setAnswer(convertToServiceAnswerDTO(answer));
+        }
+
+        return dto;
+    }
+
+    private ServiceAnswerDTO convertToServiceAnswerDTO(Answer answer) {
+        ServiceAnswerDTO dto = new ServiceAnswerDTO();
+        dto.setId(answer.getId());
+        dto.setResponder(convertToAuthorDTO(answer.getResponder()));
+        dto.setContent(answer.getContent());
+        dto.setCreatedAt(answer.getCreatedAt());
+        return dto;
+    }
+
+    private ServiceRatingDTO convertToServiceRatingDTO(Rating rating) {
+        ServiceRatingDTO dto = new ServiceRatingDTO();
+        dto.setId(rating.getId());
+        dto.setRater(convertToAuthorDTO(rating.getRater()));
+        dto.setPunctuality(rating.getPunctuality());
+        dto.setFriendliness(rating.getFriendliness());
+        dto.setCommunicative(rating.getCommunicative());
+        dto.setPreparedness(rating.getPreparedness());
+        dto.setComment(rating.getComment());
+        dto.setCreatedAt(rating.getCreatedAt());
+        return dto;
+    }
+
+    private ServiceRatingSummaryDTO calculateRatingSummary(List<Rating> ratings) {
+        if (ratings.isEmpty()) {
+            return new ServiceRatingSummaryDTO(0, 0, 0, 0, 0);
+        }
+
+        int total = ratings.size();
+        double punctualityAvg = ratings.stream()
+                .mapToInt(r -> safeRatingValue(r.getPunctuality()))
+                .average()
+                .orElse(0);
+        double friendlinessAvg = ratings.stream()
+                .mapToInt(r -> safeRatingValue(r.getFriendliness()))
+                .average()
+                .orElse(0);
+        double communicativeAvg = ratings.stream()
+                .mapToInt(r -> safeRatingValue(r.getCommunicative()))
+                .average()
+                .orElse(0);
+        double preparednessAvg = ratings.stream()
+                .mapToInt(r -> safeRatingValue(r.getPreparedness()))
+                .average()
+                .orElse(0);
+
+        return new ServiceRatingSummaryDTO(
+                roundToSingleDecimal(punctualityAvg),
+                roundToSingleDecimal(friendlinessAvg),
+                roundToSingleDecimal(communicativeAvg),
+                roundToSingleDecimal(preparednessAvg),
+                total
+        );
+    }
+
+    private double roundToSingleDecimal(double value) {
+        return Math.round(value * 10.0) / 10.0;
+    }
+
+    private int safeRatingValue(Integer value) {
+        return value != null ? value : 0;
     }
 
     private ServiceDTO convertOfferToServiceDTO(Offer offer) {
@@ -223,6 +351,10 @@ public class MarketplaceService {
         dto.setId(user.getId());
         dto.setName(user.getName() != null ? user.getName() : user.getEmail());
         dto.setAvatar(null); // değişecek
+        dto.setBio(user.getBio());
+        dto.setProvince(user.getProvince());
+        dto.setDistrict(user.getDistrict());
+        dto.setBalanceHours(user.getBalanceHours());
         
         if (user.getUserBadges() != null && !user.getUserBadges().isEmpty()) {
             // Get the most recent badge based on earned_at timestamp

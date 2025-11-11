@@ -8,6 +8,8 @@ import com.thehive.model.dto.ServiceDTO;
 import com.thehive.model.entity.*;
 import com.thehive.model.enums.ItemStatus;
 import com.thehive.repository.OfferRepository;
+import com.thehive.repository.QuestionRepository;
+import com.thehive.repository.RatingRepository;
 import com.thehive.repository.RequestRepository;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -31,6 +33,12 @@ class MarketplaceServiceTest {
 
     @Mock
     private RequestRepository requestRepository;
+
+    @Mock
+    private QuestionRepository questionRepository;
+
+    @Mock
+    private RatingRepository ratingRepository;
 
     @InjectMocks
     private MarketplaceService marketplaceService;

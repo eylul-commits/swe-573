@@ -16,6 +16,8 @@ export interface User {
   joinedDate?: string;
   location?: string;
   skills?: string[];
+  province?: string;
+  district?: string;
 }
 
 export interface Service {
@@ -29,9 +31,14 @@ export interface Service {
   timebank: string;
   poster: User;
   createdAt?: string;
+  updatedAt?: string;
   status?: "active" | "completed" | "cancelled";
   participants?: string[]; // User IDs
   maxParticipants?: number;
+  startDate?: string;
+  endDate?: string;
+  province?: string;
+  district?: string;
   schedule?: {
     date?: string;
     time?: string;
@@ -97,6 +104,56 @@ export interface CommunityStats {
   hoursExchanged: number;
   activeServices: number;
   completedThisMonth: number;
+}
+
+export interface AuthorSummary {
+  id: string;
+  name: string;
+  avatar: string;
+  badge?: BadgeType | string;
+  bio?: string;
+  province?: string;
+  district?: string;
+  timebankBalance?: number;
+}
+
+export interface ServiceAnswer {
+  id: string;
+  content: string;
+  createdAt: string;
+  responder: AuthorSummary;
+}
+
+export interface ServiceQuestion {
+  id: string;
+  content: string;
+  createdAt: string;
+  author: AuthorSummary;
+  answer?: ServiceAnswer;
+}
+
+export interface ServiceRating {
+  id: string;
+  comment?: string;
+  createdAt: string;
+  rater: AuthorSummary;
+  punctuality: number;
+  friendliness: number;
+  communicative: number;
+  preparedness: number;
+}
+
+export interface ServiceRatingSummary {
+  punctuality: number;
+  friendliness: number;
+  communicative: number;
+  preparedness: number;
+  totalReviews: number;
+}
+
+export interface ServiceRatingsResponse {
+  ratings: ServiceRating[];
+  summary: ServiceRatingSummary;
 }
 
 export interface UserProfile extends User {
