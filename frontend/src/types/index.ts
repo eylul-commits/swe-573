@@ -18,6 +18,7 @@ export interface User {
   skills?: string[];
   province?: string;
   district?: string;
+  geohash?: string; // Geohash for user location
 }
 
 export interface Service {
@@ -39,6 +40,7 @@ export interface Service {
   endDate?: string;
   province?: string;
   district?: string;
+  geohash?: string; // Geohash for location
   schedule?: {
     date?: string;
     time?: string;

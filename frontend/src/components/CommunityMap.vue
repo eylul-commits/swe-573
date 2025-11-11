@@ -1,119 +1,174 @@
 <template>
-  <div class="relative w-full h-full bg-gray-100">
-    <!-- Map placeholder with visual styling -->
-    <div class="absolute inset-0 flex items-center justify-center">
-      <!-- Grid background to simulate map -->
-      <div class="absolute inset-0 opacity-10">
-        <svg class="w-full h-full" xmlns="http://www.w3.org/2000/svg">
-          <defs>
-            <pattern id="grid" width="40" height="40" patternUnits="userSpaceOnUse">
-              <path d="M 40 0 L 0 0 0 40" fill="none" stroke="gray" stroke-width="1"/>
-            </pattern>
-          </defs>
-          <rect width="100%" height="100%" fill="url(#grid)" />
-        </svg>
+  <div class="relative w-full h-full">
+    <!-- Map container -->
+    <div ref="mapContainer" class="w-full h-full"></div>
+    
+    <!-- Legend -->
+    <div class="absolute top-4 right-4 bg-white rounded-lg shadow-md p-3 text-xs z-[1000]">
+      <div class="font-semibold mb-2">Legend</div>
+      <div class="flex items-center gap-2 mb-1">
+        <div class="w-3 h-3 rounded-full bg-emerald-500"></div>
+        <span>Offers ({{ offerCount }})</span>
       </div>
-      
-      <!-- Map markers simulation -->
-      <div class="relative z-10 w-full h-full p-8">
-        <div class="relative w-full h-full">
-          <!-- Sample markers at different positions -->
-          <div
-            v-for="(marker, index) in markers"
-            :key="index"
-            :style="{
-              position: 'absolute',
-              left: marker.x + '%',
-              top: marker.y + '%',
-              transform: 'translate(-50%, -50%)'
-            }"
-            class="group cursor-pointer"
-          >
-            <div class="relative">
-              <!-- Marker pin -->
-              <div :class="[
-                'w-8 h-8 rounded-full shadow-lg flex items-center justify-center transition-transform group-hover:scale-110',
-                marker.type === 'OFFER' ? 'bg-emerald-500' : 'bg-blue-500'
-              ]">
-                <MapPin class="w-4 h-4 text-white" />
-              </div>
-              
-              <!-- Tooltip on hover -->
-              <div class="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-2 opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none">
-                <div class="bg-gray-900 text-white text-xs rounded px-2 py-1 whitespace-nowrap">
-                  {{ marker.title }}
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
+      <div class="flex items-center gap-2">
+        <div class="w-3 h-3 rounded-full bg-blue-500"></div>
+        <span>Requests ({{ requestCount }})</span>
       </div>
-
-      <!-- Map Controls (zoom, etc.) -->
-      <div class="absolute bottom-4 right-4 flex flex-col gap-2 z-20">
-        <Button variant="outline" size="sm" class="bg-white shadow-md">
-          <Plus class="w-4 h-4" />
-        </Button>
-        <Button variant="outline" size="sm" class="bg-white shadow-md">
-          <Minus class="w-4 h-4" />
-        </Button>
-        <Button variant="outline" size="sm" class="bg-white shadow-md">
-          <Locate class="w-4 h-4" />
-        </Button>
-      </div>
-
-      <!-- Legend -->
-      <div class="absolute top-4 right-4 bg-white rounded-lg shadow-md p-3 text-xs z-20">
-        <div class="font-semibold mb-2">Legend</div>
-        <div class="flex items-center gap-2 mb-1">
-          <div class="w-3 h-3 rounded-full bg-emerald-500"></div>
-          <span>Offers</span>
-        </div>
-        <div class="flex items-center gap-2">
-          <div class="w-3 h-3 rounded-full bg-blue-500"></div>
-          <span>Requests</span>
-        </div>
-      </div>
-
-      <!-- Location label -->
-      <div class="absolute top-4 left-4 bg-white rounded-lg shadow-md px-3 py-2 text-sm font-medium z-20">
-        <div class="flex items-center gap-2">
-          <MapPin class="w-4 h-4 text-gray-600" />
-          <span>Your Community</span>
-        </div>
-      </div>
-    </div>
-
-    <!-- Map attribution/note -->
-    <div class="absolute bottom-2 left-2 text-xs text-gray-500 z-10">
-      Interactive map view
     </div>
   </div>
 </template>
 
 <script setup lang="ts">
-import { computed, ref, onMounted } from 'vue'
-import { MapPin, Plus, Minus, Locate } from 'lucide-vue-next'
-import Button from './ui/Button.vue'
+import { ref, onMounted, onUnmounted, computed } from 'vue'
+import L from 'leaflet'
+import geohash from 'ngeohash'
+import 'leaflet/dist/leaflet.css'
 import { getAllServices } from '../services/dataService'
 import type { Service } from '../types'
 
-// Generate marker positions from services
+const mapContainer = ref<HTMLElement | null>(null)
+let map: L.Map | null = null
 const services = ref<Service[]>([])
+const markers = ref<L.Marker[]>([])
 
-onMounted(async () => {
-  services.value = await getAllServices()
+const offerCount = computed(() => services.value.filter((s: Service) => s.type === 'OFFER').length)
+const requestCount = computed(() => services.value.filter((s: Service) => s.type === 'REQUEST').length)
+
+// Create custom icons for offers and requests
+const createCustomIcon = (type: 'OFFER' | 'REQUEST') => {
+  const color = type === 'OFFER' ? '#10b981' : '#3b82f6'
+  const svgIcon = `
+    <svg width="32" height="32" viewBox="0 0 32 32" xmlns="http://www.w3.org/2000/svg">
+      <path d="M16 2 C16 2, 8 8, 8 16 C8 20, 12 24, 16 30 C20 24, 24 20, 24 16 C24 8, 16 2, 16 2 Z" 
+            fill="${color}" stroke="white" stroke-width="2"/>
+      <circle cx="16" cy="14" r="5" fill="white"/>
+    </svg>
+  `
+  
+  return L.divIcon({
+    html: svgIcon,
+    className: 'custom-marker-icon',
+    iconSize: [32, 32],
+    iconAnchor: [16, 32],
+    popupAnchor: [0, -32]
+  })
+}
+
+const initMap = async () => {
+  if (!mapContainer.value) return
+
+  // Initialize the map - centered on Turkey/Istanbul by default
+  map = L.map(mapContainer.value, {
+    center: [41.0082, 28.9784], // Istanbul coordinates as default
+    zoom: 10,
+    zoomControl: true
+  })
+
+  // Add OpenStreetMap tile layer
+  L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+    attribution: '© <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors',
+    maxZoom: 19
+  }).addTo(map)
+
+  // Load services and add markers
+  try {
+    services.value = await getAllServices()
+    addMarkers()
+  } catch (error) {
+    console.error('Error loading services:', error)
+  }
+}
+
+const addMarkers = () => {
+  if (!map) return
+
+  // Clear existing markers
+  markers.value.forEach(marker => {
+    marker.remove()
+  })
+  markers.value = []
+
+  const bounds: L.LatLngBoundsExpression = []
+
+  services.value.forEach((service: Service) => {
+    // Check if service has geohash data
+    const serviceGeohash = service.geohash
+    if (!serviceGeohash) {
+      console.warn(`Service ${service.id} has no geohash`)
+      return
+    }
+
+    try {
+      // Decode geohash to lat/lng
+      const { latitude, longitude } = geohash.decode(serviceGeohash)
+      
+      // Create marker with custom icon
+      const marker = L.marker([latitude, longitude], {
+        icon: createCustomIcon(service.type)
+      })
+
+      // Add popup with service information
+      const popupContent = `
+        <div class="p-2 min-w-[200px]">
+          <h3 class="font-bold text-sm mb-1">${service.title}</h3>
+          <p class="text-xs text-gray-600 mb-2">${service.description?.substring(0, 100) || ''}${service.description?.length > 100 ? '...' : ''}</p>
+          <div class="flex items-center gap-2 text-xs">
+            <span class="px-2 py-1 rounded ${service.type === 'OFFER' ? 'bg-emerald-100 text-emerald-700' : 'bg-blue-100 text-blue-700'}">
+              ${service.type}
+            </span>
+            <span class="text-gray-500">${service.location || service.district || service.province || ''}</span>
+          </div>
+          ${service.poster ? `<div class="mt-2 text-xs text-gray-600">By: ${service.poster.name}</div>` : ''}
+        </div>
+      `
+      
+      marker.bindPopup(popupContent)
+      marker.addTo(map!)
+      markers.value.push(marker)
+
+      // Add to bounds for auto-fitting
+      bounds.push([latitude, longitude])
+    } catch (error) {
+      console.error(`Error decoding geohash for service ${service.id}:`, error)
+    }
+  })
+
+  // Fit map to show all markers
+  if (bounds.length > 0 && map) {
+    map.fitBounds(bounds, { padding: [50, 50] })
+  }
+}
+
+onMounted(() => {
+  initMap()
 })
 
-const markers = computed(() => {
-  return services.value.slice(0, 12).map((service, index) => ({
-    id: service.id,
-    title: service.title,
-    type: service.type,
-    // Distribute markers across the map
-    x: 20 + (index % 4) * 20 + Math.random() * 10,
-    y: 20 + Math.floor(index / 4) * 20 + Math.random() * 10
-  }))
+onUnmounted(() => {
+  if (map) {
+    map.remove()
+    map = null
+  }
 })
 </script>
+
+<style scoped>
+:deep(.leaflet-container) {
+  width: 100%;
+  height: 100%;
+  border-radius: inherit;
+}
+
+:deep(.custom-marker-icon) {
+  background: none;
+  border: none;
+}
+
+:deep(.leaflet-popup-content-wrapper) {
+  border-radius: 8px;
+}
+
+:deep(.leaflet-popup-content) {
+  margin: 0;
+}
+</style>
 
