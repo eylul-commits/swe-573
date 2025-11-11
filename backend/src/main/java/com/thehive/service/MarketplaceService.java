@@ -467,5 +467,40 @@ public class MarketplaceService {
         }
         return district;
     }
+
+    @Transactional(readOnly = true)
+    public List<OfferDTO> getOffersByProvider(Integer providerId) {
+        List<Offer> offers = offerRepository.findByProviderId(providerId);
+        return offers.stream()
+                .map(this::convertToOfferDTO)
+                .collect(Collectors.toList());
+    }
+
+    @Transactional(readOnly = true)
+    public List<RequestDTO> getRequestsBySeeker(Integer seekerId) {
+        List<Request> requests = requestRepository.findBySeekerId(seekerId);
+        return requests.stream()
+                .map(this::convertToRequestDTO)
+                .collect(Collectors.toList());
+    }
+
+    @Transactional(readOnly = true)
+    public List<ServiceDTO> getUserServices(Integer userId) {
+        List<ServiceDTO> services = new ArrayList<>();
+        
+        // Get user's offers and convert to ServiceDTO
+        List<Offer> offers = offerRepository.findByProviderId(userId);
+        services.addAll(offers.stream()
+                .map(this::convertOfferToServiceDTO)
+                .collect(Collectors.toList()));
+        
+        // Get user's requests and convert to ServiceDTO
+        List<Request> requests = requestRepository.findBySeekerId(userId);
+        services.addAll(requests.stream()
+                .map(this::convertRequestToServiceDTO)
+                .collect(Collectors.toList()));
+        
+        return services;
+    }
 }
 

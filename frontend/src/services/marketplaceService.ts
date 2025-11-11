@@ -390,3 +390,61 @@ export async function createRequest(payload: CreateRequestPayload): Promise<Serv
   }
 }
 
+export async function getUserOffers(userId: string): Promise<Service[]> {
+  try {
+    const offers = await api.get<OfferDTO[]>(`/marketplace/offers/user/${userId}`);
+    return offers.map(offer => ({
+      id: offer.id.toString(),
+      type: 'OFFER' as const,
+      title: offer.title,
+      description: offer.description,
+      location: `${offer.district}, ${offer.province}`,
+      tags: offer.tags || [],
+      timebank: offer.durationHours ? `${offer.durationHours}h` : '0h',
+      poster: convertAuthorToUser(offer.provider),
+      createdAt: offer.createdAt,
+      status: offer.status.toLowerCase() as any || 'active',
+      province: offer.province,
+      district: offer.district,
+      geohash: offer.geohash,
+    }));
+  } catch (error) {
+    console.error('Failed to fetch user offers:', error);
+    return [];
+  }
+}
+
+export async function getUserRequests(userId: string): Promise<Service[]> {
+  try {
+    const requests = await api.get<RequestDTO[]>(`/marketplace/requests/user/${userId}`);
+    return requests.map(request => ({
+      id: request.id.toString(),
+      type: 'REQUEST' as const,
+      title: request.title,
+      description: request.description,
+      location: `${request.district}, ${request.province}`,
+      tags: request.tags || [],
+      timebank: request.durationHours ? `${request.durationHours}h` : '0h',
+      poster: convertAuthorToUser(request.seeker),
+      createdAt: request.createdAt,
+      status: request.status.toLowerCase() as any || 'active',
+      province: request.province,
+      district: request.district,
+      geohash: request.geohash,
+    }));
+  } catch (error) {
+    console.error('Failed to fetch user requests:', error);
+    return [];
+  }
+}
+
+export async function getUserServices(userId: string): Promise<Service[]> {
+  try {
+    const services = await api.get<ServiceDTO[]>(`/marketplace/services/user/${userId}`);
+    return services.map(convertServiceDTOToService);
+  } catch (error) {
+    console.error('Failed to fetch user services:', error);
+    return [];
+  }
+}
+

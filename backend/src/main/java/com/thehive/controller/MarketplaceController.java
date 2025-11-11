@@ -122,5 +122,23 @@ public class MarketplaceController {
         List<ServiceDTO> services = recommendationService.getRecommendedServices(userId, limit);
         return ResponseEntity.ok(services);
     }
+
+    @GetMapping("/offers/user/{userId}")
+    public ResponseEntity<List<OfferDTO>> getUserOffers(@PathVariable Integer userId) {
+        List<OfferDTO> offers = marketplaceService.getOffersByProvider(userId);
+        return ResponseEntity.ok(offers);
+    }
+
+    @GetMapping("/requests/user/{userId}")
+    public ResponseEntity<List<RequestDTO>> getUserRequests(@PathVariable Integer userId) {
+        List<RequestDTO> requests = marketplaceService.getRequestsBySeeker(userId);
+        return ResponseEntity.ok(requests);
+    }
+
+    @GetMapping("/services/user/{userId}")
+    public ResponseEntity<List<ServiceDTO>> getUserServices(@PathVariable Integer userId) {
+        List<ServiceDTO> services = marketplaceService.getUserServices(userId);
+        return ResponseEntity.ok(services);
+    }
 }
 
