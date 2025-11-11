@@ -333,42 +333,58 @@ onMounted(() => {
   // Use setTimeout to ensure the container is fully rendered
   setTimeout(() => {
     if (mapContainer.value) {
-      // Create map centered on Turkey
-      map = L.map(mapContainer.value).setView([39.9334, 32.8597], 6)
-      
-      // Add OpenStreetMap tiles
-      L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-        attribution: '© OpenStreetMap contributors',
-        maxZoom: 19
-      }).addTo(map)
-      
-      // Invalidate size after a short delay to ensure proper rendering
-      setTimeout(() => {
-        map?.invalidateSize()
-      }, 100)
-      
-      // Add click event to map
-      map.on('click', (e: L.LeafletMouseEvent) => {
-        const { lat, lng } = e.latlng
+      try {
+        console.log('Initializing map...')
         
-        // Update selected location
-        selectedLocation.value = { lat, lng }
+        // Create map centered on Turkey
+        map = L.map(mapContainer.value, {
+          center: [39.9334, 32.8597],
+          zoom: 6,
+          zoomControl: true,
+          scrollWheelZoom: true
+        })
         
-        // Generate geohash
-        formData.value.geohash = encode(lat, lng, 9)
+        // Add OpenStreetMap tiles
+        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+          attribution: '© OpenStreetMap contributors',
+          maxZoom: 19
+        }).addTo(map)
         
-        // Remove existing marker if any
-        if (marker) {
-          map?.removeLayer(marker)
-        }
+        // Invalidate size after a short delay to ensure proper rendering
+        setTimeout(() => {
+          map?.invalidateSize()
+          console.log('Map initialized successfully')
+        }, 100)
         
-        // Add new marker
-        marker = L.marker([lat, lng]).addTo(map!)
-          .bindPopup(`Selected location<br>Lat: ${lat.toFixed(6)}<br>Lng: ${lng.toFixed(6)}`)
-          .openPopup()
-      })
+        // Add click event to map
+        map.on('click', (e: L.LeafletMouseEvent) => {
+          console.log('Map clicked:', e.latlng)
+          const { lat, lng } = e.latlng
+          
+          // Update selected location
+          selectedLocation.value = { lat, lng }
+          
+          // Generate geohash
+          formData.value.geohash = encode(lat, lng, 9)
+          console.log('Geohash generated:', formData.value.geohash)
+          
+          // Remove existing marker if any
+          if (marker) {
+            map?.removeLayer(marker)
+          }
+          
+          // Add new marker
+          marker = L.marker([lat, lng]).addTo(map!)
+            .bindPopup(`Selected location<br>Lat: ${lat.toFixed(6)}<br>Lng: ${lng.toFixed(6)}`)
+            .openPopup()
+        })
+      } catch (error) {
+        console.error('Failed to initialize map:', error)
+      }
+    } else {
+      console.error('Map container not found')
     }
-  }, 0)
+  }, 100)
 })
 
 onUnmounted(() => {

@@ -2,6 +2,8 @@ package com.thehive.config;
 
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Configuration;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import javax.crypto.Mac;
 import javax.crypto.spec.SecretKeySpec;
@@ -10,6 +12,8 @@ import java.util.Base64;
 
 @Configuration
 public class StreamChatConfig {
+
+    private static final Logger logger = LoggerFactory.getLogger(StreamChatConfig.class);
 
     @Value("${stream.chat.secret:}")
     private String streamChatSecret;
@@ -58,7 +62,13 @@ public class StreamChatConfig {
      * Check if Stream Chat is configured
      */
     public boolean isConfigured() {
-        return streamChatSecret != null && !streamChatSecret.isEmpty();
+        boolean configured = streamChatSecret != null && !streamChatSecret.isEmpty();
+        if (!configured) {
+            logger.warn("Stream Chat is NOT configured. Secret is missing or empty.");
+        } else {
+            logger.info("Stream Chat is configured with secret (length: {})", streamChatSecret.length());
+        }
+        return configured;
     }
 }
 

@@ -84,11 +84,16 @@ public class AuthService {
     private String generateStreamChatToken(User user) {
         try {
             if (streamChatConfig.isConfigured()) {
-                return streamChatConfig.generateUserToken(user.getId().toString());
+                String token = streamChatConfig.generateUserToken(user.getId().toString());
+                System.out.println("✓ Generated Stream Chat token for user " + user.getId() + ": " + token.substring(0, Math.min(20, token.length())) + "...");
+                return token;
+            } else {
+                System.err.println("✗ Stream Chat not configured, cannot generate token");
             }
         } catch (Exception e) {
             // Log error but don't fail the auth process
-            System.err.println("Failed to generate Stream Chat token: " + e.getMessage());
+            System.err.println("✗ Failed to generate Stream Chat token: " + e.getMessage());
+            e.printStackTrace();
         }
         return null;
     }

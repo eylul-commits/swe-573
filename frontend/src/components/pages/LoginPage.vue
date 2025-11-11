@@ -144,7 +144,7 @@ const handleLogin = async () => {
   
   try {
     const response = await login(loginForm.value)
-    appStore.setCurrentUser(response.user, response.token)
+    appStore.setCurrentUser(response.user, response.token, response.streamChatToken)
   } catch (error: any) {
     errorMessage.value = error.message || 'Login failed. Please try again.'
   } finally {
@@ -158,7 +158,7 @@ const handleRegister = async () => {
   
   try {
     const response = await register(registerForm.value)
-    appStore.setCurrentUser(response.user, response.token)
+    appStore.setCurrentUser(response.user, response.token, response.streamChatToken)
   } catch (error: any) {
     errorMessage.value = error.message || 'Registration failed. Please try again.'
   } finally {

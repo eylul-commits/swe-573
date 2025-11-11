@@ -43,6 +43,8 @@ export const useAppStore = defineStore('app', () => {
     // Initialize Stream Chat if token provided
     streamChatReady.value = false
 
+    console.log('🔐 Stream Chat token received:', streamChatToken ? `Yes (${streamChatToken.substring(0, 20)}...)` : 'No')
+
     if (streamChatToken) {
       try {
         const { initializeStreamChat } = await import('../services/streamChatService')
@@ -51,13 +53,14 @@ export const useAppStore = defineStore('app', () => {
           user.name || user.email,
           streamChatToken
         )
-        console.log('Stream Chat initialized successfully')
+        console.log('✓ Stream Chat initialized successfully')
         streamChatReady.value = true
       } catch (error) {
-        console.error('Failed to initialize Stream Chat:', error)
+        console.error('✗ Failed to initialize Stream Chat:', error)
         streamChatReady.value = false
       }
     } else {
+      console.warn('⚠️ No Stream Chat token provided, chat will not be available')
       streamChatReady.value = false
     }
   }
