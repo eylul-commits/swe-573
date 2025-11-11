@@ -4,7 +4,9 @@ import com.thehive.model.enums.ItemStatus;
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Data;
+import lombok.EqualsAndHashCode;
 import lombok.NoArgsConstructor;
+import lombok.ToString;
 import org.hibernate.annotations.CreationTimestamp;
 import org.hibernate.annotations.UpdateTimestamp;
 
@@ -16,12 +18,14 @@ import java.util.Set;
 @Entity
 @Table(name = "offers")
 @Data
+@EqualsAndHashCode(onlyExplicitlyIncluded = true)
 @NoArgsConstructor
 @AllArgsConstructor
 public class Offer {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
+    @EqualsAndHashCode.Include
     private Integer id;
 
     @ManyToOne(fetch = FetchType.LAZY)
@@ -71,12 +75,15 @@ public class Offer {
         joinColumns = @JoinColumn(name = "offer_id"),
         inverseJoinColumns = @JoinColumn(name = "tag_id")
     )
+    @ToString.Exclude
     private Set<SemanticTag> tags = new HashSet<>();
 
     @OneToMany(mappedBy = "offer", cascade = CascadeType.ALL)
+    @ToString.Exclude
     private Set<Handshake> handshakes = new HashSet<>();
 
     @OneToMany(mappedBy = "offer", cascade = CascadeType.ALL)
+    @ToString.Exclude
     private Set<Question> questions = new HashSet<>();
 }
 
