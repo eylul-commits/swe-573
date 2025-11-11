@@ -276,7 +276,7 @@
 </template>
 
 <script setup lang="ts">
-import { computed, ref } from 'vue'
+import { computed, ref, watch } from 'vue'
 import { MapPin, Clock, Calendar, Star, Send, MessageCircle } from 'lucide-vue-next'
 import Avatar from './ui/Avatar.vue'
 import AvatarImage from './ui/AvatarImage.vue'
@@ -289,6 +289,7 @@ import TabsList from './ui/TabsList.vue'
 import TabsTrigger from './ui/TabsTrigger.vue'
 import Textarea from './ui/Textarea.vue'
 import { getServiceById } from '../services/dataService'
+import type { Service } from '../types'
 
 interface ServiceInfoProps {
   serviceId: string
@@ -297,7 +298,21 @@ interface ServiceInfoProps {
 
 const props = defineProps<ServiceInfoProps>()
 
-const service = computed(() => getServiceById(props.serviceId))
+const service = ref<Service | undefined>()
+
+watch(() => props.serviceId, async (newId: string) => {
+  if (newId) {
+    try {
+      const fetchedService = await getServiceById(newId)
+      service.value = fetchedService || undefined
+    } catch (error) {
+      console.error(`Error fetching service ${newId}:`, error)
+      service.value = undefined
+    }
+  } else {
+    service.value = undefined
+  }
+}, { immediate: true })
 
 const questionText = ref("")
 
@@ -372,7 +387,7 @@ const allQuestions: Record<string, any[]> = {
       date: "3 days ago",
       question: "Do you have experience reading stories to children aged 5-7?",
       answer: "Yes! I have been reading to children in this age group for over 3 years. I have a collection of age-appropriate books and love interactive storytelling.",
-      answeredBy: service.value?.poster.name,
+      answeredBy: "Ayşe Yılmaz",
       answeredDate: "3 days ago",
     },
     {
@@ -382,7 +397,7 @@ const allQuestions: Record<string, any[]> = {
       date: "1 week ago",
       question: "What languages can you read stories in?",
       answer: "I can read stories in both Turkish and English fluently. I also know some basic German if needed!",
-      answeredBy: service.value?.poster.name,
+      answeredBy: "Ayşe Yılmaz",
       answeredDate: "1 week ago",
     },
   ],
@@ -415,10 +430,10 @@ const averageRatings = computed(() => {
   if (totalReviews.value === 0) return null
   
   return {
-    showedUp: reviews.value.reduce((sum, r) => sum + r.ratings.showedUp, 0) / totalReviews.value,
-    friendly: reviews.value.reduce((sum, r) => sum + r.ratings.friendly, 0) / totalReviews.value,
-    communicative: reviews.value.reduce((sum, r) => sum + r.ratings.communicative, 0) / totalReviews.value,
-    prepared: reviews.value.reduce((sum, r) => sum + r.ratings.prepared, 0) / totalReviews.value,
+    showedUp: reviews.value.reduce((sum: number, r: any) => sum + r.ratings.showedUp, 0) / totalReviews.value,
+    friendly: reviews.value.reduce((sum: number, r: any) => sum + r.ratings.friendly, 0) / totalReviews.value,
+    communicative: reviews.value.reduce((sum: number, r: any) => sum + r.ratings.communicative, 0) / totalReviews.value,
+    prepared: reviews.value.reduce((sum: number, r: any) => sum + r.ratings.prepared, 0) / totalReviews.value,
   }
 })
 

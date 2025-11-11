@@ -281,7 +281,7 @@
 </template>
 
 <script setup lang="ts">
-import { computed, ref } from 'vue'
+import { computed, ref, watch } from 'vue'
 import { MapPin, Clock, Calendar, Star, Send, MessageCircle, ArrowLeft } from 'lucide-vue-next'
 import Card from '../ui/Card.vue'
 import Badge from '../ui/Badge.vue'
@@ -296,13 +296,20 @@ import Textarea from '../ui/Textarea.vue'
 import ImageWithFallback from '../ui/ImageWithFallback.vue'
 import { getServiceById, getReviewsByServiceId, getAverageRating, getReviewCount } from '../../services/dataService'
 import { useAppStore } from '../../stores/appStore'
+import type { Service } from '../../types'
 
 const appStore = useAppStore()
 
 const serviceId = computed(() => appStore.selectedServiceId || '')
-const service = computed(() => 
-  appStore.selectedServiceId ? getServiceById(appStore.selectedServiceId) : null
-)
+const service = ref<Service | null>(null)
+
+watch(() => appStore.selectedServiceId, async (newId) => {
+  if (newId) {
+    service.value = await getServiceById(newId) || null
+  } else {
+    service.value = null
+  }
+}, { immediate: true })
 
 const reviews = computed(() => serviceId.value ? getReviewsByServiceId(serviceId.value) : [])
 const averageRating = computed(() => serviceId.value ? getAverageRating(serviceId.value) : 0)
@@ -350,7 +357,7 @@ const allQuestions: Record<string, any[]> = {
       date: "3 days ago",
       question: "Do I need to bring my own yoga mat?",
       answer: "Yes, please bring your own mat. I have a few extras but it's better to bring yours for comfort!",
-      answeredBy: service.value?.poster.name || '',
+      answeredBy: "Mehmet Yılmaz",
       answeredDate: "3 days ago",
     },
   ],
@@ -362,7 +369,7 @@ const allQuestions: Record<string, any[]> = {
       date: "2 days ago",
       question: "How much sunlight does your balcony get? This will help me suggest the right plants for you.",
       answer: "It gets morning sun until about 1 PM, then it's shaded. South-facing balcony on the 4th floor.",
-      answeredBy: service.value?.poster.name || '',
+      answeredBy: "Ayşe Demir",
       answeredDate: "2 days ago",
     },
     {
@@ -372,7 +379,7 @@ const allQuestions: Record<string, any[]> = {
       date: "1 day ago",
       question: "What's the size of your balcony? And are you interested in herbs, vegetables, or flowers?",
       answer: "About 6 square meters. I'd love to grow herbs like basil, mint, and maybe some cherry tomatoes!",
-      answeredBy: service.value?.poster.name || '',
+      answeredBy: "Ayşe Demir",
       answeredDate: "1 day ago",
     },
   ],
@@ -384,7 +391,7 @@ const allQuestions: Record<string, any[]> = {
       date: "1 week ago",
       question: "What kind of camera do I need?",
       answer: "Any camera works! Even smartphones are great for street photography. It's all about composition and timing.",
-      answeredBy: service.value?.poster.name || '',
+      answeredBy: "Can Özdemir",
       answeredDate: "1 week ago",
     },
   ],
@@ -396,7 +403,7 @@ const allQuestions: Record<string, any[]> = {
       date: "2 days ago",
       question: "Do you accommodate dietary restrictions?",
       answer: "Absolutely! Just let me know in advance and I'll make sure to prepare something suitable.",
-      answeredBy: service.value?.poster.name || '',
+      answeredBy: "Elif Kaya",
       answeredDate: "2 days ago",
     },
   ],
@@ -408,7 +415,7 @@ const allQuestions: Record<string, any[]> = {
       date: "5 hours ago",
       question: "What recipes will you teach?",
       answer: "I teach traditional dishes like menemen, gözleme, and imam bayıldı. Each session we focus on 2-3 recipes you can master!",
-      answeredBy: service.value?.poster.name || '',
+      answeredBy: "Fatma Yıldız",
       answeredDate: "4 hours ago",
     },
   ],
@@ -420,7 +427,7 @@ const allQuestions: Record<string, any[]> = {
       date: "1 day ago",
       question: "What genres of books are usually available?",
       answer: "We get a great mix! Mostly literary fiction, mysteries, and non-fiction. Everyone brings different tastes which makes it fun!",
-      answeredBy: service.value?.poster.name || '',
+      answeredBy: "Ali Çelik",
       answeredDate: "1 day ago",
     },
   ],

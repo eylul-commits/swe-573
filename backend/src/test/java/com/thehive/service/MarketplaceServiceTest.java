@@ -1,5 +1,6 @@
 package com.thehive.service;
 
+import com.thehive.exception.ResourceNotFoundException;
 import com.thehive.model.dto.AuthorDTO;
 import com.thehive.model.dto.OfferDTO;
 import com.thehive.model.dto.RequestDTO;
@@ -449,6 +450,161 @@ class MarketplaceServiceTest {
         // Assert
         ServiceDTO offer = result.get(0);
         assertEquals("ACTIVE", offer.getStatus());
+    }
+
+    // ==================== GET SERVICE BY ID (UNIFIED) TESTS ====================
+
+    @Test
+    void getServiceById_ShouldReturnOfferAsServiceDTO_WhenOfferExists() {
+        // Arrange
+        when(offerRepository.findById(1)).thenReturn(Optional.of(testOffer));
+
+        // Act
+        ServiceDTO result = marketplaceService.getServiceById(1);
+
+        // Assert
+        assertNotNull(result);
+        assertEquals(1, result.getId());
+        assertEquals("OFFER", result.getType());
+        assertEquals("Cooking Lessons", result.getTitle());
+        assertEquals("I can teach you how to cook Italian cuisine", result.getDescription());
+        assertEquals(2, result.getTimebank());
+        assertEquals("Kadikoy, Istanbul", result.getLocation());
+        assertEquals("ACTIVE", result.getStatus());
+        
+        // Verify repositories were called correctly
+        verify(offerRepository, times(1)).findById(1);
+        verify(requestRepository, never()).findById(any());
+    }
+
+    @Test
+    void getServiceById_ShouldReturnRequestAsServiceDTO_WhenOnlyRequestExists() {
+        // Arrange
+        when(offerRepository.findById(1)).thenReturn(Optional.empty());
+        when(requestRepository.findById(1)).thenReturn(Optional.of(testRequest));
+
+        // Act
+        ServiceDTO result = marketplaceService.getServiceById(1);
+
+        // Assert
+        assertNotNull(result);
+        assertEquals(1, result.getId());
+        assertEquals("REQUEST", result.getType());
+        assertEquals("Math Tutoring Needed", result.getTitle());
+        assertEquals("Looking for help with calculus", result.getDescription());
+        assertEquals(3, result.getTimebank());
+        assertEquals("Cankaya, Ankara", result.getLocation());
+        assertEquals("ACTIVE", result.getStatus());
+        
+        // Verify both repositories were called in correct order
+        verify(offerRepository, times(1)).findById(1);
+        verify(requestRepository, times(1)).findById(1);
+    }
+
+    @Test
+    void getServiceById_ShouldThrowResourceNotFoundException_WhenNeitherExists() {
+        // Arrange
+        when(offerRepository.findById(999)).thenReturn(Optional.empty());
+        when(requestRepository.findById(999)).thenReturn(Optional.empty());
+
+        // Act & Assert
+        ResourceNotFoundException exception = assertThrows(ResourceNotFoundException.class,
+                () -> marketplaceService.getServiceById(999));
+
+        assertEquals("Service not found with id: 999", exception.getMessage());
+        
+        // Verify both repositories were checked
+        verify(offerRepository, times(1)).findById(999);
+        verify(requestRepository, times(1)).findById(999);
+    }
+
+    @Test
+    void getServiceById_ShouldPrioritizeOffer_WhenBothOfferAndRequestExistWithSameId() {
+        // This is an edge case - in practice IDs should be unique across offers and requests
+        // But our implementation checks offers first, so let's verify that behavior
+        
+        // Arrange
+        when(offerRepository.findById(1)).thenReturn(Optional.of(testOffer));
+        // Note: Not stubbing requestRepository because it won't be called due to short-circuit
+
+        // Act
+        ServiceDTO result = marketplaceService.getServiceById(1);
+
+        // Assert
+        assertNotNull(result);
+        assertEquals("OFFER", result.getType());
+        assertEquals("Cooking Lessons", result.getTitle());
+        
+        // Verify only offer repository was called (short-circuit behavior)
+        verify(offerRepository, times(1)).findById(1);
+        verify(requestRepository, never()).findById(any());
+    }
+
+    @Test
+    void getServiceById_ShouldConvertOfferWithAllFields() {
+        // Arrange
+        when(offerRepository.findById(1)).thenReturn(Optional.of(testOffer));
+
+        // Act
+        ServiceDTO result = marketplaceService.getServiceById(1);
+
+        // Assert
+        assertNotNull(result);
+        assertEquals(1, result.getId());
+        assertEquals("OFFER", result.getType());
+        assertEquals("Cooking Lessons", result.getTitle());
+        assertEquals("I can teach you how to cook Italian cuisine", result.getDescription());
+        assertEquals(2, result.getTimebank());
+        assertEquals("Istanbul", result.getProvince());
+        assertEquals("Kadikoy", result.getDistrict());
+        assertEquals("sxk3", result.getGeohash());
+        assertEquals("ACTIVE", result.getStatus());
+        assertNotNull(result.getCreatedAt());
+        assertNotNull(result.getUpdatedAt());
+        
+        // Check poster
+        assertNotNull(result.getPoster());
+        assertEquals(1, result.getPoster().getId());
+        assertEquals("Test User", result.getPoster().getName());
+        assertEquals("Newcomer", result.getPoster().getBadge());
+        
+        // Check tags
+        assertEquals(1, result.getTags().size());
+        assertTrue(result.getTags().contains("Cooking"));
+    }
+
+    @Test
+    void getServiceById_ShouldConvertRequestWithAllFields() {
+        // Arrange
+        when(offerRepository.findById(1)).thenReturn(Optional.empty());
+        when(requestRepository.findById(1)).thenReturn(Optional.of(testRequest));
+
+        // Act
+        ServiceDTO result = marketplaceService.getServiceById(1);
+
+        // Assert
+        assertNotNull(result);
+        assertEquals(1, result.getId());
+        assertEquals("REQUEST", result.getType());
+        assertEquals("Math Tutoring Needed", result.getTitle());
+        assertEquals("Looking for help with calculus", result.getDescription());
+        assertEquals(3, result.getTimebank());
+        assertEquals("Ankara", result.getProvince());
+        assertEquals("Cankaya", result.getDistrict());
+        assertEquals("syet", result.getGeohash());
+        assertEquals("ACTIVE", result.getStatus());
+        assertNotNull(result.getCreatedAt());
+        assertNotNull(result.getUpdatedAt());
+        
+        // Check poster (seeker for requests)
+        assertNotNull(result.getPoster());
+        assertEquals(2, result.getPoster().getId());
+        assertEquals("Badged User", result.getPoster().getName());
+        assertEquals("Top Contributor", result.getPoster().getBadge());
+        
+        // Check tags
+        assertEquals(1, result.getTags().size());
+        assertTrue(result.getTags().contains("Teaching"));
     }
 
     // ==================== MULTIPLE ENTITIES TESTS ====================

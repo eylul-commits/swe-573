@@ -92,15 +92,21 @@
 </template>
 
 <script setup lang="ts">
-import { computed } from 'vue'
+import { computed, ref, onMounted } from 'vue'
 import { MapPin, Plus, Minus, Locate } from 'lucide-vue-next'
 import Button from './ui/Button.vue'
 import { getAllServices } from '../services/dataService'
+import type { Service } from '../types'
 
 // Generate marker positions from services
-const services = getAllServices()
+const services = ref<Service[]>([])
+
+onMounted(async () => {
+  services.value = await getAllServices()
+})
+
 const markers = computed(() => {
-  return services.slice(0, 12).map((service, index) => ({
+  return services.value.slice(0, 12).map((service, index) => ({
     id: service.id,
     title: service.title,
     type: service.type,

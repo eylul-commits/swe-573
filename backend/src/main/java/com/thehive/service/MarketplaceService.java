@@ -1,5 +1,6 @@
 package com.thehive.service;
 
+import com.thehive.exception.ResourceNotFoundException;
 import com.thehive.model.dto.AuthorDTO;
 import com.thehive.model.dto.OfferDTO;
 import com.thehive.model.dto.RequestDTO;
@@ -45,7 +46,7 @@ public class MarketplaceService {
     @Transactional(readOnly = true)
     public OfferDTO getOfferById(Integer id) {
         Offer offer = offerRepository.findById(id)
-                .orElseThrow(() -> new RuntimeException("Offer not found with id: " + id));
+                .orElseThrow(() -> new ResourceNotFoundException("Offer not found with id: " + id));
         return convertToOfferDTO(offer);
     }
 
@@ -68,7 +69,7 @@ public class MarketplaceService {
     @Transactional(readOnly = true)
     public RequestDTO getRequestById(Integer id) {
         Request request = requestRepository.findById(id)
-                .orElseThrow(() -> new RuntimeException("Request not found with id: " + id));
+                .orElseThrow(() -> new ResourceNotFoundException("Request not found with id: " + id));
         return convertToRequestDTO(request);
     }
 
@@ -108,6 +109,24 @@ public class MarketplaceService {
                 .collect(Collectors.toList()));
         
         return services;
+    }
+
+    @Transactional(readOnly = true)
+    public ServiceDTO getServiceById(Integer id) {
+        // Try to find as offer first
+        var offer = offerRepository.findById(id);
+        if (offer.isPresent()) {
+            return convertOfferToServiceDTO(offer.get());
+        }
+        
+        // Try to find as request
+        var request = requestRepository.findById(id);
+        if (request.isPresent()) {
+            return convertRequestToServiceDTO(request.get());
+        }
+        
+        // If neither found, throw exception
+        throw new ResourceNotFoundException("Service not found with id: " + id);
     }
 
     // Helper methods to convert entities to DTOs

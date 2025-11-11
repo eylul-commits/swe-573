@@ -43,8 +43,8 @@ import { useAppStore } from '../../stores/appStore'
 
 const appStore = useAppStore()
 
-// Local state for selected service in Explore page
-const selectedServiceId = ref<string | null>('1')
+// Local state for selected service in Explore page  
+const selectedServiceId = ref<string | null>(null)
 
 const setSelectedServiceId = (serviceId: string) => {
   selectedServiceId.value = serviceId

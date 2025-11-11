@@ -52,17 +52,31 @@ INSERT INTO request_tags (request_id, tag_id) VALUES (3, 9);
 -- HANDSHAKES
 INSERT INTO handshakes (id, offer_id, seeker_id, provider_id, status, agreed_hours, created_at, completed_at)
 VALUES
-(1, 1, 2, 1, 'COMPLETED', 2, NOW() - INTERVAL '2 days', NOW());
+(1, 1, 2, 1, 'COMPLETED', 2, NOW() - INTERVAL '2 days', NOW()),
+(2, 2, 3, 2, 'COMPLETED', 3, NOW() - INTERVAL '5 days', NOW() - INTERVAL '2 days'),
+(3, 3, 1, 3, 'COMPLETED', 4, NOW() - INTERVAL '10 days', NOW() - INTERVAL '5 days'),
+(4, 5, 2, 3, 'COMPLETED', 3, NOW() - INTERVAL '7 days', NOW() - INTERVAL '3 days'),
+(5, 4, 1, 2, 'ACTIVE', 2, NOW() - INTERVAL '1 day', NULL);
 
 -- TIMEBANK TRANSACTIONS
 INSERT INTO timebank_transactions (id, sender_id, receiver_id, handshake_id, amount, description, created_at)
 VALUES
-(1, 1, 2, 1, 2, 'Time exchange for gardening help', NOW());
+(1, 1, 2, 1, 2, 'Time exchange for gardening help', NOW()),
+(2, 2, 3, 2, 3, 'Time exchange for programming tutoring', NOW() - INTERVAL '2 days'),
+(3, 3, 1, 3, 4, 'Time exchange for photography services', NOW() - INTERVAL '5 days'),
+(4, 3, 2, 4, 3, 'Time exchange for cooking classes', NOW() - INTERVAL '3 days');
 
 -- RATINGS
 INSERT INTO ratings (id, handshake_id, rater_id, ratee_id, punctuality, friendliness, communicative, preparedness, comment, created_at)
 VALUES
-(1, 1, 2, 1, 5, 5, 4, 5, 'Very reliable and friendly!', NOW());
+(1, 1, 2, 1, 5, 5, 4, 5, 'Very reliable and friendly!', NOW()),
+(2, 1, 1, 2, 5, 4, 5, 4, 'Great experience helping Bob with his garden. He was very appreciative!', NOW()),
+(3, 2, 3, 2, 5, 5, 5, 5, 'Bob is an excellent tutor! Very patient and explained concepts clearly. Highly recommend!', NOW() - INTERVAL '2 days'),
+(4, 2, 2, 3, 4, 5, 4, 4, 'Admin was a quick learner and asked great questions. Pleasure to teach!', NOW() - INTERVAL '2 days'),
+(5, 3, 1, 3, 5, 5, 5, 5, 'Amazing photographer! Captured beautiful moments at my event. Very professional!', NOW() - INTERVAL '5 days'),
+(6, 3, 3, 1, 5, 4, 5, 5, 'Alice was wonderful to work with. Clear about what she wanted and very organized.', NOW() - INTERVAL '5 days'),
+(7, 4, 2, 3, 4, 5, 4, 5, 'The cooking class was fantastic! Learned so much about Turkish cuisine. Will definitely attend again!', NOW() - INTERVAL '3 days'),
+(8, 4, 3, 2, 5, 5, 5, 4, 'Bob was enthusiastic and engaged during the class. Made teaching a joy!', NOW() - INTERVAL '3 days');
 
 -- BADGES
 INSERT INTO badges (id, name, description, icon_url)
@@ -102,6 +116,30 @@ INSERT INTO messages (id, sender_id, receiver_id, offer_id, content, created_at)
 VALUES
 (1, 2, 1, 1, 'Thanks again for helping with my garden!', NOW());
 
+-- QUESTIONS
+INSERT INTO questions (id, offer_id, request_id, asker_id, content, created_at)
+VALUES
+(1, 2, NULL, 1, 'Hi Bob! I''m interested in the programming tutoring. Do you cover web development frameworks like React?', NOW() - INTERVAL '3 days'),
+(2, 3, NULL, 2, 'What type of camera equipment do you use for portrait photography?', NOW() - INTERVAL '4 days'),
+(3, 5, NULL, 1, 'How many people can attend the cooking class at once? Is it one-on-one or a group session?', NOW() - INTERVAL '6 days'),
+(4, 4, NULL, 3, 'What level of English proficiency do you have? I''m looking to practice advanced conversation.', NOW() - INTERVAL '2 days'),
+(5, NULL, 2, 1, 'What grade level math are we talking about? I might be able to help with high school algebra and geometry.', NOW() - INTERVAL '4 days'),
+(6, NULL, 3, 1, 'What kind of bike do you have? I have some experience with road bikes and mountain bikes.', NOW() - INTERVAL '5 days'),
+(7, 1, NULL, 3, 'Do you also help with indoor plants or just outdoor gardening?', NOW() - INTERVAL '7 days'),
+(8, 2, NULL, 3, 'How long have you been programming? And do you teach beginners?', NOW() - INTERVAL '8 days');
+
+-- ANSWERS
+INSERT INTO answers (id, question_id, responder_id, content, created_at)
+VALUES
+(1, 1, 2, 'Yes! I cover React, Vue, and also Node.js for backend. We can focus on what you''re most interested in learning.', NOW() - INTERVAL '3 days' + INTERVAL '2 hours'),
+(2, 2, 3, 'I use a Canon EOS R5 with prime lenses. For portraits, I typically use an 85mm f/1.4 lens. Professional quality guaranteed!', NOW() - INTERVAL '4 days' + INTERVAL '1 hour'),
+(3, 3, 3, 'I prefer keeping classes intimate with max 3-4 people so everyone gets hands-on experience. But I can also do one-on-one if you prefer!', NOW() - INTERVAL '6 days' + INTERVAL '3 hours'),
+(4, 4, 2, 'I''d say I''m at an upper-intermediate to advanced level. I lived in the US for 2 years, so I''m comfortable with complex topics and idioms.', NOW() - INTERVAL '2 days' + INTERVAL '5 hours'),
+(5, 5, 3, 'It''s 10th grade level - algebra II and some trigonometry. That would be perfect if you can help with those topics!', NOW() - INTERVAL '4 days' + INTERVAL '4 hours'),
+(6, 6, 2, 'It''s a mountain bike with disc brakes. The gears are acting up. If you have experience with that, it would be great!', NOW() - INTERVAL '5 days' + INTERVAL '2 hours'),
+(7, 7, 1, 'Both! I have experience with houseplants as well. I can help with repotting, pest control, and general care tips.', NOW() - INTERVAL '7 days' + INTERVAL '1 hour'),
+(8, 8, 2, 'I''ve been coding for about 5 years professionally. Yes, I specialize in teaching beginners! I believe anyone can learn to code with the right guidance.', NOW() - INTERVAL '8 days' + INTERVAL '3 hours');
+
 -- Reset sequences to avoid conflicts with future inserts
 SELECT setval('users_id_seq', (SELECT MAX(id) FROM users));
 SELECT setval('offers_id_seq', (SELECT MAX(id) FROM offers));
@@ -114,3 +152,5 @@ SELECT setval('badges_id_seq', (SELECT MAX(id) FROM badges));
 SELECT setval('forum_topics_id_seq', (SELECT MAX(id) FROM forum_topics));
 SELECT setval('forum_posts_id_seq', (SELECT MAX(id) FROM forum_posts));
 SELECT setval('messages_id_seq', (SELECT MAX(id) FROM messages));
+SELECT setval('questions_id_seq', (SELECT MAX(id) FROM questions));
+SELECT setval('answers_id_seq', (SELECT MAX(id) FROM answers));

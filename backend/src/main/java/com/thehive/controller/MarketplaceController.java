@@ -67,6 +67,12 @@ public class MarketplaceController {
         return ResponseEntity.ok(services);
     }
 
+    @GetMapping("/services/{id}")
+    public ResponseEntity<ServiceDTO> getServiceById(@PathVariable Integer id) {
+        ServiceDTO service = marketplaceService.getServiceById(id);
+        return ResponseEntity.ok(service);
+    }
+
     @GetMapping("/services/nearby")
     public ResponseEntity<List<ServiceDTO>> getNearbyServices(
             @RequestHeader(value = "X-User-Id", defaultValue = "1") Integer userId,

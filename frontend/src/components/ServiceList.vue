@@ -296,7 +296,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed } from 'vue'
+import { ref, computed, onMounted, watch } from 'vue'
 import { Settings, Clock, Search, X, Award, MapPin } from 'lucide-vue-next'
 import Badge from './ui/Badge.vue'
 import Button from './ui/Button.vue'
@@ -312,6 +312,7 @@ import TabsList from './ui/TabsList.vue'
 import TabsTrigger from './ui/TabsTrigger.vue'
 import { filterServices, getAllTags } from '../services/dataService'
 import { useAppStore } from '../stores/appStore'
+import type { Service } from '../types'
 
 interface Props {
   selectedServiceId?: string | null
@@ -331,17 +332,43 @@ const searchQuery = ref('')
 const selectedTags = ref<string[]>([])
 const selectedBadge = ref('all')
 
-// Get all unique tags
-const allTags = getAllTags()
+// Data state
+const allTags = ref<string[]>([])
+const services = ref<Service[]>([])
+const isLoading = ref(true)
+
+// Load initial data
+onMounted(async () => {
+  try {
+    isLoading.value = true
+    const [tagsData, servicesData] = await Promise.all([
+      getAllTags(),
+      filterServices({})
+    ])
+    allTags.value = tagsData
+    services.value = servicesData
+  } catch (error) {
+    console.error('Failed to load data:', error)
+  } finally {
+    isLoading.value = false
+  }
+})
+
+// Watch filter changes and reload services
+watch([searchQuery, selectedTags, selectedBadge], async () => {
+  try {
+    services.value = await filterServices({
+      searchQuery: searchQuery.value,
+      tags: selectedTags.value,
+      badge: selectedBadge.value as any,
+    })
+  } catch (error) {
+    console.error('Failed to filter services:', error)
+  }
+}, { deep: true })
 
 // Filter services based on search, selected tags, and badge
-const filteredServices = computed(() => {
-  return filterServices({
-    searchQuery: searchQuery.value,
-    tags: selectedTags.value,
-    badge: selectedBadge.value as any,
-  })
-})
+const filteredServices = computed(() => services.value)
 
 const offers = computed(() => filteredServices.value.filter((s) => s.type === 'OFFER'))
 const requests = computed(() => filteredServices.value.filter((s) => s.type === 'REQUEST'))
