@@ -277,6 +277,14 @@ import Badge from '../ui/Badge.vue'
 import { useAppStore } from '../../stores/appStore'
 import { createOffer, createRequest, type CreateOfferPayload, type CreateRequestPayload } from '../../services/marketplaceService'
 
+// Fix Leaflet default icon issue with bundlers
+delete (L.Icon.Default.prototype as any)._getIconUrl
+L.Icon.Default.mergeOptions({
+  iconRetinaUrl: 'https://unpkg.com/leaflet@1.9.4/dist/images/marker-icon-2x.png',
+  iconUrl: 'https://unpkg.com/leaflet@1.9.4/dist/images/marker-icon.png',
+  shadowUrl: 'https://unpkg.com/leaflet@1.9.4/dist/images/marker-shadow.png',
+})
+
 const appStore = useAppStore()
 
 // Service type selection
@@ -322,37 +330,45 @@ const provinces = ref([
 
 // Initialize map
 onMounted(() => {
-  if (mapContainer.value) {
-    // Create map centered on Turkey
-    map = L.map(mapContainer.value).setView([39.9334, 32.8597], 6)
-    
-    // Add OpenStreetMap tiles
-    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-      attribution: '© OpenStreetMap contributors',
-      maxZoom: 19
-    }).addTo(map)
-    
-    // Add click event to map
-    map.on('click', (e: L.LeafletMouseEvent) => {
-      const { lat, lng } = e.latlng
+  // Use setTimeout to ensure the container is fully rendered
+  setTimeout(() => {
+    if (mapContainer.value) {
+      // Create map centered on Turkey
+      map = L.map(mapContainer.value).setView([39.9334, 32.8597], 6)
       
-      // Update selected location
-      selectedLocation.value = { lat, lng }
+      // Add OpenStreetMap tiles
+      L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+        attribution: '© OpenStreetMap contributors',
+        maxZoom: 19
+      }).addTo(map)
       
-      // Generate geohash
-      formData.value.geohash = encode(lat, lng, 9)
+      // Invalidate size after a short delay to ensure proper rendering
+      setTimeout(() => {
+        map?.invalidateSize()
+      }, 100)
       
-      // Remove existing marker if any
-      if (marker) {
-        map?.removeLayer(marker)
-      }
-      
-      // Add new marker
-      marker = L.marker([lat, lng]).addTo(map!)
-        .bindPopup(`Selected location<br>Lat: ${lat.toFixed(6)}<br>Lng: ${lng.toFixed(6)}`)
-        .openPopup()
-    })
-  }
+      // Add click event to map
+      map.on('click', (e: L.LeafletMouseEvent) => {
+        const { lat, lng } = e.latlng
+        
+        // Update selected location
+        selectedLocation.value = { lat, lng }
+        
+        // Generate geohash
+        formData.value.geohash = encode(lat, lng, 9)
+        
+        // Remove existing marker if any
+        if (marker) {
+          map?.removeLayer(marker)
+        }
+        
+        // Add new marker
+        marker = L.marker([lat, lng]).addTo(map!)
+          .bindPopup(`Selected location<br>Lat: ${lat.toFixed(6)}<br>Lng: ${lng.toFixed(6)}`)
+          .openPopup()
+      })
+    }
+  }, 0)
 })
 
 onUnmounted(() => {

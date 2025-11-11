@@ -11,8 +11,10 @@ import lombok.NoArgsConstructor;
 @AllArgsConstructor
 public class CreateHandshakeRequest {
     
-    @NotNull(message = "Offer ID is required")
+    // Either offerId or requestId must be provided (but not both)
     private Integer offerId;
+    
+    private Integer requestId;
     
     @NotNull(message = "Provider ID is required")
     private Integer providerId;

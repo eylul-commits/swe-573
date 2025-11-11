@@ -69,7 +69,8 @@ export async function createHandshakeChannel(
       ],
       // Custom data
       handshake_id: handshake.id,
-      offer_id: handshake.offerId,
+      offer_id: handshake.offerId || null,
+      request_id: handshake.requestId || null,
       agreed_hours: handshake.agreedHours,
       status: handshake.status,
     });

@@ -9,11 +9,13 @@ import com.thehive.model.dto.HandshakeDTO;
 import com.thehive.model.entity.Handshake;
 import com.thehive.model.entity.Offer;
 import com.thehive.model.entity.Rating;
+import com.thehive.model.entity.Request;
 import com.thehive.model.entity.User;
 import com.thehive.model.enums.HandshakeStatus;
 import com.thehive.repository.HandshakeRepository;
 import com.thehive.repository.OfferRepository;
 import com.thehive.repository.RatingRepository;
+import com.thehive.repository.RequestRepository;
 import com.thehive.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
@@ -29,14 +31,42 @@ public class HandshakeService {
 
     private final HandshakeRepository handshakeRepository;
     private final OfferRepository offerRepository;
+    private final RequestRepository requestRepository;
     private final UserRepository userRepository;
     private final RatingRepository ratingRepository;
 
     @Transactional
     public HandshakeDTO createHandshake(CreateHandshakeRequest request, Integer seekerId) {
-        // Validate offer exists
-        Offer offer = offerRepository.findById(request.getOfferId())
-                .orElseThrow(() -> new ResourceNotFoundException("Offer not found with id: " + request.getOfferId()));
+        // Validate that either offerId or requestId is provided (but not both)
+        if ((request.getOfferId() == null && request.getRequestId() == null) ||
+            (request.getOfferId() != null && request.getRequestId() != null)) {
+            throw new IllegalArgumentException("Either offerId or requestId must be provided (but not both)");
+        }
+
+        Offer offer = null;
+        Request serviceRequest = null;
+        Integer defaultHours;
+
+        // Validate offer or request exists
+        if (request.getOfferId() != null) {
+            offer = offerRepository.findById(request.getOfferId())
+                    .orElseThrow(() -> new ResourceNotFoundException("Offer not found with id: " + request.getOfferId()));
+            defaultHours = offer.getDurationHours();
+            
+            // Check if handshake already exists for this offer
+            if (handshakeRepository.findByOfferIdAndSeekerId(request.getOfferId(), seekerId).isPresent()) {
+                throw new IllegalStateException("Handshake already exists for this offer and seeker");
+            }
+        } else {
+            serviceRequest = requestRepository.findById(request.getRequestId())
+                    .orElseThrow(() -> new ResourceNotFoundException("Request not found with id: " + request.getRequestId()));
+            defaultHours = serviceRequest.getDurationHours();
+            
+            // Check if handshake already exists for this request
+            if (handshakeRepository.findByRequestIdAndSeekerId(request.getRequestId(), seekerId).isPresent()) {
+                throw new IllegalStateException("Handshake already exists for this request and seeker");
+            }
+        }
 
         // Validate seeker
         User seeker = userRepository.findById(seekerId)
@@ -46,17 +76,13 @@ public class HandshakeService {
         User provider = userRepository.findById(request.getProviderId())
                 .orElseThrow(() -> new ResourceNotFoundException("Provider not found with id: " + request.getProviderId()));
 
-        // Check if handshake already exists
-        if (handshakeRepository.findByOfferIdAndSeekerId(request.getOfferId(), seekerId).isPresent()) {
-            throw new IllegalStateException("Handshake already exists for this offer and seeker");
-        }
-
         // Create handshake
         Handshake handshake = new Handshake();
         handshake.setOffer(offer);
+        handshake.setRequest(serviceRequest);
         handshake.setSeeker(seeker);
         handshake.setProvider(provider);
-        handshake.setAgreedHours(request.getAgreedHours() != null ? request.getAgreedHours() : offer.getDurationHours());
+        handshake.setAgreedHours(request.getAgreedHours() != null ? request.getAgreedHours() : defaultHours);
         handshake.setStatus(HandshakeStatus.PENDING);
         handshake.setSeekerConfirmed(false);
         handshake.setProviderConfirmed(false);
@@ -198,8 +224,18 @@ public class HandshakeService {
     private HandshakeDTO convertToDTO(Handshake handshake, Integer currentUserId) {
         HandshakeDTO dto = new HandshakeDTO();
         dto.setId(handshake.getId());
-        dto.setOfferId(handshake.getOffer().getId());
-        dto.setOfferTitle(handshake.getOffer().getTitle());
+        
+        // Set either offerId or requestId and title based on which one exists
+        if (handshake.getOffer() != null) {
+            dto.setOfferId(handshake.getOffer().getId());
+            dto.setOfferTitle(handshake.getOffer().getTitle());
+            dto.setRequestId(null);
+        } else if (handshake.getRequest() != null) {
+            dto.setRequestId(handshake.getRequest().getId());
+            dto.setOfferTitle(handshake.getRequest().getTitle());
+            dto.setOfferId(null);
+        }
+        
         dto.setSeeker(convertToAuthorDTO(handshake.getSeeker()));
         dto.setProvider(convertToAuthorDTO(handshake.getProvider()));
         dto.setStatus(handshake.getStatus());

@@ -186,8 +186,9 @@ export type HandshakeStatus = "PENDING" | "CONFIRMED" | "COMPLETED" | "CANCELLED
 
 export interface Handshake {
   id: number;
-  offerId: number;
-  offerTitle: string;
+  offerId?: number; // null if this is for a request
+  requestId?: number; // null if this is for an offer
+  offerTitle: string; // title of the service (either offer or request)
   seeker: AuthorSummary;
   provider: AuthorSummary;
   status: HandshakeStatus;
@@ -200,7 +201,8 @@ export interface Handshake {
 }
 
 export interface CreateHandshakeRequest {
-  offerId: number;
+  offerId?: number; // For offers
+  requestId?: number; // For requests (either offerId or requestId must be provided)
   providerId: number;
   agreedHours: number;
 }

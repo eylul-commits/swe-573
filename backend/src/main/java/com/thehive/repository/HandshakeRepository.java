@@ -15,6 +15,8 @@ public interface HandshakeRepository extends JpaRepository<Handshake, Integer> {
     
     List<Handshake> findByOfferId(Integer offerId);
     
+    List<Handshake> findByRequestId(Integer requestId);
+    
     List<Handshake> findBySeekerId(Integer seekerId);
     
     List<Handshake> findByProviderId(Integer providerId);
@@ -25,6 +27,9 @@ public interface HandshakeRepository extends JpaRepository<Handshake, Integer> {
     
     @Query("SELECT h FROM Handshake h WHERE h.offer.id = :offerId AND h.seeker.id = :seekerId")
     Optional<Handshake> findByOfferIdAndSeekerId(@Param("offerId") Integer offerId, @Param("seekerId") Integer seekerId);
+    
+    @Query("SELECT h FROM Handshake h WHERE h.request.id = :requestId AND h.seeker.id = :seekerId")
+    Optional<Handshake> findByRequestIdAndSeekerId(@Param("requestId") Integer requestId, @Param("seekerId") Integer seekerId);
     
     @Query("SELECT h FROM Handshake h WHERE (h.seeker.id = :userId OR h.provider.id = :userId) AND h.status = :status")
     List<Handshake> findByUserIdAndStatus(@Param("userId") Integer userId, @Param("status") HandshakeStatus status);

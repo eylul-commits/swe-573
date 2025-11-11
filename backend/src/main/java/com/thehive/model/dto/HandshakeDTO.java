@@ -12,8 +12,9 @@ import java.time.LocalDateTime;
 @AllArgsConstructor
 public class HandshakeDTO {
     private Integer id;
-    private Integer offerId;
-    private String offerTitle;
+    private Integer offerId; // null if this is for a request
+    private Integer requestId; // null if this is for an offer
+    private String offerTitle; // title of the service (either offer or request)
     private AuthorDTO seeker;
     private AuthorDTO provider;
     private HandshakeStatus status;

@@ -14,6 +14,7 @@ import com.thehive.model.enums.ItemStatus;
 import com.thehive.repository.HandshakeRepository;
 import com.thehive.repository.OfferRepository;
 import com.thehive.repository.RatingRepository;
+import com.thehive.repository.RequestRepository;
 import com.thehive.repository.UserRepository;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -37,6 +38,9 @@ class HandshakeServiceTest {
 
     @Mock
     private OfferRepository offerRepository;
+
+    @Mock
+    private RequestRepository requestRepository;
 
     @Mock
     private UserRepository userRepository;
@@ -143,8 +147,6 @@ class HandshakeServiceTest {
         request.setProviderId(2);
 
         when(offerRepository.findById(1)).thenReturn(Optional.of(offer));
-        when(userRepository.findById(1)).thenReturn(Optional.of(seeker));
-        when(userRepository.findById(2)).thenReturn(Optional.of(provider));
         when(handshakeRepository.findByOfferIdAndSeekerId(1, 1))
             .thenReturn(Optional.of(handshake));
 

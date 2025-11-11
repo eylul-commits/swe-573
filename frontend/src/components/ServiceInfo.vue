@@ -120,9 +120,17 @@
             </div>
           </div>
           <div class="space-y-2">
-            <Button class="bg-gray-900 hover:bg-gray-800 text-white w-full">
-              {{ service.type === 'OFFER' ? 'Accept Offer' : 'Offer Help' }}
+            <Button 
+              @click="handleAcceptService"
+              :disabled="isAccepting || service.poster.id === appStore.currentUser?.id.toString()"
+              class="bg-gray-900 hover:bg-gray-800 text-white w-full disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              <span v-if="isAccepting">{{ service.type === 'OFFER' ? 'Accepting...' : 'Sending...' }}</span>
+              <span v-else-if="service.poster.id === appStore.currentUser?.id.toString()">Your Service</span>
+              <span v-else>{{ service.type === 'OFFER' ? 'Accept Offer' : 'Offer Help' }}</span>
             </Button>
+            <p v-if="acceptError" class="text-xs text-red-600">{{ acceptError }}</p>
+            <p v-if="acceptSuccess" class="text-xs text-emerald-600">{{ acceptSuccess }}</p>
             <Button v-if="onViewFullDetails" variant="outline" class="w-full" @click="() => onViewFullDetails?.(serviceId)">
               View Full Details
             </Button>
@@ -289,8 +297,13 @@ import TabsList from './ui/TabsList.vue'
 import TabsTrigger from './ui/TabsTrigger.vue'
 import Textarea from './ui/Textarea.vue'
 import { getServiceById, getServiceRatings, getServiceQuestions } from '../services/dataService'
+import { createHandshake } from '../services/handshakeService'
+import { createHandshakeChannel, isStreamChatInitialized } from '../services/streamChatService'
+import { useAppStore } from '../stores/appStore'
 import { formatDistanceToNow, formatDate } from '../utils/dateUtils'
 import type { Service, ServiceRatingsResponse, ServiceQuestion as ServiceQuestionDTO } from '../types'
+
+const appStore = useAppStore()
 
 interface ServiceInfoProps {
   serviceId: string
@@ -338,6 +351,9 @@ const questions = ref<UiQuestion[]>([])
 const averageRatings = ref<AverageRatings | null>(null)
 const totalReviews = ref(0)
 const isLoading = ref(false)
+const isAccepting = ref(false)
+const acceptError = ref('')
+const acceptSuccess = ref('')
 
 let activeRequestId = 0
 
@@ -518,6 +534,71 @@ const handleAskQuestion = () => {
     // In a real app, this would send the question to the backend
     console.log("Asking question:", questionText.value)
     questionText.value = ""
+  }
+}
+
+const handleAcceptService = async () => {
+  if (!service.value || !appStore.currentUser) {
+    acceptError.value = 'Please log in to accept services'
+    return
+  }
+
+  // Don't allow users to accept their own services
+  if (service.value.poster.id === appStore.currentUser.id.toString()) {
+    acceptError.value = 'You cannot accept your own service'
+    return
+  }
+
+  isAccepting.value = true
+  acceptError.value = ''
+  acceptSuccess.value = ''
+
+  try {
+    // Parse the timebank hours
+    const agreedHours = parseInt(service.value.timebank.replace(/[^\d]/g, '')) || 1
+
+    // Create the handshake (pass either offerId or requestId based on type)
+    const handshakeRequest: any = {
+      providerId: parseInt(service.value.poster.id),
+      agreedHours: agreedHours
+    }
+    
+    if (service.value.type === 'OFFER') {
+      handshakeRequest.offerId = parseInt(service.value.id)
+    } else {
+      handshakeRequest.requestId = parseInt(service.value.id)
+    }
+    
+    const handshake = await createHandshake(handshakeRequest)
+
+    console.log('Handshake created:', handshake)
+    
+    // Create Stream Chat channel
+    if (isStreamChatInitialized()) {
+      try {
+        const channel = await createHandshakeChannel(handshake)
+        console.log('Stream Chat channel created:', channel.id)
+        
+        await channel.sendMessage({
+          text: `🤝 ${service.value.type === 'OFFER' ? 'Offer accepted' : 'Help offered'}! You can now coordinate the details for "${handshake.offerTitle}". Duration: ${handshake.agreedHours} hours.`,
+          type: 'system',
+        })
+      } catch (chatError) {
+        console.error('Failed to create Stream Chat channel:', chatError)
+      }
+    }
+    
+    acceptSuccess.value = '✅ Success! Chat created.'
+    
+    setTimeout(() => {
+      appStore.setCurrentPage('messages')
+    }, 1500)
+
+  } catch (error: any) {
+    console.error('Failed to accept service:', error)
+    acceptError.value = error.response?.data?.message || 'Failed to accept. Try again.'
+  } finally {
+    isAccepting.value = false
   }
 }
 </script>
