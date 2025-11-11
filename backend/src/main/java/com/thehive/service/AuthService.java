@@ -4,13 +4,17 @@ import com.thehive.model.dto.AuthResponse;
 import com.thehive.model.dto.LoginRequest;
 import com.thehive.model.dto.RegisterRequest;
 import com.thehive.model.dto.UserDTO;
+import com.thehive.model.entity.TimebankTransaction;
 import com.thehive.model.entity.User;
+import com.thehive.repository.TimebankTransactionRepository;
 import com.thehive.repository.UserRepository;
 import com.thehive.security.JwtUtil;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+
+import java.util.List;
 
 @Service
 @RequiredArgsConstructor
@@ -19,6 +23,7 @@ public class AuthService {
     private final UserRepository userRepository;
     private final PasswordEncoder passwordEncoder;
     private final JwtUtil jwtUtil;
+    private final TimebankTransactionRepository timebankTransactionRepository;
 
     @Transactional
     public AuthResponse register(RegisterRequest request) {
@@ -83,6 +88,22 @@ public class AuthService {
         dto.setGeohash(user.getGeohash());
         dto.setRole(user.getRole());
         dto.setBalanceHours(user.getBalanceHours());
+        
+        // Calculate hours given and received from timebank transactions
+        List<TimebankTransaction> sentTransactions = timebankTransactionRepository.findBySenderId(user.getId());
+        List<TimebankTransaction> receivedTransactions = timebankTransactionRepository.findByReceiverId(user.getId());
+        
+        int hoursGiven = sentTransactions.stream()
+                .mapToInt(t -> t.getAmount() != null ? t.getAmount() : 0)
+                .sum();
+        
+        int hoursReceived = receivedTransactions.stream()
+                .mapToInt(t -> t.getAmount() != null ? t.getAmount() : 0)
+                .sum();
+        
+        dto.setHoursGiven(hoursGiven);
+        dto.setHoursReceived(hoursReceived);
+        
         return dto;
     }
 }

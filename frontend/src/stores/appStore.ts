@@ -30,8 +30,8 @@ export const useAppStore = defineStore('app', () => {
     const mappedUser: User = {
       ...user,
       timebankBalance: user.balanceHours,
-      hoursGiven: 0, // TODO: Get from backend
-      hoursReceived: 0, // TODO: Get from backend
+      hoursGiven: user.hoursGiven || 0,
+      hoursReceived: user.hoursReceived || 0,
       location: user.district && user.province ? `${user.district}, ${user.province}` : undefined,
     }
     currentUser.value = mappedUser

@@ -14,5 +14,7 @@ public class UserDTO {
     private String geohash;
     private UserRole role;
     private Integer balanceHours;
+    private Integer hoursGiven;
+    private Integer hoursReceived;
 }
 

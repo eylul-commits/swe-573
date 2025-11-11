@@ -6,6 +6,7 @@ import com.thehive.model.dto.RegisterRequest;
 import com.thehive.model.dto.UserDTO;
 import com.thehive.model.entity.User;
 import com.thehive.model.enums.UserRole;
+import com.thehive.repository.TimebankTransactionRepository;
 import com.thehive.repository.UserRepository;
 import com.thehive.security.JwtUtil;
 import org.junit.jupiter.api.BeforeEach;
@@ -16,6 +17,7 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.security.crypto.password.PasswordEncoder;
 
+import java.util.Collections;
 import java.util.Optional;
 
 import static org.junit.jupiter.api.Assertions.*;
@@ -34,6 +36,9 @@ class AuthServiceTest {
 
     @Mock
     private JwtUtil jwtUtil;
+
+    @Mock
+    private TimebankTransactionRepository timebankTransactionRepository;
 
     @InjectMocks
     private AuthService authService;
@@ -73,6 +78,8 @@ class AuthServiceTest {
         when(passwordEncoder.encode(registerRequest.getPassword())).thenReturn("$2a$10$hashedPassword");
         when(userRepository.save(any(User.class))).thenReturn(testUser);
         when(jwtUtil.generateToken(anyString(), any(Integer.class))).thenReturn("jwt-token");
+        when(timebankTransactionRepository.findBySenderId(any(Integer.class))).thenReturn(Collections.emptyList());
+        when(timebankTransactionRepository.findByReceiverId(any(Integer.class))).thenReturn(Collections.emptyList());
 
         // Act
         AuthResponse response = authService.register(registerRequest);
@@ -85,6 +92,8 @@ class AuthServiceTest {
         assertEquals(testUser.getEmail(), response.getUser().getEmail());
         assertEquals(testUser.getName(), response.getUser().getName());
         assertEquals(3, response.getUser().getBalanceHours());
+        assertEquals(0, response.getUser().getHoursGiven());
+        assertEquals(0, response.getUser().getHoursReceived());
 
         // Verify interactions
         verify(userRepository).existsByEmail(registerRequest.getEmail());
@@ -118,6 +127,8 @@ class AuthServiceTest {
         when(userRepository.findByEmail(loginRequest.getEmail())).thenReturn(Optional.of(testUser));
         when(passwordEncoder.matches(loginRequest.getPassword(), testUser.getPasswordHash())).thenReturn(true);
         when(jwtUtil.generateToken(testUser.getEmail(), testUser.getId())).thenReturn("jwt-token");
+        when(timebankTransactionRepository.findBySenderId(any(Integer.class))).thenReturn(Collections.emptyList());
+        when(timebankTransactionRepository.findByReceiverId(any(Integer.class))).thenReturn(Collections.emptyList());
 
         // Act
         AuthResponse response = authService.login(loginRequest);
@@ -130,6 +141,8 @@ class AuthServiceTest {
         assertEquals(testUser.getEmail(), response.getUser().getEmail());
         assertEquals(testUser.getName(), response.getUser().getName());
         assertEquals(testUser.getBalanceHours(), response.getUser().getBalanceHours());
+        assertEquals(0, response.getUser().getHoursGiven());
+        assertEquals(0, response.getUser().getHoursReceived());
 
         // Verify interactions
         verify(userRepository).findByEmail(loginRequest.getEmail());
@@ -180,6 +193,8 @@ class AuthServiceTest {
         // Arrange
         Integer userId = 1;
         when(userRepository.findById(userId)).thenReturn(Optional.of(testUser));
+        when(timebankTransactionRepository.findBySenderId(userId)).thenReturn(Collections.emptyList());
+        when(timebankTransactionRepository.findByReceiverId(userId)).thenReturn(Collections.emptyList());
 
         // Act
         UserDTO result = authService.getCurrentUser(userId);
@@ -195,9 +210,13 @@ class AuthServiceTest {
         assertEquals(testUser.getGeohash(), result.getGeohash());
         assertEquals(testUser.getRole(), result.getRole());
         assertEquals(testUser.getBalanceHours(), result.getBalanceHours());
+        assertEquals(0, result.getHoursGiven());
+        assertEquals(0, result.getHoursReceived());
 
         // Verify
         verify(userRepository).findById(userId);
+        verify(timebankTransactionRepository).findBySenderId(userId);
+        verify(timebankTransactionRepository).findByReceiverId(userId);
     }
 
     @Test
