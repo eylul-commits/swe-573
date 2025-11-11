@@ -10,10 +10,11 @@ public class WebConfig implements WebMvcConfigurer {
     @Override
     public void addCorsMappings(CorsRegistry registry) {
         registry.addMapping("/api/**")  // Apply to all API endpoints
-                .allowedOrigins(
-                    "http://localhost:3000",  // Development frontend
-                    "http://frontend:80"      // Docker container network
-                )
+        .allowedOrigins(
+            "http://localhost:3000",                  // local dev
+            "http://frontend:80",                     // Docker internal
+            "https://swe-573-frontend.onrender.com"   //  deployed frontend
+        )
                 .allowedMethods("GET", "POST", "PUT", "DELETE", "OPTIONS")
                 .allowedHeaders("*")
                 .allowCredentials(true)
