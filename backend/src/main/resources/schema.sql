@@ -9,12 +9,22 @@ CREATE TABLE IF NOT EXISTS users (
     bio TEXT,
     province VARCHAR(100),
     district VARCHAR(100),
-    geohash VARCHAR(20),
     role VARCHAR(20) DEFAULT 'USER',
     balance_hours INT DEFAULT 3,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
+
+-- Add geohash column if it doesn't exist
+DO $$
+BEGIN
+    IF NOT EXISTS (
+        SELECT 1 FROM information_schema.columns 
+        WHERE table_name = 'users' AND column_name = 'geohash'
+    ) THEN
+        ALTER TABLE users ADD COLUMN geohash VARCHAR(20);
+    END IF;
+END $$;
 
 -- Offers table
 CREATE TABLE IF NOT EXISTS offers (
@@ -27,11 +37,21 @@ CREATE TABLE IF NOT EXISTS offers (
     end_date DATE,
     province VARCHAR(100),
     district VARCHAR(100),
-    geohash VARCHAR(20),
     status VARCHAR(20) DEFAULT 'ACTIVE',
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
+
+-- Add geohash column if it doesn't exist
+DO $$
+BEGIN
+    IF NOT EXISTS (
+        SELECT 1 FROM information_schema.columns 
+        WHERE table_name = 'offers' AND column_name = 'geohash'
+    ) THEN
+        ALTER TABLE offers ADD COLUMN geohash VARCHAR(20);
+    END IF;
+END $$;
 
 -- Requests table
 CREATE TABLE IF NOT EXISTS requests (
@@ -44,11 +64,21 @@ CREATE TABLE IF NOT EXISTS requests (
     end_date DATE,
     province VARCHAR(100),
     district VARCHAR(100),
-    geohash VARCHAR(20),
     status VARCHAR(20) DEFAULT 'ACTIVE',
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
+
+-- Add geohash column if it doesn't exist
+DO $$
+BEGIN
+    IF NOT EXISTS (
+        SELECT 1 FROM information_schema.columns 
+        WHERE table_name = 'requests' AND column_name = 'geohash'
+    ) THEN
+        ALTER TABLE requests ADD COLUMN geohash VARCHAR(20);
+    END IF;
+END $$;
 
 -- Semantic tags table
 CREATE TABLE IF NOT EXISTS semantic_tags (
@@ -191,38 +221,130 @@ CREATE TABLE IF NOT EXISTS forum_posts (
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
--- Add foreign key constraints
-ALTER TABLE offers ADD CONSTRAINT fk_offers_provider FOREIGN KEY (provider_id) REFERENCES users(id);
-ALTER TABLE requests ADD CONSTRAINT fk_requests_seeker FOREIGN KEY (seeker_id) REFERENCES users(id);
-ALTER TABLE offer_tags ADD CONSTRAINT fk_offer_tags_offer FOREIGN KEY (offer_id) REFERENCES offers(id) ON DELETE CASCADE;
-ALTER TABLE offer_tags ADD CONSTRAINT fk_offer_tags_tag FOREIGN KEY (tag_id) REFERENCES semantic_tags(id) ON DELETE CASCADE;
-ALTER TABLE request_tags ADD CONSTRAINT fk_request_tags_request FOREIGN KEY (request_id) REFERENCES requests(id) ON DELETE CASCADE;
-ALTER TABLE request_tags ADD CONSTRAINT fk_request_tags_tag FOREIGN KEY (tag_id) REFERENCES semantic_tags(id) ON DELETE CASCADE;
-ALTER TABLE handshakes ADD CONSTRAINT fk_handshakes_offer FOREIGN KEY (offer_id) REFERENCES offers(id);
-ALTER TABLE handshakes ADD CONSTRAINT fk_handshakes_seeker FOREIGN KEY (seeker_id) REFERENCES users(id);
-ALTER TABLE handshakes ADD CONSTRAINT fk_handshakes_provider FOREIGN KEY (provider_id) REFERENCES users(id);
-ALTER TABLE timebank_transactions ADD CONSTRAINT fk_transactions_sender FOREIGN KEY (sender_id) REFERENCES users(id);
-ALTER TABLE timebank_transactions ADD CONSTRAINT fk_transactions_receiver FOREIGN KEY (receiver_id) REFERENCES users(id);
-ALTER TABLE timebank_transactions ADD CONSTRAINT fk_transactions_handshake FOREIGN KEY (handshake_id) REFERENCES handshakes(id);
-ALTER TABLE ratings ADD CONSTRAINT fk_ratings_handshake FOREIGN KEY (handshake_id) REFERENCES handshakes(id);
-ALTER TABLE ratings ADD CONSTRAINT fk_ratings_rater FOREIGN KEY (rater_id) REFERENCES users(id);
-ALTER TABLE ratings ADD CONSTRAINT fk_ratings_ratee FOREIGN KEY (ratee_id) REFERENCES users(id);
-ALTER TABLE questions ADD CONSTRAINT fk_questions_offer FOREIGN KEY (offer_id) REFERENCES offers(id);
-ALTER TABLE questions ADD CONSTRAINT fk_questions_request FOREIGN KEY (request_id) REFERENCES requests(id);
-ALTER TABLE questions ADD CONSTRAINT fk_questions_asker FOREIGN KEY (asker_id) REFERENCES users(id);
-ALTER TABLE answers ADD CONSTRAINT fk_answers_question FOREIGN KEY (question_id) REFERENCES questions(id);
-ALTER TABLE answers ADD CONSTRAINT fk_answers_responder FOREIGN KEY (responder_id) REFERENCES users(id);
-ALTER TABLE user_badges ADD CONSTRAINT fk_user_badges_user FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE;
-ALTER TABLE user_badges ADD CONSTRAINT fk_user_badges_badge FOREIGN KEY (badge_id) REFERENCES badges(id) ON DELETE CASCADE;
-ALTER TABLE reports ADD CONSTRAINT fk_reports_reporter FOREIGN KEY (reporter_id) REFERENCES users(id);
-ALTER TABLE reports ADD CONSTRAINT fk_reports_reported FOREIGN KEY (reported_user_id) REFERENCES users(id);
-ALTER TABLE messages ADD CONSTRAINT fk_messages_sender FOREIGN KEY (sender_id) REFERENCES users(id);
-ALTER TABLE messages ADD CONSTRAINT fk_messages_receiver FOREIGN KEY (receiver_id) REFERENCES users(id);
-ALTER TABLE messages ADD CONSTRAINT fk_messages_offer FOREIGN KEY (offer_id) REFERENCES offers(id);
-ALTER TABLE messages ADD CONSTRAINT fk_messages_request FOREIGN KEY (request_id) REFERENCES requests(id);
-ALTER TABLE messages ADD CONSTRAINT fk_messages_handshake FOREIGN KEY (handshake_id) REFERENCES handshakes(id);
-ALTER TABLE forum_topics ADD CONSTRAINT fk_forum_topics_author FOREIGN KEY (author_id) REFERENCES users(id);
-ALTER TABLE forum_posts ADD CONSTRAINT fk_forum_posts_topic FOREIGN KEY (topic_id) REFERENCES forum_topics(id) ON DELETE CASCADE;
-ALTER TABLE forum_posts ADD CONSTRAINT fk_forum_posts_author FOREIGN KEY (author_id) REFERENCES users(id);
+-- Add foreign key constraints (only if they don't exist)
+DO $$
+BEGIN
+    -- Offers constraints
+    IF NOT EXISTS (SELECT 1 FROM pg_constraint WHERE conname = 'fk_offers_provider') THEN
+        ALTER TABLE offers ADD CONSTRAINT fk_offers_provider FOREIGN KEY (provider_id) REFERENCES users(id);
+    END IF;
+    
+    -- Requests constraints
+    IF NOT EXISTS (SELECT 1 FROM pg_constraint WHERE conname = 'fk_requests_seeker') THEN
+        ALTER TABLE requests ADD CONSTRAINT fk_requests_seeker FOREIGN KEY (seeker_id) REFERENCES users(id);
+    END IF;
+    
+    -- Offer tags constraints
+    IF NOT EXISTS (SELECT 1 FROM pg_constraint WHERE conname = 'fk_offer_tags_offer') THEN
+        ALTER TABLE offer_tags ADD CONSTRAINT fk_offer_tags_offer FOREIGN KEY (offer_id) REFERENCES offers(id) ON DELETE CASCADE;
+    END IF;
+    IF NOT EXISTS (SELECT 1 FROM pg_constraint WHERE conname = 'fk_offer_tags_tag') THEN
+        ALTER TABLE offer_tags ADD CONSTRAINT fk_offer_tags_tag FOREIGN KEY (tag_id) REFERENCES semantic_tags(id) ON DELETE CASCADE;
+    END IF;
+    
+    -- Request tags constraints
+    IF NOT EXISTS (SELECT 1 FROM pg_constraint WHERE conname = 'fk_request_tags_request') THEN
+        ALTER TABLE request_tags ADD CONSTRAINT fk_request_tags_request FOREIGN KEY (request_id) REFERENCES requests(id) ON DELETE CASCADE;
+    END IF;
+    IF NOT EXISTS (SELECT 1 FROM pg_constraint WHERE conname = 'fk_request_tags_tag') THEN
+        ALTER TABLE request_tags ADD CONSTRAINT fk_request_tags_tag FOREIGN KEY (tag_id) REFERENCES semantic_tags(id) ON DELETE CASCADE;
+    END IF;
+    
+    -- Handshakes constraints
+    IF NOT EXISTS (SELECT 1 FROM pg_constraint WHERE conname = 'fk_handshakes_offer') THEN
+        ALTER TABLE handshakes ADD CONSTRAINT fk_handshakes_offer FOREIGN KEY (offer_id) REFERENCES offers(id);
+    END IF;
+    IF NOT EXISTS (SELECT 1 FROM pg_constraint WHERE conname = 'fk_handshakes_seeker') THEN
+        ALTER TABLE handshakes ADD CONSTRAINT fk_handshakes_seeker FOREIGN KEY (seeker_id) REFERENCES users(id);
+    END IF;
+    IF NOT EXISTS (SELECT 1 FROM pg_constraint WHERE conname = 'fk_handshakes_provider') THEN
+        ALTER TABLE handshakes ADD CONSTRAINT fk_handshakes_provider FOREIGN KEY (provider_id) REFERENCES users(id);
+    END IF;
+    
+    -- Timebank transactions constraints
+    IF NOT EXISTS (SELECT 1 FROM pg_constraint WHERE conname = 'fk_transactions_sender') THEN
+        ALTER TABLE timebank_transactions ADD CONSTRAINT fk_transactions_sender FOREIGN KEY (sender_id) REFERENCES users(id);
+    END IF;
+    IF NOT EXISTS (SELECT 1 FROM pg_constraint WHERE conname = 'fk_transactions_receiver') THEN
+        ALTER TABLE timebank_transactions ADD CONSTRAINT fk_transactions_receiver FOREIGN KEY (receiver_id) REFERENCES users(id);
+    END IF;
+    IF NOT EXISTS (SELECT 1 FROM pg_constraint WHERE conname = 'fk_transactions_handshake') THEN
+        ALTER TABLE timebank_transactions ADD CONSTRAINT fk_transactions_handshake FOREIGN KEY (handshake_id) REFERENCES handshakes(id);
+    END IF;
+    
+    -- Ratings constraints
+    IF NOT EXISTS (SELECT 1 FROM pg_constraint WHERE conname = 'fk_ratings_handshake') THEN
+        ALTER TABLE ratings ADD CONSTRAINT fk_ratings_handshake FOREIGN KEY (handshake_id) REFERENCES handshakes(id);
+    END IF;
+    IF NOT EXISTS (SELECT 1 FROM pg_constraint WHERE conname = 'fk_ratings_rater') THEN
+        ALTER TABLE ratings ADD CONSTRAINT fk_ratings_rater FOREIGN KEY (rater_id) REFERENCES users(id);
+    END IF;
+    IF NOT EXISTS (SELECT 1 FROM pg_constraint WHERE conname = 'fk_ratings_ratee') THEN
+        ALTER TABLE ratings ADD CONSTRAINT fk_ratings_ratee FOREIGN KEY (ratee_id) REFERENCES users(id);
+    END IF;
+    
+    -- Questions constraints
+    IF NOT EXISTS (SELECT 1 FROM pg_constraint WHERE conname = 'fk_questions_offer') THEN
+        ALTER TABLE questions ADD CONSTRAINT fk_questions_offer FOREIGN KEY (offer_id) REFERENCES offers(id);
+    END IF;
+    IF NOT EXISTS (SELECT 1 FROM pg_constraint WHERE conname = 'fk_questions_request') THEN
+        ALTER TABLE questions ADD CONSTRAINT fk_questions_request FOREIGN KEY (request_id) REFERENCES requests(id);
+    END IF;
+    IF NOT EXISTS (SELECT 1 FROM pg_constraint WHERE conname = 'fk_questions_asker') THEN
+        ALTER TABLE questions ADD CONSTRAINT fk_questions_asker FOREIGN KEY (asker_id) REFERENCES users(id);
+    END IF;
+    
+    -- Answers constraints
+    IF NOT EXISTS (SELECT 1 FROM pg_constraint WHERE conname = 'fk_answers_question') THEN
+        ALTER TABLE answers ADD CONSTRAINT fk_answers_question FOREIGN KEY (question_id) REFERENCES questions(id);
+    END IF;
+    IF NOT EXISTS (SELECT 1 FROM pg_constraint WHERE conname = 'fk_answers_responder') THEN
+        ALTER TABLE answers ADD CONSTRAINT fk_answers_responder FOREIGN KEY (responder_id) REFERENCES users(id);
+    END IF;
+    
+    -- User badges constraints
+    IF NOT EXISTS (SELECT 1 FROM pg_constraint WHERE conname = 'fk_user_badges_user') THEN
+        ALTER TABLE user_badges ADD CONSTRAINT fk_user_badges_user FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE;
+    END IF;
+    IF NOT EXISTS (SELECT 1 FROM pg_constraint WHERE conname = 'fk_user_badges_badge') THEN
+        ALTER TABLE user_badges ADD CONSTRAINT fk_user_badges_badge FOREIGN KEY (badge_id) REFERENCES badges(id) ON DELETE CASCADE;
+    END IF;
+    
+    -- Reports constraints
+    IF NOT EXISTS (SELECT 1 FROM pg_constraint WHERE conname = 'fk_reports_reporter') THEN
+        ALTER TABLE reports ADD CONSTRAINT fk_reports_reporter FOREIGN KEY (reporter_id) REFERENCES users(id);
+    END IF;
+    IF NOT EXISTS (SELECT 1 FROM pg_constraint WHERE conname = 'fk_reports_reported') THEN
+        ALTER TABLE reports ADD CONSTRAINT fk_reports_reported FOREIGN KEY (reported_user_id) REFERENCES users(id);
+    END IF;
+    
+    -- Messages constraints
+    IF NOT EXISTS (SELECT 1 FROM pg_constraint WHERE conname = 'fk_messages_sender') THEN
+        ALTER TABLE messages ADD CONSTRAINT fk_messages_sender FOREIGN KEY (sender_id) REFERENCES users(id);
+    END IF;
+    IF NOT EXISTS (SELECT 1 FROM pg_constraint WHERE conname = 'fk_messages_receiver') THEN
+        ALTER TABLE messages ADD CONSTRAINT fk_messages_receiver FOREIGN KEY (receiver_id) REFERENCES users(id);
+    END IF;
+    IF NOT EXISTS (SELECT 1 FROM pg_constraint WHERE conname = 'fk_messages_offer') THEN
+        ALTER TABLE messages ADD CONSTRAINT fk_messages_offer FOREIGN KEY (offer_id) REFERENCES offers(id);
+    END IF;
+    IF NOT EXISTS (SELECT 1 FROM pg_constraint WHERE conname = 'fk_messages_request') THEN
+        ALTER TABLE messages ADD CONSTRAINT fk_messages_request FOREIGN KEY (request_id) REFERENCES requests(id);
+    END IF;
+    IF NOT EXISTS (SELECT 1 FROM pg_constraint WHERE conname = 'fk_messages_handshake') THEN
+        ALTER TABLE messages ADD CONSTRAINT fk_messages_handshake FOREIGN KEY (handshake_id) REFERENCES handshakes(id);
+    END IF;
+    
+    -- Forum constraints
+    IF NOT EXISTS (SELECT 1 FROM pg_constraint WHERE conname = 'fk_forum_topics_author') THEN
+        ALTER TABLE forum_topics ADD CONSTRAINT fk_forum_topics_author FOREIGN KEY (author_id) REFERENCES users(id);
+    END IF;
+    IF NOT EXISTS (SELECT 1 FROM pg_constraint WHERE conname = 'fk_forum_posts_topic') THEN
+        ALTER TABLE forum_posts ADD CONSTRAINT fk_forum_posts_topic FOREIGN KEY (topic_id) REFERENCES forum_topics(id) ON DELETE CASCADE;
+    END IF;
+    IF NOT EXISTS (SELECT 1 FROM pg_constraint WHERE conname = 'fk_forum_posts_author') THEN
+        ALTER TABLE forum_posts ADD CONSTRAINT fk_forum_posts_author FOREIGN KEY (author_id) REFERENCES users(id);
+    END IF;
+END $$;
 
 
