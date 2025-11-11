@@ -41,6 +41,12 @@ public class Handshake {
     @Column(name = "agreed_hours")
     private Integer agreedHours;
 
+    @Column(name = "seeker_confirmed")
+    private Boolean seekerConfirmed = false;
+
+    @Column(name = "provider_confirmed")
+    private Boolean providerConfirmed = false;
+
     @CreationTimestamp
     @Column(name = "created_at", updatable = false)
     private LocalDateTime createdAt;

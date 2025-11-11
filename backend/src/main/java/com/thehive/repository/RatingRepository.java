@@ -5,6 +5,7 @@ import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
 
 import java.util.List;
+import java.util.Optional;
 
 @Repository
 public interface RatingRepository extends JpaRepository<Rating, Integer> {
@@ -16,5 +17,9 @@ public interface RatingRepository extends JpaRepository<Rating, Integer> {
     List<Rating> findByRateeId(Integer rateeId);
 
     List<Rating> findByHandshakeOfferId(Integer offerId);
+    
+    Optional<Rating> findByHandshakeIdAndRaterId(Integer handshakeId, Integer raterId);
+    
+    boolean existsByHandshakeIdAndRaterId(Integer handshakeId, Integer raterId);
 }
 
