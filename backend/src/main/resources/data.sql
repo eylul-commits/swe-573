@@ -17,11 +17,12 @@ VALUES
 (5, 3, 'Home Cooking Classes', 'Learn traditional Turkish dishes.', 3, '2025-11-01', '2025-11-30', 'Istanbul', 'Kadıköy', 'sxk3', 'ACTIVE', NOW(), NOW());
 
 -- REQUESTS
+-- NOTE: Request IDs start at 6 to avoid conflicts with offer IDs (1-5)
 INSERT INTO requests (id, seeker_id, title, description, duration_hours, start_date, end_date, province, district, geohash, status, created_at, updated_at)
 VALUES
-(1, 2, 'Dog Walking', 'Looking for someone to walk my dog.', 1, '2025-11-02', '2025-11-03', 'Ankara', 'Çankaya', 'syet', 'ACTIVE', NOW(), NOW()),
-(2, 3, 'Math Tutoring', 'Need help with high school mathematics.', 2, '2025-11-05', '2025-12-05', 'Istanbul', 'Kadıköy', 'sxk3', 'ACTIVE', NOW(), NOW()),
-(3, 2, 'Bike Repair', 'Need someone to fix my bicycle.', 1, '2025-11-08', '2025-11-15', 'Istanbul', 'Beşiktaş', 'sxk9', 'ACTIVE', NOW(), NOW());
+(6, 2, 'Dog Walking', 'Looking for someone to walk my dog.', 1, '2025-11-02', '2025-11-03', 'Ankara', 'Çankaya', 'syet', 'ACTIVE', NOW(), NOW()),
+(7, 3, 'Math Tutoring', 'Need help with high school mathematics.', 2, '2025-11-05', '2025-12-05', 'Istanbul', 'Kadıköy', 'sxk3', 'ACTIVE', NOW(), NOW()),
+(8, 2, 'Bike Repair', 'Need someone to fix my bicycle.', 1, '2025-11-08', '2025-11-15', 'Istanbul', 'Beşiktaş', 'sxk9', 'ACTIVE', NOW(), NOW());
 
 -- SEMANTIC TAGS
 INSERT INTO semantic_tags (id, name, wikidata_id)
@@ -44,10 +45,10 @@ INSERT INTO offer_tags (offer_id, tag_id) VALUES (3, 5);
 INSERT INTO offer_tags (offer_id, tag_id) VALUES (4, 6);
 INSERT INTO offer_tags (offer_id, tag_id) VALUES (4, 4);
 INSERT INTO offer_tags (offer_id, tag_id) VALUES (5, 7);
-INSERT INTO request_tags (request_id, tag_id) VALUES (1, 2);
-INSERT INTO request_tags (request_id, tag_id) VALUES (2, 8);
-INSERT INTO request_tags (request_id, tag_id) VALUES (2, 4);
-INSERT INTO request_tags (request_id, tag_id) VALUES (3, 9);
+INSERT INTO request_tags (request_id, tag_id) VALUES (6, 2);
+INSERT INTO request_tags (request_id, tag_id) VALUES (7, 8);
+INSERT INTO request_tags (request_id, tag_id) VALUES (7, 4);
+INSERT INTO request_tags (request_id, tag_id) VALUES (8, 9);
 
 -- HANDSHAKES
 INSERT INTO handshakes (id, offer_id, seeker_id, provider_id, status, agreed_hours, created_at, completed_at)
@@ -123,8 +124,8 @@ VALUES
 (2, 3, NULL, 2, 'What type of camera equipment do you use for portrait photography?', NOW() - INTERVAL '4 days'),
 (3, 5, NULL, 1, 'How many people can attend the cooking class at once? Is it one-on-one or a group session?', NOW() - INTERVAL '6 days'),
 (4, 4, NULL, 3, 'What level of English proficiency do you have? I''m looking to practice advanced conversation.', NOW() - INTERVAL '2 days'),
-(5, NULL, 2, 1, 'What grade level math are we talking about? I might be able to help with high school algebra and geometry.', NOW() - INTERVAL '4 days'),
-(6, NULL, 3, 1, 'What kind of bike do you have? I have some experience with road bikes and mountain bikes.', NOW() - INTERVAL '5 days'),
+(5, NULL, 7, 1, 'What grade level math are we talking about? I might be able to help with high school algebra and geometry.', NOW() - INTERVAL '4 days'),
+(6, NULL, 8, 1, 'What kind of bike do you have? I have some experience with road bikes and mountain bikes.', NOW() - INTERVAL '5 days'),
 (7, 1, NULL, 3, 'Do you also help with indoor plants or just outdoor gardening?', NOW() - INTERVAL '7 days'),
 (8, 2, NULL, 3, 'How long have you been programming? And do you teach beginners?', NOW() - INTERVAL '8 days');
 
