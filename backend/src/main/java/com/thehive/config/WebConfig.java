@@ -13,7 +13,7 @@ public class WebConfig implements WebMvcConfigurer {
         .allowedOrigins(
             "http://localhost:3000",                  // local dev
             "http://frontend:80",                     // Docker internal
-            "https://swe-573-frontend.onrender.com"   //  deployed frontend
+            "https://the-hive-frontend.onrender.com"   //  deployed frontend
         )
                 .allowedMethods("GET", "POST", "PUT", "DELETE", "OPTIONS")
                 .allowedHeaders("*")
