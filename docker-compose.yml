@@ -19,20 +19,23 @@ services:
       DB_NAME: thehive
       DB_USER: postgres
       DB_PASSWORD: postgres
-      JWT_SECRET: your-secret-key-change-this-in-production
+      JWT_SECRET: ${JWT_SECRET}
+      STREAM_CHAT_SECRET: ${STREAM_CHAT_SECRET}
     ports:
       - "8080:8080"  # take port 8080 inside the container and make it available on port 8080 locally
     depends_on:
       - postgres  # wait for database to start
 
   frontend:  # Vue.js frontend application
-    build: ./frontend  # Build from frontend directory
+    build:
+      context: ./frontend
+      args:
+        VITE_API_BASE_URL: http://localhost:8080/api
+        VITE_STREAM_CHAT_API_KEY: ${VITE_STREAM_CHAT_API_KEY}
     ports:
       - "3000:80"  # map container port 80 to local port 3000
     depends_on:
       - backend  # wait for backend to start
-    environment:
-      - VITE_API_URL=http://localhost:8080  # backend API URL
 
 volumes:
   postgres_data:  # needed (?) for database persistence

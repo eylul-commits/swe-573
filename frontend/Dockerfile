@@ -13,6 +13,14 @@ RUN npm ci
 # Copy project files
 COPY . .
 
+# Build arguments for environment variables
+ARG VITE_API_BASE_URL
+ARG VITE_STREAM_CHAT_API_KEY
+
+# Set environment variables for build
+ENV VITE_API_BASE_URL=$VITE_API_BASE_URL
+ENV VITE_STREAM_CHAT_API_KEY=$VITE_STREAM_CHAT_API_KEY
+
 # Build the Vue app
 RUN npm run build
 

@@ -27,5 +27,5 @@ jwt:
 
 stream:
   chat:
-    secret: cdupahsskcsd4ubdexu566n64rdtbwduasgp3auymsjz56as5cv5wakkvxscf9hy
+    secret: ${STREAM_CHAT_SECRET:REPLACE_WITH_YOUR_STREAM_CHAT_SECRET} #bu kullanılmıyor
 
