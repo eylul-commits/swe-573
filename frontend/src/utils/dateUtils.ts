@@ -1,10 +1,4 @@
-/**
- * Date utility functions
- */
 
-/**
- * Format a date string to a relative time string (e.g., "2 hours ago")
- */
 export function formatDistanceToNow(dateString: string): string {
   const date = new Date(dateString);
   const now = new Date();
@@ -38,9 +32,6 @@ export function formatDistanceToNow(dateString: string): string {
   return `${diffInYears} year${diffInYears === 1 ? '' : 's'} ago`;
 }
 
-/**
- * Format a date to a readable string
- */
 export function formatDate(dateString: string): string {
   const date = new Date(dateString);
   return date.toLocaleDateString('en-US', {
@@ -50,9 +41,6 @@ export function formatDate(dateString: string): string {
   });
 }
 
-/**
- * Format a date to include time
- */
 export function formatDateTime(dateString: string): string {
   const date = new Date(dateString);
   return date.toLocaleString('en-US', {

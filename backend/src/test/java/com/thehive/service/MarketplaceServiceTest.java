@@ -7,6 +7,8 @@ import com.thehive.model.dto.CreateRequestRequest;
 import com.thehive.model.dto.OfferDTO;
 import com.thehive.model.dto.RequestDTO;
 import com.thehive.model.dto.ServiceDTO;
+import com.thehive.model.dto.ServiceQuestionDTO;
+import com.thehive.model.dto.ServiceRatingsResponseDTO;
 import com.thehive.model.entity.*;
 import com.thehive.model.enums.ItemStatus;
 import com.thehive.repository.OfferRepository;
@@ -1059,6 +1061,153 @@ class MarketplaceServiceTest {
         long requestCount = result.stream().filter(s -> s.getType().equals("REQUEST")).count();
         assertEquals(2, offerCount);
         assertEquals(2, requestCount);
+    }
+
+    // ==================== GET QUESTIONS FOR SERVICE TESTS ====================
+
+    @Test
+    void getQuestionsForService_ShouldReturnQuestionsForOffer() {
+        Question question = new Question();
+        question.setContent("Test question");
+        question.setAsker(testUser);
+
+        when(offerRepository.existsById(1)).thenReturn(true);
+        when(questionRepository.findByOfferId(1)).thenReturn(Arrays.asList(question));
+
+        List<ServiceQuestionDTO> result = marketplaceService.getQuestionsForService(1);
+
+        assertNotNull(result);
+        assertEquals(1, result.size());
+    }
+
+    @Test
+    void getQuestionsForService_ShouldReturnQuestionsForRequest() {
+        Question question = new Question();
+        question.setContent("Test question");
+        question.setAsker(testUser);
+
+        when(offerRepository.existsById(1)).thenReturn(false);
+        when(requestRepository.existsById(1)).thenReturn(true);
+        when(questionRepository.findByRequestId(1)).thenReturn(Arrays.asList(question));
+
+        List<ServiceQuestionDTO> result = marketplaceService.getQuestionsForService(1);
+
+        assertNotNull(result);
+        assertEquals(1, result.size());
+    }
+
+    @Test
+    void getQuestionsForService_ShouldThrowException_WhenServiceNotFound() {
+        when(offerRepository.existsById(999)).thenReturn(false);
+        when(requestRepository.existsById(999)).thenReturn(false);
+
+        assertThrows(ResourceNotFoundException.class,
+            () -> marketplaceService.getQuestionsForService(999));
+    }
+
+    // ==================== GET RATINGS FOR SERVICE TESTS ====================
+
+    @Test
+    void getRatingsForService_ShouldReturnRatingsForOffer() {
+        Rating rating = new Rating();
+        rating.setId(1);
+        rating.setRater(testUser);
+        rating.setPunctuality(5);
+        rating.setFriendliness(4);
+        rating.setCommunicative(5);
+        rating.setPreparedness(4);
+        rating.setCreatedAt(LocalDateTime.now());
+
+        when(offerRepository.existsById(1)).thenReturn(true);
+        when(ratingRepository.findByHandshakeOfferId(1)).thenReturn(Arrays.asList(rating));
+
+        ServiceRatingsResponseDTO result = marketplaceService.getRatingsForService(1);
+
+        assertNotNull(result);
+        assertEquals(1, result.getRatings().size());
+        assertEquals(5.0, result.getSummary().getPunctuality());
+    }
+
+    @Test
+    void getRatingsForService_ShouldReturnEmptyForRequest() {
+        when(offerRepository.existsById(1)).thenReturn(false);
+        when(requestRepository.existsById(1)).thenReturn(true);
+
+        ServiceRatingsResponseDTO result = marketplaceService.getRatingsForService(1);
+
+        assertNotNull(result);
+        assertEquals(0, result.getRatings().size());
+    }
+
+    @Test
+    void getRatingsForService_ShouldThrowException_WhenServiceNotFound() {
+        when(offerRepository.existsById(999)).thenReturn(false);
+        when(requestRepository.existsById(999)).thenReturn(false);
+
+        assertThrows(ResourceNotFoundException.class,
+            () -> marketplaceService.getRatingsForService(999));
+    }
+
+    // ==================== GET OFFERS BY PROVIDER TESTS ====================
+
+    @Test
+    void getOffersByProvider_ShouldReturnOffers() {
+        when(offerRepository.findByProviderId(1)).thenReturn(Arrays.asList(testOffer));
+
+        List<OfferDTO> result = marketplaceService.getOffersByProvider(1);
+
+        assertNotNull(result);
+        assertEquals(1, result.size());
+    }
+
+    // ==================== GET REQUESTS BY SEEKER TESTS ====================
+
+    @Test
+    void getRequestsBySeeker_ShouldReturnRequests() {
+        when(requestRepository.findBySeekerId(2)).thenReturn(Arrays.asList(testRequest));
+
+        List<RequestDTO> result = marketplaceService.getRequestsBySeeker(2);
+
+        assertNotNull(result);
+        assertEquals(1, result.size());
+    }
+
+    // ==================== GET USER SERVICES TESTS ====================
+
+    @Test
+    void getUserServices_ShouldReturnCombinedOffersAndRequests() {
+        when(offerRepository.findByProviderId(1)).thenReturn(Arrays.asList(testOffer));
+        when(requestRepository.findBySeekerId(1)).thenReturn(Arrays.asList(testRequest));
+
+        List<ServiceDTO> result = marketplaceService.getUserServices(1);
+
+        assertNotNull(result);
+        assertEquals(2, result.size());
+        assertEquals(1, result.stream().filter(s -> "OFFER".equals(s.getType())).count());
+        assertEquals(1, result.stream().filter(s -> "REQUEST".equals(s.getType())).count());
+    }
+
+    @Test
+    void getUserServices_ShouldReturnOnlyOffers() {
+        when(offerRepository.findByProviderId(1)).thenReturn(Arrays.asList(testOffer));
+        when(requestRepository.findBySeekerId(1)).thenReturn(Collections.emptyList());
+
+        List<ServiceDTO> result = marketplaceService.getUserServices(1);
+
+        assertNotNull(result);
+        assertEquals(1, result.size());
+        assertEquals("OFFER", result.get(0).getType());
+    }
+
+    @Test
+    void getUserServices_ShouldReturnEmptyList() {
+        when(offerRepository.findByProviderId(1)).thenReturn(Collections.emptyList());
+        when(requestRepository.findBySeekerId(1)).thenReturn(Collections.emptyList());
+
+        List<ServiceDTO> result = marketplaceService.getUserServices(1);
+
+        assertNotNull(result);
+        assertEquals(0, result.size());
     }
 }
 
