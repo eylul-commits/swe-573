@@ -1,5 +1,7 @@
 package com.thehive.service;
 
+import com.thehive.client.StreamChatClient;
+import com.thehive.config.StreamChatConfig;
 import com.thehive.model.dto.AuthResponse;
 import com.thehive.model.dto.LoginRequest;
 import com.thehive.model.dto.RegisterRequest;
@@ -39,6 +41,12 @@ class AuthServiceTest {
 
     @Mock
     private TimebankTransactionRepository timebankTransactionRepository;
+
+    @Mock
+    private StreamChatConfig streamChatConfig;
+
+    @Mock
+    private StreamChatClient streamChatClient;
 
     @InjectMocks
     private AuthService authService;
@@ -80,6 +88,9 @@ class AuthServiceTest {
         when(jwtUtil.generateToken(anyString(), any(Integer.class))).thenReturn("jwt-token");
         when(timebankTransactionRepository.findBySenderId(any(Integer.class))).thenReturn(Collections.emptyList());
         when(timebankTransactionRepository.findByReceiverId(any(Integer.class))).thenReturn(Collections.emptyList());
+        when(streamChatConfig.isConfigured()).thenReturn(true);
+        when(streamChatConfig.generateUserToken(anyString())).thenReturn("stream-chat-token");
+        doNothing().when(streamChatClient).upsertUser(any(Integer.class), anyString());
 
         // Act
         AuthResponse response = authService.register(registerRequest);
@@ -100,6 +111,7 @@ class AuthServiceTest {
         verify(passwordEncoder).encode(registerRequest.getPassword());
         verify(userRepository).save(any(User.class));
         verify(jwtUtil).generateToken(testUser.getEmail(), testUser.getId());
+        verify(streamChatClient).upsertUser(testUser.getId(), testUser.getName());
     }
 
     @Test
@@ -129,6 +141,8 @@ class AuthServiceTest {
         when(jwtUtil.generateToken(testUser.getEmail(), testUser.getId())).thenReturn("jwt-token");
         when(timebankTransactionRepository.findBySenderId(any(Integer.class))).thenReturn(Collections.emptyList());
         when(timebankTransactionRepository.findByReceiverId(any(Integer.class))).thenReturn(Collections.emptyList());
+        when(streamChatConfig.isConfigured()).thenReturn(true);
+        when(streamChatConfig.generateUserToken(anyString())).thenReturn("stream-chat-token");
 
         // Act
         AuthResponse response = authService.login(loginRequest);

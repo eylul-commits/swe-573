@@ -27,5 +27,6 @@ jwt:
 
 stream:
   chat:
-    secret: ${STREAM_CHAT_SECRET:REPLACE_WITH_YOUR_STREAM_CHAT_SECRET} #bu kullanılmıyor
+    api-key: ${STREAM_CHAT_API_KEY:} #bunlar şu an kullanılmıyor
+    secret: ${STREAM_CHAT_SECRET:}
 
