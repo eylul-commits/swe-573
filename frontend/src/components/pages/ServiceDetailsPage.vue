@@ -304,7 +304,7 @@ import Textarea from '../ui/Textarea.vue'
 import ImageWithFallback from '../ui/ImageWithFallback.vue'
 import { getServiceById, getReviewsByServiceId, getAverageRating, getReviewCount } from '../../services/dataService'
 import { createHandshake } from '../../services/handshakeService'
-import { createHandshakeChannel, isStreamChatInitialized } from '../../services/streamChatService'
+import { createHandshakeChannel, isStreamChatInitialized } from '../../clients/streamChatClient'
 import { useAppStore } from '../../stores/appStore'
 import type { Service } from '../../types'
 

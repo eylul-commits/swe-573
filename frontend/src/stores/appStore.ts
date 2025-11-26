@@ -47,7 +47,7 @@ export const useAppStore = defineStore('app', () => {
 
     if (streamChatToken) {
       try {
-        const { initializeStreamChat } = await import('../services/streamChatService')
+        const { initializeStreamChat } = await import('../clients/streamChatClient')
         await initializeStreamChat(
           user.id.toString(),
           user.name || user.email,
@@ -68,7 +68,7 @@ export const useAppStore = defineStore('app', () => {
   const logout = async () => {
     // Disconnect from Stream Chat
     try {
-      const { disconnectStreamChat } = await import('../services/streamChatService')
+      const { disconnectStreamChat } = await import('../clients/streamChatClient')
       await disconnectStreamChat()
     } catch (error) {
       console.error('Failed to disconnect from Stream Chat:', error)

@@ -161,7 +161,7 @@ import ConfirmHandshakeModal from '../ConfirmHandshakeModal.vue';
 import RatingModal from '../RatingModal.vue';
 import { useHandshakeStore } from '../../stores/handshakeStore';
 import { useAppStore } from '../../stores/appStore';
-import { isStreamChatInitialized } from '../../services/streamChatService';
+import { isStreamChatInitialized } from '../../clients/streamChatClient';
 import type { Handshake, AuthorSummary } from '../../types';
 
 const handshakeStore = useHandshakeStore();

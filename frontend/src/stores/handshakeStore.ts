@@ -112,7 +112,7 @@ export const useHandshakeStore = defineStore('handshake', () => {
 
       // Auto-create Stream Chat channel
       try {
-        const { isStreamChatInitialized, createHandshakeChannel } = await import('../services/streamChatService');
+        const { isStreamChatInitialized, createHandshakeChannel } = await import('../clients/streamChatClient');
         if (isStreamChatInitialized()) {
           await createHandshakeChannel(handshake);
           console.log('Stream Chat channel created for handshake:', handshake.id);
@@ -151,7 +151,7 @@ export const useHandshakeStore = defineStore('handshake', () => {
 
       // Update Stream Chat channel status
       try {
-        const { isStreamChatInitialized, updateChannelStatus } = await import('../services/streamChatService');
+        const { isStreamChatInitialized, updateChannelStatus } = await import('../clients/streamChatClient');
         if (isStreamChatInitialized() && handshake.status === 'CONFIRMED') {
           await updateChannelStatus(handshakeId, 'CONFIRMED');
         }

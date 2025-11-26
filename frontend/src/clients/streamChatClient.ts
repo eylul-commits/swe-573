@@ -52,7 +52,7 @@ export async function initializeStreamChat(
  */
 export async function createHandshakeChannel(
   handshake: Handshake
-): Promise<Channel<DefaultGenerics>> {
+): Promise<Channel<DefaultGenerics>> {  // im returning a promise of channel with "DefaultGenerics" (Stream Chat standard type without extensions)
   if (!chatClient) {
     throw new Error('Stream Chat client not initialized. Call initializeStreamChat first.');
   }

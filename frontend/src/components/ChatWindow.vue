@@ -138,7 +138,7 @@ import {
   getHandshakeChannel,
   createHandshakeChannel,
   markChannelAsRead,
-} from '../services/streamChatService';
+} from '../clients/streamChatClient';
 import type {
   Channel as StreamChannel,
   DefaultGenerics,
