@@ -118,8 +118,9 @@ CREATE TABLE IF NOT EXISTS handshakes (
         (offer_id IS NOT NULL AND request_id IS NULL) OR
         (offer_id IS NULL AND request_id IS NOT NULL)
     )
+    CONSTRAINT unique_offer_seeker UNIQUE (offer_id, seeker_id),
+    CONSTRAINT unique_request_seeker UNIQUE (request_id, seeker_id)
 );
-
 -- Timebank transactions table
 CREATE TABLE IF NOT EXISTS timebank_transactions (
     id SERIAL PRIMARY KEY,
