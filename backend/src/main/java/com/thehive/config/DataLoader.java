@@ -24,6 +24,9 @@ public class DataLoader {
     public CommandLineRunner initDatabase() {
         return args -> {
             try {
+                log.info("Clearing Stream Chat data on startup...");
+                clearStreamChatData();
+
                 // Check if users exist
                 Integer userCount = jdbcTemplate.queryForObject("SELECT COUNT(*) FROM users", Integer.class);
                 
