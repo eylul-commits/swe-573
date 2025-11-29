@@ -117,7 +117,7 @@ CREATE TABLE IF NOT EXISTS handshakes (
     CONSTRAINT chk_offer_or_request CHECK (
         (offer_id IS NOT NULL AND request_id IS NULL) OR
         (offer_id IS NULL AND request_id IS NOT NULL)
-    )
+    ),
     CONSTRAINT unique_offer_seeker UNIQUE (offer_id, seeker_id),
     CONSTRAINT unique_request_seeker UNIQUE (request_id, seeker_id)
 );

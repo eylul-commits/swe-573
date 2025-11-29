@@ -62,7 +62,7 @@ VALUES
 (2, 2, 3, 2, 'COMPLETED', 3, NOW() - INTERVAL '5 days', NOW() - INTERVAL '2 days'),
 (3, 3, 1, 3, 'COMPLETED', 4, NOW() - INTERVAL '10 days', NOW() - INTERVAL '5 days'),
 (4, 5, 2, 3, 'COMPLETED', 3, NOW() - INTERVAL '7 days', NOW() - INTERVAL '3 days'),
-(5, 4, 1, 2, 'ACTIVE', 2, NOW() - INTERVAL '1 day', NULL)
+(5, 4, 1, 2, 'PENDING', 2, NOW() - INTERVAL '1 day', NULL)
 ON CONFLICT (id) DO NOTHING;
 
 -- TIMEBANK TRANSACTIONS
