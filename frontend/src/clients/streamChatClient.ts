@@ -112,23 +112,6 @@ export async function getHandshakeChannel(
 }
 
 /**
- * Send a system message to a channel
- */
-export async function sendSystemMessage(
-  channel: Channel<DefaultGenerics>,
-  message: string
-): Promise<void> {
-  try {
-    await channel.sendMessage({
-      text: message,
-      type: 'system',
-    });
-  } catch (error) {
-    console.error('Failed to send system message:', error);
-  }
-}
-
-/**
  * Update channel data when handshake status changes
  */
 export async function updateChannelStatus(
@@ -147,23 +130,6 @@ export async function updateChannelStatus(
       },
     });
 
-    // Send system message about status change
-    let message = '';
-    switch (status) {
-      case 'CONFIRMED':
-        message = '✅ Handshake confirmed! Both parties have agreed to the terms.';
-        break;
-      case 'COMPLETED':
-        message = '🎉 Service exchange completed! Both parties have rated each other.';
-        break;
-      case 'CANCELLED':
-        message = '❌ Handshake cancelled.';
-        break;
-    }
-
-    if (message) {
-      await sendSystemMessage(channel, message);
-    }
   } catch (error) {
     console.error('Failed to update channel status:', error);
   }
