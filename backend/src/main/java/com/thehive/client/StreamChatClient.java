@@ -186,9 +186,15 @@ public class StreamChatClient {
                 int deletedCount = 0;
                 for (Map<String, Object> channel : channels) {
                     try {
-                        String channelType = (String) channel.get("type");
-                        String channelId = (String) channel.get("id");
-                        
+                        Map<String, Object> channelData = (Map<String, Object>) channel.get("channel");
+                        if (channelData == null) {
+                            log.warn("Channel object is missing 'channel' wrapper: {}", channel);
+                            continue;
+                        }
+
+                        String channelType = (String) channelData.get("type");
+                        String channelId = (String) channelData.get("id");
+
                         if (channelType != null && channelId != null) {
                             String deleteUrl = String.format("%s/channels/%s/%s?api_key=%s&hard_delete=true", 
                                 STREAM_API_BASE_URL, channelType, channelId, apiKey);

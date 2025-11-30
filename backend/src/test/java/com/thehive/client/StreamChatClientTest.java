@@ -176,14 +176,20 @@ class StreamChatClientTest {
 
     @Test
     void deleteAllChannels_whenConfigured_shouldQueryAndDeleteChannels() {
-        // Arrange - mock query response with 2 channels
+        // Arrange - mock query response with 2 channels (matching Stream API format)
+        Map<String, Object> channel1Data = new HashMap<>();
+        channel1Data.put("type", "messaging");
+        channel1Data.put("id", "channel-1");
+        
         Map<String, Object> channel1 = new HashMap<>();
-        channel1.put("type", "messaging");
-        channel1.put("id", "channel-1");
+        channel1.put("channel", channel1Data);
+        
+        Map<String, Object> channel2Data = new HashMap<>();
+        channel2Data.put("type", "messaging");
+        channel2Data.put("id", "channel-2");
         
         Map<String, Object> channel2 = new HashMap<>();
-        channel2.put("type", "messaging");
-        channel2.put("id", "channel-2");
+        channel2.put("channel", channel2Data);
         
         List<Map<String, Object>> channels = Arrays.asList(channel1, channel2);
         Map<String, Object> queryResponseBody = new HashMap<>();
