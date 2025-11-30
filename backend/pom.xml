@@ -79,6 +79,13 @@
             <optional>true</optional>
         </dependency>
 
+        <!-- Stream Chat Java SDK -->
+        <dependency>
+            <groupId>io.getstream</groupId>
+            <artifactId>stream-chat-java</artifactId>
+            <version>1.37.2</version>
+        </dependency>
+
         <!-- Testing Dependencies -->
         <dependency>
             <groupId>org.springframework.boot</groupId>
