@@ -5,11 +5,13 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.*;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestTemplate;
+import java.net.URI; 
 
 import javax.crypto.Mac;
 import javax.crypto.spec.SecretKeySpec;
 import java.nio.charset.StandardCharsets;
 import java.util.*;
+import java.net.URLEncoder; 
 
 @Service
 @Slf4j
@@ -145,15 +147,23 @@ public class StreamChatClient {
             // Query all users first
             Map<String, Object> queryParams = new HashMap<>();
             queryParams.put("limit", 100);
-            
-            String queryUrl = String.format("%s/users?api_key=%s", STREAM_API_BASE_URL, apiKey);
-            HttpEntity<Void> queryRequest = new HttpEntity<>(headers);
-            log.info("Query URL: {}", queryUrl);
-            log.info("Query Request: {}", queryRequest);
-            log.info("Headers: {}", headers);
 
-            ResponseEntity<Map> queryResponse = restTemplate.exchange(queryUrl, HttpMethod.GET, queryRequest, Map.class);
-            log.info("Query Response: {}", queryResponse.getBody());
+            String payload = URLEncoder.encode("{\"filter_conditions\":{}}", StandardCharsets.UTF_8);
+            
+            String queryUrl = String.format(
+                "%s/users?payload=%s&api_key=%s",
+                STREAM_API_BASE_URL,
+                payload,
+                apiKey
+            );
+
+            RequestEntity<Void> request = RequestEntity
+                .get(URI.create(queryUrl))
+                .header("Authorization", generateServerToken())
+                .header("Stream-Auth-Type", "jwt")
+                .build();
+
+            ResponseEntity<Map> queryResponse = restTemplate.exchange(request, Map.class);
             
             if (queryResponse.getBody() != null && queryResponse.getBody().containsKey("users")) {
                 List<Map<String, Object>> users = (List<Map<String, Object>>) queryResponse.getBody().get("users");
@@ -183,8 +193,10 @@ public class StreamChatClient {
                             
                             HttpEntity<Map<String, Object>> deleteRequest = new HttpEntity<>(deleteBody, headers);
                             
+                            log.info("Delete URL: {}", deleteUrl);
                             restTemplate.exchange(deleteUrl, HttpMethod.POST, deleteRequest, String.class);
                             
+                            log.info("Deleted User: {}", userId);
                             deletedCount++;
                         }
                     } catch (Exception e) {
