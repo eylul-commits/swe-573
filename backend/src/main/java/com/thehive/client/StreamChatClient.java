@@ -175,36 +175,33 @@ public class StreamChatClient {
                 
                 log.info("Found {} users to delete from Stream Chat", users.size());
 
-                // Delete each user individually
-                int deletedCount = 0;
+                // Collect all user IDs
+                List<String> userIds = new ArrayList<>();
                 for (Map<String, Object> user : users) {
-                    try {
-                        String userId = (String) user.get("id");
-                        
-                        if (userId != null) {
-                            String deleteUrl = String.format("%s/users/%s?api_key=%s", 
-                                STREAM_API_BASE_URL, userId, apiKey);
-                            
-                            // Prepare delete request body
-                            Map<String, Object> deleteBody = new HashMap<>();
-                            deleteBody.put("conversations", "hard");
-                            deleteBody.put("messages", "hard");
-                            deleteBody.put("user", "hard");
-                            
-                            HttpEntity<Map<String, Object>> deleteRequest = new HttpEntity<>(deleteBody, headers);
-                            
-                            log.info("Delete URL: {}", deleteUrl);
-                            restTemplate.exchange(deleteUrl, HttpMethod.POST, deleteRequest, String.class);
-                            
-                            log.info("Deleted User: {}", userId);
-                            deletedCount++;
-                        }
-                    } catch (Exception e) {
-                        log.warn("Failed to delete user: {}", e.getMessage());
+                    String userId = (String) user.get("id");
+                    if (userId != null) {
+                        userIds.add(userId);
                     }
                 }
                 
-                log.info("✓ Deleted {} users from Stream Chat", deletedCount);
+                // Delete all users in a single batch request
+                if (!userIds.isEmpty()) {
+                    try {
+                        String deleteUrl = String.format("%s/users/delete?api_key=%s", STREAM_API_BASE_URL, apiKey);
+
+                        Map<String, Object> deleteBody = new HashMap<>();
+                        deleteBody.put("conversations", "hard");
+                        deleteBody.put("messages", "hard");
+                        deleteBody.put("user", "hard");
+                        deleteBody.put("user_ids", userIds);
+                        
+                        HttpEntity<Map<String, Object>> deleteRequest = new HttpEntity<>(deleteBody, headers);
+                        
+                        restTemplate.exchange(deleteUrl, HttpMethod.POST, deleteRequest, String.class);
+                    } catch (Exception e) {
+                        log.error("Failed to delete users: {}", e.getMessage());
+                    }
+                }
             }
         } catch (Exception e) {
             log.error("✗ Failed to delete all users from Stream Chat: {}", e.getMessage(), e);
