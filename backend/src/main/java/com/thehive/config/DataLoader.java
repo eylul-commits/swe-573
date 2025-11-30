@@ -34,6 +34,9 @@ public class DataLoader {
                     log.info("✓ Database already initialized with {} users.", userCount);
                     
                     // Sync all users to Stream Chat
+                    
+                    //Warning: this is a hack to wait for the Stream Chat data to be cleared, bad practice :(
+                    Thread.sleep(10000);
                     syncUsersToStreamChat();
                 } else {
                     log.info("✓ Database is empty. Initial data should be loaded from data.sql");
