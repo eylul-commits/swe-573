@@ -1,5 +1,6 @@
 package com.thehive.service;
 
+import com.thehive.client.StreamChatClient;
 import com.thehive.config.StreamChatConfig;
 import com.thehive.model.dto.AuthResponse;
 import com.thehive.model.dto.LoginRequest;
@@ -26,6 +27,7 @@ public class AuthService {
     private final JwtUtil jwtUtil;
     private final TimebankTransactionRepository timebankTransactionRepository;
     private final StreamChatConfig streamChatConfig;
+    private final StreamChatClient streamChatClient;
 
     @Transactional
     public AuthResponse register(RegisterRequest request) {
@@ -42,6 +44,9 @@ public class AuthService {
         user.setBalanceHours(3); // Default starting balance
 
         user = userRepository.save(user);
+
+        // Upsert user to Stream Chat (create user in Stream Chat system)
+        streamChatClient.upsertUser(user.getId(), user.getName());
 
         // Generate JWT token
         String token = jwtUtil.generateToken(user.getEmail(), user.getId());

@@ -298,7 +298,7 @@ import TabsTrigger from './ui/TabsTrigger.vue'
 import Textarea from './ui/Textarea.vue'
 import { getServiceById, getServiceRatings, getServiceQuestions } from '../services/dataService'
 import { createHandshake } from '../services/handshakeService'
-import { createHandshakeChannel, isStreamChatInitialized } from '../services/streamChatService'
+import { createHandshakeChannel, isStreamChatInitialized } from '../clients/streamChatClient'
 import { useAppStore } from '../stores/appStore'
 import { formatDistanceToNow, formatDate } from '../utils/dateUtils'
 import type { Service, ServiceRatingsResponse, ServiceQuestion as ServiceQuestionDTO } from '../types'
@@ -495,6 +495,7 @@ const scheduleText = computed(() => {
   }
 
   return 'Schedule not specified'
+
 })
 
 const postedTime = computed(() => {
