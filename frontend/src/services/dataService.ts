@@ -10,8 +10,6 @@ import {
   User,
   Notification,
   Review,
-  Message,
-  Conversation,
   CommunityStats,
   ServiceFilters,
   ServiceRatingsResponse,
@@ -255,39 +253,6 @@ export const getServiceQuestions = async (
     console.error(`Failed to load questions for service ${serviceId}:`, error);
     return [];
   }
-};
-
-// =============================================================================
-// MESSAGE OPERATIONS
-// =============================================================================
-
-export const getAllConversations = (): Conversation[] => {
-  // TODO: Implement backend API call
-  console.warn("getAllConversations API not implemented yet");
-  return [];
-};
-
-export const getConversationById = (_id: string): Conversation | undefined => {
-  // TODO: Implement backend API call
-  console.warn("getConversationById API not implemented yet");
-  return undefined;
-};
-
-export const getMessagesByConversationId = (_conversationId: string): Message[] => {
-  // TODO: Implement backend API call
-  console.warn("getMessagesByConversationId API not implemented yet");
-  return [];
-};
-
-export const getUnreadMessageCount = (): number => {
-  // TODO: Implement backend API call
-  console.warn("getUnreadMessageCount API not implemented yet");
-  return 0;
-};
-
-export const sendMessage = (_message: Omit<Message, "id">): Message => {
-  // TODO: Implement backend API call
-  throw new Error("sendMessage API not implemented yet");
 };
 
 // =============================================================================

@@ -1,12 +1,10 @@
 import { defineStore } from 'pinia'
 import { ref, computed } from 'vue'
-import type { Notification, Conversation } from '../types'
+import type { Notification } from '../types'
 import type { User } from '../services/authService'
 import {
   getAllNotifications,
   getUnreadNotificationsCount,
-  getAllConversations,
-  getUnreadMessageCount,
 } from '../services/dataService'
 
 export const useAppStore = defineStore('app', () => {
@@ -15,8 +13,6 @@ export const useAppStore = defineStore('app', () => {
   const authToken = ref<string | null>(localStorage.getItem('authToken'))
   const notifications = ref<Notification[]>([])
   const unreadNotificationsCount = ref(0)
-  const conversations = ref<Conversation[]>([])
-  const unreadMessagesCount = ref(0)
   const streamChatReady = ref(false)
   const currentPage = ref('home')
   const selectedServiceId = ref<string | null>(null)
@@ -128,11 +124,6 @@ export const useAppStore = defineStore('app', () => {
     unreadNotificationsCount.value = getUnreadNotificationsCount()
   }
 
-  const refreshConversations = () => {
-    conversations.value = getAllConversations()
-    unreadMessagesCount.value = getUnreadMessageCount()
-  }
-
   const setCurrentPage = (page: string) => {
     currentPage.value = page
   }
@@ -149,7 +140,6 @@ export const useAppStore = defineStore('app', () => {
   loadUserFromStorage()
   if (isAuthenticated.value) {
     refreshNotifications()
-    refreshConversations()
   }
 
   return {
@@ -158,8 +148,6 @@ export const useAppStore = defineStore('app', () => {
     authToken,
     notifications,
     unreadNotificationsCount,
-    conversations,
-    unreadMessagesCount,
     streamChatReady,
     currentPage,
     selectedServiceId,
@@ -172,7 +160,6 @@ export const useAppStore = defineStore('app', () => {
     setCurrentUser,
     logout,
     refreshNotifications,
-    refreshConversations,
     setCurrentPage,
     setSelectedServiceId,
     setSelectedThreadId,
