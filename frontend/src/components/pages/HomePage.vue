@@ -413,14 +413,9 @@ const filteredServices = computed(() => {
 
 // Sort services by distance and get nearby ones
 const nearbyServices = computed(() => {
-  // If filters are active, use filtered results
   if (hasActiveFilters.value) {
-    return [...filteredServices.value]
-      .filter(s => s.distance)
-      .sort((a, b) => parseFloat(a.distance!) - parseFloat(b.distance!))
-      .slice(0, 6)
+    return filteredServices.value.slice(0, 12)
   }
-  // Otherwise use the smart nearby recommendations
   return nearbyServicesData.value
 })
 
