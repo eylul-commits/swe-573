@@ -1,13 +1,5 @@
-/**
- * Data Service Layer
- * 
- * This service provides a centralized interface for all data operations.
- * Uses real backend API calls for all data.
- */
-
 import {
   Service,
-  User,
   Notification,
   Review,
   ServiceFilters,
@@ -59,7 +51,7 @@ export const filterServices = async (filters: ServiceFilters): Promise<Service[]
   return filterServicesLocally(allServices, filters);
 };
 
-// Local filtering logic (moved from mock data)
+//TO-DO: Semantic tags filtering logic will be added here
 const filterServicesLocally = (services: Service[], filters: ServiceFilters): Service[] => {
   let filtered = services;
 
@@ -136,32 +128,6 @@ export const updateService = (
 export const deleteService = (_id: string): boolean => {
   // TODO: Implement backend API call
   throw new Error("deleteService API not implemented yet");
-};
-
-// =============================================================================
-// USER OPERATIONS
-// =============================================================================
-
-export const getAllUsers = (): User[] => {
-  // TODO: Implement backend API call
-  console.warn("getAllUsers API not implemented yet");
-  return [];
-};
-
-export const getUserById = (_id: string): User | undefined => {
-  // TODO: Implement backend API call
-  console.warn("getUserById API not implemented yet");
-  return undefined;
-};
-
-export const getCurrentUser = (): User => {
-  // TODO: Implement backend API call
-  throw new Error("getCurrentUser API not implemented yet");
-};
-
-export const updateCurrentUser = (_updates: Partial<User>): User => {
-  // TODO: Implement backend API call
-  throw new Error("updateCurrentUser API not implemented yet");
 };
 
 // =============================================================================
