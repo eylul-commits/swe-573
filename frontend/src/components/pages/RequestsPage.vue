@@ -96,10 +96,10 @@ import TabsTrigger from '../ui/TabsTrigger.vue'
 import TabsContent from '../ui/TabsContent.vue'
 import ScrollArea from '../ui/ScrollArea.vue'
 import RequestCard from '../RequestCard.vue'
-import { mockRequests } from '../../data/mockRequests'
-import type { ServiceRequest } from '../../data/mockRequests'
+import type { ServiceRequest } from '../../types'
 
-const requests = ref<ServiceRequest[]>([...mockRequests])
+// TODO: Replace with API call to fetch service requests
+const requests = ref<ServiceRequest[]>([])
 
 const pendingRequests = computed(() => requests.value.filter(r => r.status === 'pending'))
 const acceptedRequests = computed(() => requests.value.filter(r => r.status === 'accepted'))
