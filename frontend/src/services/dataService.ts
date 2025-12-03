@@ -10,7 +10,6 @@ import {
   User,
   Notification,
   Review,
-  CommunityStats,
   ServiceFilters,
   ServiceRatingsResponse,
   ServiceQuestion,
@@ -253,19 +252,4 @@ export const getServiceQuestions = async (
     console.error(`Failed to load questions for service ${serviceId}:`, error);
     return [];
   }
-};
-
-// =============================================================================
-// COMMUNITY STATS OPERATIONS
-// =============================================================================
-
-export const getCommunityStats = (): CommunityStats => {
-  // TODO: Implement backend API call
-  console.warn("getCommunityStats API not implemented yet");
-  return {
-    activeMembers: 0,
-    hoursExchanged: 0,
-    activeServices: 0,
-    completedThisMonth: 0,
-  };
 };
