@@ -4,9 +4,9 @@
 -- USERS
 INSERT INTO users (id, email, password_hash, name, bio, province, district, geohash, role, balance_hours, created_at, updated_at)
 VALUES
-(1, 'alice@example.com', 'hash123', 'Alice Aydın', 'Love volunteering!', 'Istanbul', 'Kadıköy', 'sxk3', 'USER', 3, NOW(), NOW()),
-(2, 'bob@example.com', 'hash456', 'Bob Balcı', 'Community builder', 'Ankara', 'Çankaya', 'syet', 'USER', 5, NOW(), NOW()),
-(3, 'admin@example.com', 'hash789', 'Admin User', 'Platform moderator', 'Istanbul', 'Beşiktaş', 'sxk9', 'ADMIN', 10, NOW(), NOW())
+(1, 'alice@example.com', '$2a$12$ghIyUZLjPNnQudmitgsimuViKIbP4Wo1Gi8eiVHrbL5yK.rt7N4pa', 'Alice Aydın', 'Love volunteering!', 'Istanbul', 'Kadıköy', 'sxk3', 'USER', 3, NOW(), NOW()),
+(2, 'bob@example.com', '$2a$12$ghIyUZLjPNnQudmitgsimuViKIbP4Wo1Gi8eiVHrbL5yK.rt7N4pa', 'Bob Balcı', 'Community builder', 'Ankara', 'Çankaya', 'syet', 'USER', 5, NOW(), NOW()),
+(3, 'admin@example.com', '$2a$12$ghIyUZLjPNnQudmitgsimuViKIbP4Wo1Gi8eiVHrbL5yK.rt7N4pa', 'Admin User', 'Platform moderator', 'Istanbul', 'Beşiktaş', 'sxk9', 'ADMIN', 10, NOW(), NOW())
 ON CONFLICT (id) DO NOTHING;
 
 -- OFFERS
@@ -62,7 +62,7 @@ VALUES
 (2, 2, 3, 2, 'COMPLETED', 3, NOW() - INTERVAL '5 days', NOW() - INTERVAL '2 days'),
 (3, 3, 1, 3, 'COMPLETED', 4, NOW() - INTERVAL '10 days', NOW() - INTERVAL '5 days'),
 (4, 5, 2, 3, 'COMPLETED', 3, NOW() - INTERVAL '7 days', NOW() - INTERVAL '3 days'),
-(5, 4, 1, 2, 'ACTIVE', 2, NOW() - INTERVAL '1 day', NULL)
+(5, 4, 1, 2, 'PENDING', 2, NOW() - INTERVAL '1 day', NULL)
 ON CONFLICT (id) DO NOTHING;
 
 -- TIMEBANK TRANSACTIONS

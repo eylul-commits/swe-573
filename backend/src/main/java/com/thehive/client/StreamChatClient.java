@@ -5,11 +5,13 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.*;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestTemplate;
+import java.net.URI; 
 
 import javax.crypto.Mac;
 import javax.crypto.spec.SecretKeySpec;
 import java.nio.charset.StandardCharsets;
 import java.util.*;
+import java.net.URLEncoder; 
 
 @Service
 @Slf4j
@@ -142,13 +144,65 @@ public class StreamChatClient {
             // Prepare authenticated headers
             HttpHeaders headers = createAuthenticatedHeaders();
 
-            // Delete all users (hard delete)
-            String url = String.format("%s/users?api_key=%s&delete_type=hard", STREAM_API_BASE_URL, apiKey);
-            HttpEntity<Map<String, Object>> request = new HttpEntity<>(new HashMap<>(), headers);
+            // Query all users first
+            Map<String, Object> queryParams = new HashMap<>();
+            queryParams.put("limit", 100);
+
+            String payload = URLEncoder.encode("{\"filter_conditions\":{}}", StandardCharsets.UTF_8);
             
-            restTemplate.exchange(url, HttpMethod.DELETE, request, String.class);
+            String queryUrl = String.format(
+                "%s/users?payload=%s&api_key=%s",
+                STREAM_API_BASE_URL,
+                payload,
+                apiKey
+            );
+
+            RequestEntity<Void> request = RequestEntity
+                .get(URI.create(queryUrl))
+                .header("Authorization", generateServerToken())
+                .header("Stream-Auth-Type", "jwt")
+                .build();
+
+            ResponseEntity<Map> queryResponse = restTemplate.exchange(request, Map.class);
             
-            log.info("✓ Deleted all users from Stream Chat");
+            if (queryResponse.getBody() != null && queryResponse.getBody().containsKey("users")) {
+                List<Map<String, Object>> users = (List<Map<String, Object>>) queryResponse.getBody().get("users");
+                
+                if (users.isEmpty()) {
+                    log.info("No users to delete from Stream Chat");
+                    return;
+                }
+                
+                log.info("Found {} users to delete from Stream Chat", users.size());
+
+                // Collect all user IDs
+                List<String> userIds = new ArrayList<>();
+                for (Map<String, Object> user : users) {
+                    String userId = (String) user.get("id");
+                    if (userId != null) {
+                        userIds.add(userId);
+                    }
+                }
+                
+                // Delete all users in a single batch request
+                if (!userIds.isEmpty()) {
+                    try {
+                        String deleteUrl = String.format("%s/users/delete?api_key=%s", STREAM_API_BASE_URL, apiKey);
+
+                        Map<String, Object> deleteBody = new HashMap<>();
+                        deleteBody.put("conversations", "hard");
+                        deleteBody.put("messages", "hard");
+                        deleteBody.put("user", "hard");
+                        deleteBody.put("user_ids", userIds);
+                        
+                        HttpEntity<Map<String, Object>> deleteRequest = new HttpEntity<>(deleteBody, headers);
+                        
+                        restTemplate.exchange(deleteUrl, HttpMethod.POST, deleteRequest, String.class);
+                    } catch (Exception e) {
+                        log.error("Failed to delete users: {}", e.getMessage());
+                    }
+                }
+            }
         } catch (Exception e) {
             log.error("✗ Failed to delete all users from Stream Chat: {}", e.getMessage(), e);
         }
@@ -186,9 +240,15 @@ public class StreamChatClient {
                 int deletedCount = 0;
                 for (Map<String, Object> channel : channels) {
                     try {
-                        String channelType = (String) channel.get("type");
-                        String channelId = (String) channel.get("id");
-                        
+                        Map<String, Object> channelData = (Map<String, Object>) channel.get("channel");
+                        if (channelData == null) {
+                            log.warn("Channel object is missing 'channel' wrapper: {}", channel);
+                            continue;
+                        }
+
+                        String channelType = (String) channelData.get("type");
+                        String channelId = (String) channelData.get("id");
+
                         if (channelType != null && channelId != null) {
                             String deleteUrl = String.format("%s/channels/%s/%s?api_key=%s&hard_delete=true", 
                                 STREAM_API_BASE_URL, channelType, channelId, apiKey);
