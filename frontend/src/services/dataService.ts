@@ -112,24 +112,6 @@ export const getUserBadge = (
   return "newcomer";
 };
 
-export const createService = (_service: Omit<Service, "id">): Service => {
-  // TODO: Implement backend API call
-  throw new Error("createService API not implemented yet - use marketplaceService.createOffer/createRequest instead");
-};
-
-export const updateService = (
-  _id: string,
-  _updates: Partial<Service>
-): Service | undefined => {
-  // TODO: Implement backend API call
-  throw new Error("updateService API not implemented yet");
-};
-
-export const deleteService = (_id: string): boolean => {
-  // TODO: Implement backend API call
-  throw new Error("deleteService API not implemented yet");
-};
-
 // =============================================================================
 // NOTIFICATION OPERATIONS
 // =============================================================================
@@ -146,25 +128,9 @@ export const getUnreadNotificationsCount = (): number => {
   return 0;
 };
 
-export const markNotificationAsRead = (_id: string): void => {
-  // TODO: Implement backend API call
-  console.warn("markNotificationAsRead API not implemented yet");
-};
-
-export const markAllNotificationsAsRead = (): void => {
-  // TODO: Implement backend API call
-  console.warn("markAllNotificationsAsRead API not implemented yet");
-};
-
 // =============================================================================
 // REVIEW OPERATIONS
 // =============================================================================
-
-export const getAllReviews = (): Review[] => {
-  // TODO: Implement backend API call
-  console.warn("getAllReviews API not implemented yet");
-  return [];
-};
 
 export const getReviewsByServiceId = (_serviceId: string): Review[] => {
   // TODO: Implement backend API call
@@ -182,11 +148,6 @@ export const getReviewCount = (_serviceId: string): number => {
   // TODO: Implement backend API call
   console.warn("getReviewCount API not implemented yet");
   return 0;
-};
-
-export const createReview = (_review: Omit<Review, "id">): Review => {
-  // TODO: Implement backend API call
-  throw new Error("createReview API not implemented yet");
 };
 
 export const getServiceRatings = async (
