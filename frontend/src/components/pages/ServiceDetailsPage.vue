@@ -106,24 +106,43 @@
 
         <!-- Service Ratings Card -->
         <Card v-if="reviewCount > 0" class="p-6">
-          <div class="flex items-center justify-between mb-6">
-            <div>
-              <h2 class="text-gray-900 mb-1">Service Ratings</h2>
-              <p class="text-sm text-gray-600">{{ reviewCount }} {{ reviewCount === 1 ? 'review' : 'reviews' }} from past exchanges</p>
-            </div>
-            <div class="text-center">
-              <div class="flex items-center gap-2 mb-1">
+          <h2 class="text-gray-900 mb-4">Service Ratings ({{ reviewCount }} {{ reviewCount === 1 ? 'review' : 'reviews' }})</h2>
+          <div class="grid grid-cols-2 gap-4">
+            <div class="space-y-1">
+              <div class="text-sm text-gray-700">Punctuality</div>
+              <div class="flex items-center gap-2">
                 <div class="flex items-center gap-0.5">
-                  <Star
-                    v-for="star in 5"
-                    :key="star"
-                    class="w-6 h-6"
-                    :class="star <= Math.round(averageRating) ? 'fill-amber-400 text-amber-400' : 'fill-gray-200 text-gray-200'"
-                  />
+                  <Star v-for="star in 5" :key="star" :class="['w-4 h-4', star <= Math.round(ratings?.summary.punctuality || 0) ? 'fill-amber-400 text-amber-400' : 'fill-gray-200 text-gray-200']" />
                 </div>
+                <span class="text-sm text-gray-600">{{ ratings?.summary.punctuality.toFixed(1) }}</span>
               </div>
-              <div class="text-2xl text-gray-900">{{ averageRating.toFixed(1) }}</div>
-              <div class="text-xs text-gray-500">Average Rating</div>
+            </div>
+            <div class="space-y-1">
+              <div class="text-sm text-gray-700">Friendly</div>
+              <div class="flex items-center gap-2">
+                <div class="flex items-center gap-0.5">
+                  <Star v-for="star in 5" :key="star" :class="['w-4 h-4', star <= Math.round(ratings?.summary.friendliness || 0) ? 'fill-amber-400 text-amber-400' : 'fill-gray-200 text-gray-200']" />
+                </div>
+                <span class="text-sm text-gray-600">{{ ratings?.summary.friendliness.toFixed(1) }}</span>
+              </div>
+            </div>
+            <div class="space-y-1">
+              <div class="text-sm text-gray-700">Communicative</div>
+              <div class="flex items-center gap-2">
+                <div class="flex items-center gap-0.5">
+                  <Star v-for="star in 5" :key="star" :class="['w-4 h-4', star <= Math.round(ratings?.summary.communicative || 0) ? 'fill-amber-400 text-amber-400' : 'fill-gray-200 text-gray-200']" />
+                </div>
+                <span class="text-sm text-gray-600">{{ ratings?.summary.communicative.toFixed(1) }}</span>
+              </div>
+            </div>
+            <div class="space-y-1">
+              <div class="text-sm text-gray-700">Prepared</div>
+              <div class="flex items-center gap-2">
+                <div class="flex items-center gap-0.5">
+                  <Star v-for="star in 5" :key="star" :class="['w-4 h-4', star <= Math.round(ratings?.summary.preparedness || 0) ? 'fill-amber-400 text-amber-400' : 'fill-gray-200 text-gray-200']" />
+                </div>
+                <span class="text-sm text-gray-600">{{ ratings?.summary.preparedness.toFixed(1) }}</span>
+              </div>
             </div>
           </div>
         </Card>
@@ -184,7 +203,7 @@
                 class="rounded-none border-b-2 border-transparent data-[state=active]:border-gray-900 data-[state=active]:bg-transparent"
               >
                 <Star class="w-4 h-4 mr-2" />
-                Reviews ({{ ratings?.ratings.length || 0 }})
+                Reviews ({{ serviceRatings.length }})
               </TabsTrigger>
             </TabsList>
 
@@ -245,25 +264,44 @@
             </TabsContent>
 
             <TabsContent value="reviews" class="space-y-4">
-              <div v-if="ratings?.ratings && ratings.ratings.length > 0">
-                <div v-for="rating in ratings.ratings" :key="rating.id" class="space-y-3 pb-4 border-b border-gray-200 last:border-0 last:pb-0">
+              <div v-if="serviceRatings.length > 0">
+                <div v-for="rating in serviceRatings" :key="rating.id" class="space-y-3 pb-4 border-b border-gray-200 last:border-0 last:pb-0">
                   <div class="flex items-start gap-3">
                     <Avatar class="w-10 h-10">
                       <AvatarImage :src="rating.rater.avatar" :alt="rating.rater.name" />
                     </Avatar>
                     <div class="flex-1">
-                      <div class="flex items-center justify-between mb-2">
-                        <div>
-                          <div class="text-gray-900 text-sm">{{ rating.rater.name }}</div>
-                          <div class="text-xs text-gray-500 mt-0.5">{{ rating.createdAt }}</div>
+                      <div class="flex items-center gap-2 mb-2">
+                        <div class="text-gray-900 text-sm">{{ rating.rater.name }}</div>
+                        <span class="text-xs text-gray-400">•</span>
+                        <div class="text-xs text-gray-500">{{ rating.createdAt }}</div>
+                      </div>
+                      
+                      <!-- Individual ratings -->
+                      <div class="grid grid-cols-2 gap-2 mb-3">
+                        <div class="flex items-center gap-2">
+                          <span class="text-xs text-gray-600 w-24">Punctuality:</span>
+                          <div class="flex items-center gap-0.5">
+                            <Star v-for="star in 5" :key="star" :class="['w-3 h-3', star <= rating.punctuality ? 'fill-amber-400 text-amber-400' : 'fill-gray-200 text-gray-200']" />
+                          </div>
                         </div>
-                        <div class="flex items-center gap-0.5">
-                          <Star
-                            v-for="star in 5"
-                            :key="star"
-                            class="w-3 h-3"
-                            :class="star <= ((rating.punctuality + rating.friendliness + rating.communicative + rating.preparedness) / 4) ? 'fill-amber-400 text-amber-400' : 'fill-gray-200 text-gray-200'"
-                          />
+                        <div class="flex items-center gap-2">
+                          <span class="text-xs text-gray-600 w-24">Friendly:</span>
+                          <div class="flex items-center gap-0.5">
+                            <Star v-for="star in 5" :key="star" :class="['w-3 h-3', star <= rating.friendliness ? 'fill-amber-400 text-amber-400' : 'fill-gray-200 text-gray-200']" />
+                          </div>
+                        </div>
+                        <div class="flex items-center gap-2">
+                          <span class="text-xs text-gray-600 w-24">Communicative:</span>
+                          <div class="flex items-center gap-0.5">
+                            <Star v-for="star in 5" :key="star" :class="['w-3 h-3', star <= rating.communicative ? 'fill-amber-400 text-amber-400' : 'fill-gray-200 text-gray-200']" />
+                          </div>
+                        </div>
+                        <div class="flex items-center gap-2">
+                          <span class="text-xs text-gray-600 w-24">Prepared:</span>
+                          <div class="flex items-center gap-0.5">
+                            <Star v-for="star in 5" :key="star" :class="['w-3 h-3', star <= rating.preparedness ? 'fill-amber-400 text-amber-400' : 'fill-gray-200 text-gray-200']" />
+                          </div>
                         </div>
                       </div>
                       
@@ -336,13 +374,8 @@ watch(() => appStore.selectedServiceId, async (newId) => {
   }
 }, { immediate: true })
 
-const averageRating = computed(() => {
-  if (!ratings.value || ratings.value.summary.totalReviews === 0) return 0
-  const summary = ratings.value.summary
-  return (summary.punctuality + summary.friendliness + summary.communicative + summary.preparedness) / 4
-})
-
 const reviewCount = computed(() => ratings.value?.summary.totalReviews || 0)
+const serviceRatings = computed(() => ratings.value?.ratings || [])
 
 const questionText = ref('')
 
