@@ -6,6 +6,7 @@ import { useHandshakeStore } from '../stores/handshakeStore';
 
 let chatClient: StreamChat | null = null;
 let currentUserId: string | null = null;
+let activeChannelId: string | null = null;
 let hasNewMessageListener = false;
 
 async function setupGlobalMessageListener() {
@@ -241,7 +242,9 @@ function addChannelMessageListener(channel: Channel<DefaultGenerics>) {
     // ignore messages sent by the current user
     if (user?.id && user.id === currentUserId) return;
 
-    
+    // DON'T show notification if this channel is currently active
+    if (channel.id === activeChannelId) return;
+
     const senderName = (user && (user.name as string)) || user?.id || 'New message';
     const channelName = channel.data?.name || 'Chat';
 
@@ -252,4 +255,14 @@ function addChannelMessageListener(channel: Channel<DefaultGenerics>) {
       duration: 3000,
     });
   });
+}
+
+export function setActiveChannel(handshakeId: number): void {
+  activeChannelId = `handshake-${handshakeId}`;
+  console.log('Active channel set:', activeChannelId);
+}
+
+export function clearActiveChannel(): void {
+  console.log('Active channel cleared');
+  activeChannelId = null;
 }

@@ -125,7 +125,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, onMounted, nextTick, watch } from 'vue';
+import { ref, computed, onMounted, nextTick, watch, onUnmounted } from 'vue';
 import Avatar from './ui/Avatar.vue';
 import AvatarImage from './ui/AvatarImage.vue';
 import AvatarFallback from './ui/AvatarFallback.vue';
@@ -138,6 +138,8 @@ import {
   getHandshakeChannel,
   createHandshakeChannel,
   markChannelAsRead,
+  clearActiveChannel,
+  setActiveChannel,
 } from '../clients/streamChatClient';
 import type {
   Channel as StreamChannel,
@@ -238,11 +240,22 @@ function isCurrentUserMessage(message: FormatMessageResponse<DefaultGenerics>): 
 }
 
 // Initialize Stream Chat when enabled or handshake changes
-watch(() => [props.streamChatEnabled, props.handshake?.id], async () => {
-  if (props.streamChatEnabled && props.handshake) {
-    await initializeStreamChat();
-  }
-}, { immediate: true });
+watch(
+  () => props.handshake,
+  async (newHandshake, oldHandshake) => {
+    // Clear the previous active channel
+    if (oldHandshake) {
+      clearActiveChannel();
+    }
+    
+    // Set the new active channel
+    if (newHandshake && props.streamChatEnabled) {
+      await initializeStreamChat();
+      setActiveChannel(newHandshake.id);
+    }
+  },
+  { immediate: true }
+);
 
 async function initializeStreamChat() {
   if (!props.handshake) return;
@@ -297,6 +310,12 @@ async function initializeStreamChat() {
 onMounted(async () => {
   if (props.streamChatEnabled && props.handshake) {
     await initializeStreamChat();
+  }
+});
+
+onUnmounted(() => {
+  if (props.streamChatEnabled && props.handshake) {
+    clearActiveChannel();
   }
 });
 </script>
