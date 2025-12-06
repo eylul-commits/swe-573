@@ -1,14 +1,11 @@
 import { defineStore } from 'pinia'
 import { ref, computed } from 'vue'
-import type { Notification } from '../types'
 import type { User } from '../services/authService'
 
 export const useAppStore = defineStore('app', () => {
   // State
   const currentUser = ref<User | null>(null)
   const authToken = ref<string | null>(localStorage.getItem('authToken'))
-  const notifications = ref<Notification[]>([])
-  const unreadNotificationsCount = ref(0)
   const streamChatReady = ref(false)
   const currentPage = ref('home')
   const selectedServiceId = ref<string | null>(null)
@@ -96,8 +93,6 @@ export const useAppStore = defineStore('app', () => {
     // State
     currentUser,
     authToken,
-    notifications,
-    unreadNotificationsCount,
     streamChatReady,
     currentPage,
     selectedServiceId,
