@@ -1,14 +1,35 @@
-/**
- * Stream Chat Service
- * 
- * Manages Stream Chat SDK initialization and channel operations
- */
-
 import { StreamChat, Channel, DefaultGenerics } from 'stream-chat';
+import type { Event } from 'stream-chat';
+import { ElMessage } from 'element-plus';
 import type { Handshake } from '../types';
 
 let chatClient: StreamChat | null = null;
 let currentUserId: string | null = null;
+let hasNewMessageListener = false;
+
+function setupGlobalMessageListener() {
+  if (!chatClient || hasNewMessageListener) return;
+
+  chatClient.on('message.new', (event: Event) => {
+    const message = event.message;
+    const user = message?.user || event.user;
+
+    // Ignore messages sent by the current user
+    if (user?.id && user.id === currentUserId) return;
+
+    const senderName = (user && (user.name as string)) || user?.id || 'New message';
+    const text = (message?.text as string) || '';
+
+    ElMessage({
+      message: text ? `${senderName}: ${text}` : `New message from ${senderName}`,
+      type: 'success',
+      showClose: true,
+      duration: 3000,
+    });
+  });
+
+  hasNewMessageListener = true;
+}
 
 /**
  * Initialize Stream Chat client and connect user
@@ -27,7 +48,7 @@ export async function initializeStreamChat(
 
     // Get or create client instance
     chatClient = StreamChat.getInstance(apiKey);
-    
+
     // Connect user
     await chatClient.connectUser(
       {
@@ -36,10 +57,14 @@ export async function initializeStreamChat(
       },
       userToken
     );
-    
+
     currentUserId = userId;
+
+    // Set up global new-message notification listener once per client
+    setupGlobalMessageListener();
+
     console.log('Stream Chat initialized for user:', userName);
-    
+
     return chatClient;
   } catch (error) {
     console.error('Failed to initialize Stream Chat:', error);
