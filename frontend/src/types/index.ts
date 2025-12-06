@@ -47,18 +47,6 @@ export interface Service {
     recurring?: boolean;
   };
 }
-
-export interface Review {
-  id: string;
-  serviceId: string;
-  reviewerId: string;
-  reviewerName: string;
-  reviewerAvatar: string;
-  rating: number;
-  comment: string;
-  createdAt: string;
-}
-
 export interface Notification {
   id: string;
   type: "request" | "offer" | "message" | "review" | "reminder" | "achievement";
@@ -168,7 +156,6 @@ export interface UserProfile extends User {
   };
   servicesOffered: Service[];
   servicesRequested: Service[];
-  reviews: Review[];
 }
 
 // Filter types
@@ -219,5 +206,19 @@ export interface CreateRatingRequest {
   communicative: number;
   preparedness: number;
   comment?: string;
+}
+
+export interface ServiceRequest {
+  id: string;
+  serviceId: string;
+  service: Service;
+  requester: Omit<User, 'badge'> & {
+    badge: { emoji: string; label: string };
+  };
+  proposedDate: string;
+  proposedTime: string;
+  timestamp: string;
+  status: "pending" | "accepted" | "declined";
+  message?: string;
 }
 

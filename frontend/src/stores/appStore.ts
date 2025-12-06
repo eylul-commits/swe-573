@@ -1,13 +1,7 @@
 import { defineStore } from 'pinia'
 import { ref, computed } from 'vue'
-import type { Notification, Conversation } from '../types'
+import type { Notification } from '../types'
 import type { User } from '../services/authService'
-import {
-  getAllNotifications,
-  getUnreadNotificationsCount,
-  getAllConversations,
-  getUnreadMessageCount,
-} from '../services/dataService'
 
 export const useAppStore = defineStore('app', () => {
   // State
@@ -15,8 +9,6 @@ export const useAppStore = defineStore('app', () => {
   const authToken = ref<string | null>(localStorage.getItem('authToken'))
   const notifications = ref<Notification[]>([])
   const unreadNotificationsCount = ref(0)
-  const conversations = ref<Conversation[]>([])
-  const unreadMessagesCount = ref(0)
   const streamChatReady = ref(false)
   const currentPage = ref('home')
   const selectedServiceId = ref<string | null>(null)
@@ -87,52 +79,6 @@ export const useAppStore = defineStore('app', () => {
     streamChatReady.value = false
   }
 
-  const loadUserFromStorage = async () => {
-    const token = localStorage.getItem('authToken')
-    const userStr = localStorage.getItem('currentUser')
-    const streamChatToken = localStorage.getItem('streamChatToken')
-    
-    if (token && userStr) {
-      try {
-        currentUser.value = JSON.parse(userStr)
-        authToken.value = token
-
-        if (streamChatToken && currentUser.value) {
-          console.log('Reinitializing Stream Chat from storage...')
-          streamChatReady.value = false
-          try {
-            const { initializeStreamChat } = await import('../clients/streamChatClient')
-            await initializeStreamChat(
-              currentUser.value.id.toString(),
-              currentUser.value.name || currentUser.value.email,
-              streamChatToken
-            )
-            console.log('Stream Chat reinitialized successfully')
-            streamChatReady.value = true
-          } catch (error) {
-            // Token expired olmuşsa siliyorum
-            console.error('Failed to reinitialize Stream Chat:', error)
-            streamChatReady.value = false
-            localStorage.removeItem('streamChatToken')
-          }
-        }
-
-      } catch (e) {
-        logout()
-      }
-    }
-  }
-
-  const refreshNotifications = () => {
-    notifications.value = getAllNotifications()
-    unreadNotificationsCount.value = getUnreadNotificationsCount()
-  }
-
-  const refreshConversations = () => {
-    conversations.value = getAllConversations()
-    unreadMessagesCount.value = getUnreadMessageCount()
-  }
-
   const setCurrentPage = (page: string) => {
     currentPage.value = page
   }
@@ -145,12 +91,6 @@ export const useAppStore = defineStore('app', () => {
     selectedThreadId.value = id
   }
 
-  // Initialize data on store creation
-  loadUserFromStorage()
-  if (isAuthenticated.value) {
-    refreshNotifications()
-    refreshConversations()
-  }
 
   return {
     // State
@@ -158,8 +98,6 @@ export const useAppStore = defineStore('app', () => {
     authToken,
     notifications,
     unreadNotificationsCount,
-    conversations,
-    unreadMessagesCount,
     streamChatReady,
     currentPage,
     selectedServiceId,
@@ -171,8 +109,6 @@ export const useAppStore = defineStore('app', () => {
     // Actions
     setCurrentUser,
     logout,
-    refreshNotifications,
-    refreshConversations,
     setCurrentPage,
     setSelectedServiceId,
     setSelectedThreadId,

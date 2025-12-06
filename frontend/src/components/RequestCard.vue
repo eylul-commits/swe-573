@@ -120,7 +120,7 @@ import AvatarImage from './ui/AvatarImage.vue'
 import Badge from './ui/Badge.vue'
 import Card from './ui/Card.vue'
 import Button from './ui/Button.vue'
-import type { ServiceRequest } from '../data/mockRequests'
+import type { ServiceRequest } from '../types'
 
 defineProps<{
   request: ServiceRequest
