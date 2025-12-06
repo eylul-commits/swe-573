@@ -1,7 +1,5 @@
 import {
   Service,
-  Notification,
-  Review,
   ServiceFilters,
   ServiceRatingsResponse,
   ServiceQuestion,
@@ -113,42 +111,8 @@ export const getUserBadge = (
 };
 
 // =============================================================================
-// NOTIFICATION OPERATIONS
-// =============================================================================
-
-export const getAllNotifications = (): Notification[] => {
-  // TODO: Implement backend API call
-  console.warn("getAllNotifications API not implemented yet");
-  return [];
-};
-
-export const getUnreadNotificationsCount = (): number => {
-  // TODO: Implement backend API call
-  console.warn("getUnreadNotificationsCount API not implemented yet");
-  return 0;
-};
-
-// =============================================================================
 // REVIEW OPERATIONS
 // =============================================================================
-
-export const getReviewsByServiceId = (_serviceId: string): Review[] => {
-  // TODO: Implement backend API call
-  console.warn("getReviewsByServiceId API not implemented yet");
-  return [];
-};
-
-export const getAverageRating = (_serviceId: string): number => {
-  // TODO: Implement backend API call
-  console.warn("getAverageRating API not implemented yet");
-  return 0;
-};
-
-export const getReviewCount = (_serviceId: string): number => {
-  // TODO: Implement backend API call
-  console.warn("getReviewCount API not implemented yet");
-  return 0;
-};
 
 export const getServiceRatings = async (
   serviceId: string

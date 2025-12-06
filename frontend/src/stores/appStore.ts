@@ -2,10 +2,6 @@ import { defineStore } from 'pinia'
 import { ref, computed } from 'vue'
 import type { Notification } from '../types'
 import type { User } from '../services/authService'
-import {
-  getAllNotifications,
-  getUnreadNotificationsCount,
-} from '../services/dataService'
 
 export const useAppStore = defineStore('app', () => {
   // State
@@ -119,11 +115,6 @@ export const useAppStore = defineStore('app', () => {
     }
   }
 
-  const refreshNotifications = () => {
-    notifications.value = getAllNotifications()
-    unreadNotificationsCount.value = getUnreadNotificationsCount()
-  }
-
   const setCurrentPage = (page: string) => {
     currentPage.value = page
   }
@@ -136,11 +127,6 @@ export const useAppStore = defineStore('app', () => {
     selectedThreadId.value = id
   }
 
-  // Initialize data on store creation
-  loadUserFromStorage()
-  if (isAuthenticated.value) {
-    refreshNotifications()
-  }
 
   return {
     // State
@@ -159,7 +145,6 @@ export const useAppStore = defineStore('app', () => {
     // Actions
     setCurrentUser,
     logout,
-    refreshNotifications,
     setCurrentPage,
     setSelectedServiceId,
     setSelectedThreadId,
