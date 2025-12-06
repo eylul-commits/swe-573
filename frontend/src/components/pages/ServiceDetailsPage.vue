@@ -417,7 +417,7 @@ const getAvailability = (id: string) => {
 
 const handleAskQuestion = () => {
   if (questionText.value.trim()) {
-    // In a real app, this would send the question to the backend
+    // TODO: Implement backend API call to create a question
     console.log("Asking question:", questionText.value)
     questionText.value = ""
   }
