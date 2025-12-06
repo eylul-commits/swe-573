@@ -9,15 +9,12 @@
       <Sidebar 
         :current-page="appStore.currentPage" 
         @navigate="handleNavigate"
-        @view-notifications="() => appStore.setCurrentPage('notifications')"
         @logout="handleLogout"
       />
     </div>
 
     <!-- Main Content -->
     <component :is="currentPageComponent" />
-    
-    <!-- Toast Notifications (simplified, would need a toast library) -->
   </div>
 </template>
 
@@ -30,7 +27,6 @@ import HomePage from './components/pages/HomePage.vue'
 import ExplorePage from './components/pages/ExplorePage.vue'
 import CommonsPage from './components/pages/CommonsPage.vue'
 import MessagingPage from './components/pages/MessagingPage.vue'
-import NotificationsPage from './components/pages/NotificationsPage.vue'
 import RequestsPage from './components/pages/RequestsPage.vue'
 import ServiceDetailsPage from './components/pages/ServiceDetailsPage.vue'
 import ThreadDetailsPage from './components/pages/ThreadDetailsPage.vue'
@@ -68,8 +64,6 @@ const currentPageComponent = computed(() => {
       return ExplorePage
     case 'create-offer':
       return CreateServicePage
-    case 'notifications':
-      return NotificationsPage
     case 'requests':
       return RequestsPage
     case 'messages':

@@ -1,14 +1,40 @@
-/**
- * Stream Chat Service
- * 
- * Manages Stream Chat SDK initialization and channel operations
- */
-
 import { StreamChat, Channel, DefaultGenerics } from 'stream-chat';
+import type { Event } from 'stream-chat';
+import { ElMessage } from 'element-plus';
 import type { Handshake } from '../types';
+import { useHandshakeStore } from '../stores/handshakeStore';
 
 let chatClient: StreamChat | null = null;
 let currentUserId: string | null = null;
+let activeChannelId: string | null = null;
+let hasNewMessageListener = false;
+
+async function setupGlobalMessageListener() {
+  if (!chatClient || hasNewMessageListener) return;
+
+  try {
+    // get all handshakes from store
+    const handshakeStore = useHandshakeStore();
+    await handshakeStore.loadHandshakes();
+    const allHandshakes = handshakeStore.handshakes;
+    
+    // get channels for each handshake
+    const channelPromises = allHandshakes.map(handshake => getHandshakeChannel(handshake.id));
+    const channelResults = await Promise.all(channelPromises);
+
+    // error varsa null gönderiyordu, o yüzden böyle
+    const channels = channelResults.filter((channel): channel is Channel<DefaultGenerics> => channel !== null);
+
+    // set up message listener on each channel
+    channels.forEach((channel) => {
+      addChannelMessageListener(channel);
+    });
+
+    hasNewMessageListener = true;
+  } catch (error) {
+    console.error('Failed to setup message listeners:', error);
+  }
+}
 
 /**
  * Initialize Stream Chat client and connect user
@@ -27,7 +53,7 @@ export async function initializeStreamChat(
 
     // Get or create client instance
     chatClient = StreamChat.getInstance(apiKey);
-    
+
     // Connect user
     await chatClient.connectUser(
       {
@@ -36,10 +62,14 @@ export async function initializeStreamChat(
       },
       userToken
     );
-    
+
     currentUserId = userId;
+
+    // Set up global new-message notification listener once per client
+    setupGlobalMessageListener();
+
     console.log('Stream Chat initialized for user:', userName);
-    
+
     return chatClient;
   } catch (error) {
     console.error('Failed to initialize Stream Chat:', error);
@@ -79,6 +109,7 @@ export async function createHandshakeChannel(
     await channel.watch();
     
     console.log('Channel created/accessed:', channelId);
+    addChannelMessageListener(channel);
     
     return channel;
   } catch (error) {
@@ -150,7 +181,6 @@ export async function getUserChannels(): Promise<Channel<DefaultGenerics>[]> {
     };
     
     const sort = [{ last_message_at: -1 as const }];
-    
     const channels = await chatClient.queryChannels(filter, sort, {
       watch: true,
       state: true,
@@ -204,3 +234,35 @@ export async function markChannelAsRead(channel: Channel<DefaultGenerics>): Prom
   }
 }
 
+function addChannelMessageListener(channel: Channel<DefaultGenerics>) {
+  channel.on('message.new', (event: Event) => {
+    const message = event.message;
+    const user = message?.user || event.user;
+
+    // ignore messages sent by the current user
+    if (user?.id && user.id === currentUserId) return;
+
+    // DON'T show notification if this channel is currently active
+    if (channel.id === activeChannelId) return;
+
+    const senderName = (user && (user.name as string)) || user?.id || 'New message';
+    const channelName = channel.data?.name || 'Chat';
+
+    ElMessage({
+      message: `New message from ${senderName} in ${channelName}`,
+      type: 'success',
+      showClose: true,
+      duration: 3000,
+    });
+  });
+}
+
+export function setActiveChannel(handshakeId: number): void {
+  activeChannelId = `handshake-${handshakeId}`;
+  console.log('Active channel set:', activeChannelId);
+}
+
+export function clearActiveChannel(): void {
+  console.log('Active channel cleared');
+  activeChannelId = null;
+}

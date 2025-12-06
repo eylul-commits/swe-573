@@ -47,17 +47,6 @@ export interface Service {
     recurring?: boolean;
   };
 }
-export interface Notification {
-  id: string;
-  type: "request" | "offer" | "message" | "review" | "reminder" | "achievement";
-  title: string;
-  message: string;
-  timestamp: string;
-  read: boolean;
-  actionUrl?: string;
-  relatedUserId?: string;
-  relatedServiceId?: string;
-}
 
 export interface Message {
   id: string;
@@ -150,8 +139,6 @@ export interface UserProfile extends User {
   email?: string;
   phone?: string;
   preferences?: {
-    emailNotifications: boolean;
-    pushNotifications: boolean;
     showLocation: boolean;
   };
   servicesOffered: Service[];
