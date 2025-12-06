@@ -184,7 +184,7 @@
                 class="rounded-none border-b-2 border-transparent data-[state=active]:border-gray-900 data-[state=active]:bg-transparent"
               >
                 <Star class="w-4 h-4 mr-2" />
-                Reviews ({{ reviews.length }})
+                Reviews ({{ ratings?.ratings.length || 0 }})
               </TabsTrigger>
             </TabsList>
 
@@ -212,23 +212,23 @@
                 <div v-for="q in questions" :key="q.id" class="space-y-3 bg-white border border-gray-200 rounded-lg p-4">
                   <div class="flex items-start gap-3">
                     <Avatar class="w-8 h-8">
-                      <AvatarImage :src="q.avatar" :alt="q.author" />
+                      <AvatarImage :src="q.author.avatar" :alt="q.author.name" />
                     </Avatar>
                     <div class="flex-1">
                       <div class="flex items-center gap-2 mb-1">
-                        <div class="text-sm text-gray-900">{{ q.author }}</div>
+                        <div class="text-sm text-gray-900">{{ q.author.name }}</div>
                         <span class="text-xs text-gray-400">•</span>
-                        <div class="text-xs text-gray-500">{{ q.date }}</div>
+                        <div class="text-xs text-gray-500">{{ q.createdAt }}</div>
                       </div>
-                      <p class="text-sm text-gray-700">{{ q.question }}</p>
+                      <p class="text-sm text-gray-700">{{ q.content }}</p>
                       
                       <div v-if="q.answer" class="mt-3 pl-4 border-l-2 border-emerald-200 bg-emerald-50 p-3 rounded">
                         <div class="flex items-center gap-2 mb-1">
-                          <div class="text-xs text-emerald-700">Answer from {{ q.answeredBy }}</div>
+                          <div class="text-xs text-emerald-700">Answer from {{ q.answer.responder.name }}</div>
                           <span class="text-xs text-gray-400">•</span>
-                          <div class="text-xs text-gray-500">{{ q.answeredDate }}</div>
+                          <div class="text-xs text-gray-500">{{ q.answer.createdAt }}</div>
                         </div>
-                        <p class="text-sm text-gray-700">{{ q.answer }}</p>
+                        <p class="text-sm text-gray-700">{{ q.answer.content }}</p>
                       </div>
 
                       <div v-else class="mt-2 text-xs text-gray-500 italic">
@@ -245,29 +245,29 @@
             </TabsContent>
 
             <TabsContent value="reviews" class="space-y-4">
-              <div v-if="reviews.length > 0">
-                <div v-for="review in reviews" :key="review.id" class="space-y-3 pb-4 border-b border-gray-200 last:border-0 last:pb-0">
+              <div v-if="ratings?.ratings && ratings.ratings.length > 0">
+                <div v-for="rating in ratings.ratings" :key="rating.id" class="space-y-3 pb-4 border-b border-gray-200 last:border-0 last:pb-0">
                   <div class="flex items-start gap-3">
                     <Avatar class="w-10 h-10">
-                      <AvatarImage :src="review.reviewerAvatar" :alt="review.reviewerName" />
+                      <AvatarImage :src="rating.rater.avatar" :alt="rating.rater.name" />
                     </Avatar>
                     <div class="flex-1">
                       <div class="flex items-center justify-between mb-2">
                         <div>
-                          <div class="text-gray-900 text-sm">{{ review.reviewerName }}</div>
-                          <div class="text-xs text-gray-500 mt-0.5">{{ review.createdAt }}</div>
+                          <div class="text-gray-900 text-sm">{{ rating.rater.name }}</div>
+                          <div class="text-xs text-gray-500 mt-0.5">{{ rating.createdAt }}</div>
                         </div>
                         <div class="flex items-center gap-0.5">
                           <Star
                             v-for="star in 5"
                             :key="star"
                             class="w-3 h-3"
-                            :class="star <= review.rating ? 'fill-amber-400 text-amber-400' : 'fill-gray-200 text-gray-200'"
+                            :class="star <= ((rating.punctuality + rating.friendliness + rating.communicative + rating.preparedness) / 4) ? 'fill-amber-400 text-amber-400' : 'fill-gray-200 text-gray-200'"
                           />
                         </div>
                       </div>
                       
-                      <p class="text-sm text-gray-600">{{ review.comment }}</p>
+                      <p class="text-sm text-gray-600">{{ rating.comment }}</p>
                     </div>
                   </div>
                 </div>
@@ -302,11 +302,11 @@ import TabsList from '../ui/TabsList.vue'
 import TabsTrigger from '../ui/TabsTrigger.vue'
 import Textarea from '../ui/Textarea.vue'
 import ImageWithFallback from '../ui/ImageWithFallback.vue'
-import { getServiceById, getReviewsByServiceId, getAverageRating, getReviewCount } from '../../services/dataService'
+import { getServiceById, getServiceRatings, getServiceQuestions  } from '../../services/dataService'
 import { createHandshake } from '../../services/handshakeService'
 import { createHandshakeChannel, isStreamChatInitialized } from '../../clients/streamChatClient'
 import { useAppStore } from '../../stores/appStore'
-import type { Service } from '../../types'
+import type { Service, ServiceQuestion, ServiceRatingsResponse } from '../../types'
 
 const appStore = useAppStore()
 
@@ -315,18 +315,34 @@ const service = ref<Service | null>(null)
 const isAccepting = ref(false)
 const acceptError = ref('')
 const acceptSuccess = ref('')
+const ratings = ref<ServiceRatingsResponse | null>(null)
+const questions = ref<ServiceQuestion[]>([])
 
 watch(() => appStore.selectedServiceId, async (newId) => {
   if (newId) {
-    service.value = await getServiceById(newId) || null
+    const [fetchedService, ratingsResponse, questionsResponse] = await Promise.all([
+      getServiceById(newId),
+      getServiceRatings(newId),
+      getServiceQuestions(newId),
+    ])
+    
+    service.value = fetchedService || null
+    ratings.value = ratingsResponse
+    questions.value = questionsResponse
   } else {
     service.value = null
+    ratings.value = null
+    questions.value = []
   }
 }, { immediate: true })
 
-const reviews = computed(() => serviceId.value ? getReviewsByServiceId(serviceId.value) : [])
-const averageRating = computed(() => serviceId.value ? getAverageRating(serviceId.value) : 0)
-const reviewCount = computed(() => serviceId.value ? getReviewCount(serviceId.value) : 0)
+const averageRating = computed(() => {
+  if (!ratings.value || ratings.value.summary.totalReviews === 0) return 0
+  const summary = ratings.value.summary
+  return (summary.punctuality + summary.friendliness + summary.communicative + summary.preparedness) / 4
+})
+
+const reviewCount = computed(() => ratings.value?.summary.totalReviews || 0)
 
 const questionText = ref('')
 
@@ -359,94 +375,6 @@ const badge = computed(() => {
     service.value.poster.timebankBalance
   )
 })
-
-// Mock questions data
-const allQuestions: Record<string, any[]> = {
-  "1": [
-    {
-      id: "q1",
-      author: "Murat Demir",
-      avatar: "https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=100&h=100&fit=crop",
-      date: "3 days ago",
-      question: "Do I need to bring my own yoga mat?",
-      answer: "Yes, please bring your own mat. I have a few extras but it's better to bring yours for comfort!",
-      answeredBy: "Mehmet Yılmaz",
-      answeredDate: "3 days ago",
-    },
-  ],
-  "2": [
-    {
-      id: "q2a",
-      author: "Selin Karaca",
-      avatar: "https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=100&h=100&fit=crop",
-      date: "2 days ago",
-      question: "How much sunlight does your balcony get? This will help me suggest the right plants for you.",
-      answer: "It gets morning sun until about 1 PM, then it's shaded. South-facing balcony on the 4th floor.",
-      answeredBy: "Ayşe Demir",
-      answeredDate: "2 days ago",
-    },
-    {
-      id: "q2b",
-      author: "Elif Demir",
-      avatar: "https://images.unsplash.com/photo-1487412720507-e7ab37603c6f?w=100&h=100&fit=crop",
-      date: "1 day ago",
-      question: "What's the size of your balcony? And are you interested in herbs, vegetables, or flowers?",
-      answer: "About 6 square meters. I'd love to grow herbs like basil, mint, and maybe some cherry tomatoes!",
-      answeredBy: "Ayşe Demir",
-      answeredDate: "1 day ago",
-    },
-  ],
-  "3": [
-    {
-      id: "q3",
-      author: "Ebru Kaya",
-      avatar: "https://images.unsplash.com/photo-1438761681033-6461ffad8d80?w=100&h=100&fit=crop",
-      date: "1 week ago",
-      question: "What kind of camera do I need?",
-      answer: "Any camera works! Even smartphones are great for street photography. It's all about composition and timing.",
-      answeredBy: "Can Özdemir",
-      answeredDate: "1 week ago",
-    },
-  ],
-  "5": [
-    {
-      id: "q5",
-      author: "Ahmet Yılmaz",
-      avatar: "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=100&h=100&fit=crop",
-      date: "2 days ago",
-      question: "Do you accommodate dietary restrictions?",
-      answer: "Absolutely! Just let me know in advance and I'll make sure to prepare something suitable.",
-      answeredBy: "Elif Kaya",
-      answeredDate: "2 days ago",
-    },
-  ],
-  "8": [
-    {
-      id: "q8",
-      author: "Elif Demir",
-      avatar: "https://images.unsplash.com/photo-1487412720507-e7ab37603c6f?w=100&h=100&fit=crop",
-      date: "5 hours ago",
-      question: "What recipes will you teach?",
-      answer: "I teach traditional dishes like menemen, gözleme, and imam bayıldı. Each session we focus on 2-3 recipes you can master!",
-      answeredBy: "Fatma Yıldız",
-      answeredDate: "4 hours ago",
-    },
-  ],
-  "9": [
-    {
-      id: "q9",
-      author: "Zeynep Acar",
-      avatar: "https://images.unsplash.com/photo-1438761681033-6461ffad8d80?w=100&h=100&fit=crop",
-      date: "1 day ago",
-      question: "What genres of books are usually available?",
-      answer: "We get a great mix! Mostly literary fiction, mysteries, and non-fiction. Everyone brings different tastes which makes it fun!",
-      answeredBy: "Ali Çelik",
-      answeredDate: "1 day ago",
-    },
-  ],
-}
-
-const questions = computed(() => allQuestions[serviceId.value] || [])
 
 const getAvailability = (id: string) => {
   if (id === "9") return "Starting Nov 1, 2025"
