@@ -41,6 +41,7 @@ export const useAppStore = defineStore('app', () => {
     if (streamChatToken) {
       try {
         const { initializeStreamChat } = await import('../clients/streamChatClient')
+
         await initializeStreamChat(
           user.id.toString(),
           user.name || user.email,

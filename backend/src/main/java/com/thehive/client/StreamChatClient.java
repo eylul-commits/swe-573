@@ -78,7 +78,7 @@ public class StreamChatClient {
         headers.setContentType(MediaType.APPLICATION_JSON);
         headers.set("Authorization", serverToken);
         headers.set("Stream-Auth-Type", "jwt");
-        
+
         return headers;
     }
 

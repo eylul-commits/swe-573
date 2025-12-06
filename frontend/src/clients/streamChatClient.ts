@@ -2,33 +2,37 @@ import { StreamChat, Channel, DefaultGenerics } from 'stream-chat';
 import type { Event } from 'stream-chat';
 import { ElMessage } from 'element-plus';
 import type { Handshake } from '../types';
+import { useHandshakeStore } from '../stores/handshakeStore';
 
 let chatClient: StreamChat | null = null;
 let currentUserId: string | null = null;
 let hasNewMessageListener = false;
 
-function setupGlobalMessageListener() {
+async function setupGlobalMessageListener() {
   if (!chatClient || hasNewMessageListener) return;
 
-  chatClient.on('message.new', (event: Event) => {
-    const message = event.message;
-    const user = message?.user || event.user;
+  try {
+    // get all handshakes from store
+    const handshakeStore = useHandshakeStore();
+    await handshakeStore.loadHandshakes();
+    const allHandshakes = handshakeStore.handshakes;
+    
+    // get channels for each handshake
+    const channelPromises = allHandshakes.map(handshake => getHandshakeChannel(handshake.id));
+    const channelResults = await Promise.all(channelPromises);
 
-    // Ignore messages sent by the current user
-    if (user?.id && user.id === currentUserId) return;
+    // error varsa null gönderiyordu, o yüzden böyle
+    const channels = channelResults.filter((channel): channel is Channel<DefaultGenerics> => channel !== null);
 
-    const senderName = (user && (user.name as string)) || user?.id || 'New message';
-    const text = (message?.text as string) || '';
-
-    ElMessage({
-      message: text ? `${senderName}: ${text}` : `New message from ${senderName}`,
-      type: 'success',
-      showClose: true,
-      duration: 3000,
+    // set up message listener on each channel
+    channels.forEach((channel) => {
+      addChannelMessageListener(channel);
     });
-  });
 
-  hasNewMessageListener = true;
+    hasNewMessageListener = true;
+  } catch (error) {
+    console.error('Failed to setup message listeners:', error);
+  }
 }
 
 /**
@@ -104,6 +108,7 @@ export async function createHandshakeChannel(
     await channel.watch();
     
     console.log('Channel created/accessed:', channelId);
+    addChannelMessageListener(channel);
     
     return channel;
   } catch (error) {
@@ -175,7 +180,6 @@ export async function getUserChannels(): Promise<Channel<DefaultGenerics>[]> {
     };
     
     const sort = [{ last_message_at: -1 as const }];
-    
     const channels = await chatClient.queryChannels(filter, sort, {
       watch: true,
       state: true,
@@ -229,3 +233,23 @@ export async function markChannelAsRead(channel: Channel<DefaultGenerics>): Prom
   }
 }
 
+function addChannelMessageListener(channel: Channel<DefaultGenerics>) {
+  channel.on('message.new', (event: Event) => {
+    const message = event.message;
+    const user = message?.user || event.user;
+
+    // ignore messages sent by the current user
+    if (user?.id && user.id === currentUserId) return;
+
+    
+    const senderName = (user && (user.name as string)) || user?.id || 'New message';
+    const channelName = channel.data?.name || 'Chat';
+
+    ElMessage({
+      message: `New message from ${senderName} in ${channelName}`,
+      type: 'success',
+      showClose: true,
+      duration: 3000,
+    });
+  });
+}
