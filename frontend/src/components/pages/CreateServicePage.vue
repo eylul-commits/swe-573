@@ -253,11 +253,16 @@
               </div>
             </div>
             
+            <!-- Map wrapper with dynamic border (doesn't affect map container) -->
             <div 
-              ref="mapContainer" 
-              class="map-container rounded-lg border border-gray-300"
-              :class="{ 'border-emerald-500': formData.geohash }"
-            ></div>
+              class="rounded-lg border-2 transition-colors"
+              :class="formData.geohash ? 'border-emerald-500' : 'border-gray-300'"
+            >
+              <div 
+                ref="mapContainer" 
+                class="map-container rounded-lg"
+              ></div>
+            </div>
             <p v-if="formData.geohash" class="text-sm text-emerald-600 mt-2">
               Location selected: {{ selectedLocation.lat.toFixed(6) }}, {{ selectedLocation.lng.toFixed(6) }}
             </p>
@@ -377,8 +382,6 @@ onMounted(() => {
   setTimeout(() => {
     if (mapContainer.value) {
       try {
-        console.log('Initializing map...', mapContainer.value)
-        
         // Create map centered on Turkey
         map = L.map(mapContainer.value, {
           center: [39.9334, 32.8597],
@@ -387,8 +390,6 @@ onMounted(() => {
           scrollWheelZoom: true,
           attributionControl: true
         })
-        
-        console.log('Map object created:', map)
         
         // Add OpenStreetMap tiles
         const tileLayer = L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
@@ -399,10 +400,6 @@ onMounted(() => {
         
         tileLayer.addTo(map)
         
-        tileLayer.on('load', () => {
-          console.log('Tiles loaded successfully')
-        })
-        
         tileLayer.on('tileerror', (error) => {
           console.error('Tile loading error:', error)
         })
@@ -411,18 +408,14 @@ onMounted(() => {
         setTimeout(() => {
           if (map) {
             map.invalidateSize()
-            console.log('Map size invalidated and initialized successfully')
           }
         }, 200)
         
         // Add click event to map
         map.on('click', (e: L.LeafletMouseEvent) => {
-          console.log('Map clicked:', e.latlng)
           const { lat, lng } = e.latlng
           placeMarker(lat, lng)
         })
-        
-        console.log('Map event handlers attached')
       } catch (error) {
         console.error('Failed to initialize map:', error)
         errorMessage.value = 'Failed to load map. Please refresh the page.'
@@ -478,7 +471,6 @@ async function searchLocation() {
     if (response.ok) {
       const results = await response.json()
       searchResults.value = results
-      console.log('Search results:', results)
     } else {
       errorMessage.value = 'Failed to search location. Please try again.'
     }
@@ -513,13 +505,6 @@ function placeMarker(lat: number, lng: number) {
   if (!map) return
   
   try {
-    // Update selected location
-    selectedLocation.value = { lat, lng }
-    
-    // Generate geohash
-    formData.value.geohash = encode(lat, lng, 9)
-    console.log('Geohash generated:', formData.value.geohash)
-    
     // Remove existing marker if any
     if (marker) {
       map.removeLayer(marker)
@@ -543,7 +528,18 @@ function placeMarker(lat: number, lng: number) {
     marker.addTo(map)
     marker.bindPopup(`Selected location<br>Lat: ${lat.toFixed(6)}<br>Lng: ${lng.toFixed(6)}`).openPopup()
     
-    console.log('Marker placed successfully')
+    // Update selected location
+    selectedLocation.value = { lat, lng }
+    
+    // Generate geohash
+    formData.value.geohash = encode(lat, lng, 9)
+    
+    // Force map to refresh and ensure tiles are visible
+    setTimeout(() => {
+      if (map) {
+        map.invalidateSize()
+      }
+    }, 10)
   } catch (error) {
     console.error('Error placing marker:', error)
   }
@@ -588,30 +584,39 @@ async function handleSubmit() {
   position: relative;
   z-index: 0;
   background-color: #f3f4f6;
+  overflow: hidden;
 }
 
-/* Ensure Leaflet container fills the parent */
+/* Ensure Leaflet container fills the parent and is always visible */
 :deep(.leaflet-container) {
   height: 100%;
   width: 100%;
   border-radius: 0.5rem;
   background-color: #e5e7eb;
   font-family: inherit;
+  position: relative;
+  z-index: 1;
 }
 
-/* Ensure Leaflet tiles and pane are visible */
+/* Ensure Leaflet tiles and pane are visible and on top */
 :deep(.leaflet-tile-pane) {
-  z-index: 2;
+  z-index: 2 !important;
 }
 
 :deep(.leaflet-tile) {
   image-rendering: auto;
+  opacity: 1 !important;
+}
+
+:deep(.leaflet-tile-container) {
+  opacity: 1 !important;
 }
 
 /* Ensure Leaflet controls are visible */
 :deep(.leaflet-control-zoom) {
   border: 2px solid rgba(0,0,0,0.2);
   border-radius: 4px;
+  z-index: 10;
 }
 
 :deep(.leaflet-bar) {
@@ -628,12 +633,17 @@ async function handleSubmit() {
 :deep(.leaflet-control-attribution) {
   background-color: rgba(255, 255, 255, 0.7);
   font-size: 11px;
+  z-index: 10;
 }
 
 /* Fix for marker icons */
 :deep(.leaflet-marker-icon) {
   margin-left: -12px;
   margin-top: -41px;
+}
+
+:deep(.leaflet-marker-shadow) {
+  opacity: 0.5;
 }
 </style>
 
