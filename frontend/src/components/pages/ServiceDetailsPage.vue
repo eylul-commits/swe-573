@@ -62,7 +62,7 @@
               <div class="text-sm text-gray-500">Location</div>
               <div class="flex items-center gap-2 text-gray-900">
                 <MapPin class="w-4 h-4 text-gray-400" />
-                <span>{{ service.location }}, Istanbul</span>
+                <span>{{ service.location }}</span>
               </div>
               <div class="text-sm text-gray-500">{{ service.distance }} away</div>
             </div>
