@@ -150,36 +150,6 @@
             </div>
           </div>
           
-          <!-- Province & District -->
-          <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div>
-              <label class="block text-sm font-medium text-gray-700 mb-2">
-                Province <span class="text-red-500">*</span>
-              </label>
-              <select 
-                v-model="formData.province"
-                class="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
-                required
-                @change="onProvinceChange"
-              >
-                <option value="">Select province</option>
-                <option v-for="province in provinces" :key="province" :value="province">
-                  {{ province }}
-                </option>
-              </select>
-            </div>
-            <div>
-              <label class="block text-sm font-medium text-gray-700 mb-2">
-                District <span class="text-red-500">*</span>
-              </label>
-              <Input 
-                v-model="formData.district"
-                placeholder="Enter district"
-                required
-              />
-            </div>
-          </div>
-          
           <!-- Tags -->
           <div>
             <label class="block text-sm font-medium text-gray-700 mb-2">
@@ -362,19 +332,6 @@ const searchQuery = ref('')
 const searchResults = ref<any[]>([])
 const isSearching = ref(false)
 
-// Turkish provinces
-const provinces = ref([
-  'Adana', 'Adıyaman', 'Afyonkarahisar', 'Ağrı', 'Aksaray', 'Amasya', 'Ankara', 'Antalya',
-  'Ardahan', 'Artvin', 'Aydın', 'Balıkesir', 'Bartın', 'Batman', 'Bayburt', 'Bilecik',
-  'Bingöl', 'Bitlis', 'Bolu', 'Burdur', 'Bursa', 'Çanakkale', 'Çankırı', 'Çorum',
-  'Denizli', 'Diyarbakır', 'Düzce', 'Edirne', 'Elazığ', 'Erzincan', 'Erzurum', 'Eskişehir',
-  'Gaziantep', 'Giresun', 'Gümüşhane', 'Hakkari', 'Hatay', 'Iğdır', 'Isparta', 'İstanbul',
-  'İzmir', 'Kahramanmaraş', 'Karabük', 'Karaman', 'Kars', 'Kastamonu', 'Kayseri', 'Kilis',
-  'Kırıkkale', 'Kırklareli', 'Kırşehir', 'Kocaeli', 'Konya', 'Kütahya', 'Malatya', 'Manisa',
-  'Mardin', 'Mersin', 'Muğla', 'Muş', 'Nevşehir', 'Niğde', 'Ordu', 'Osmaniye',
-  'Rize', 'Sakarya', 'Samsun', 'Şanlıurfa', 'Siirt', 'Sinop', 'Şırnak', 'Sivas',
-  'Tekirdağ', 'Tokat', 'Trabzon', 'Tunceli', 'Uşak', 'Van', 'Yalova', 'Yozgat', 'Zonguldak'
-])
 
 // Initialize map
 onMounted(() => {
@@ -434,10 +391,6 @@ onUnmounted(() => {
   }
 })
 
-function onProvinceChange() {
-  // Clear district when province changes
-  // You could add district auto-completion here based on province
-}
 
 function addTag() {
   const tag = tagInput.value.trim()
@@ -500,8 +453,8 @@ function selectSearchResult(result: any) {
   }
 }
 
-// Helper function to place marker
-function placeMarker(lat: number, lng: number) {
+// Helper function to place marker and get address details
+async function placeMarker(lat: number, lng: number) {
   if (!map) return
   
   try {
@@ -534,6 +487,9 @@ function placeMarker(lat: number, lng: number) {
     // Generate geohash
     formData.value.geohash = encode(lat, lng, 9)
     
+    // Get province and district from reverse geocoding
+    await reverseGeocode(lat, lng)
+    
     // Force map to refresh and ensure tiles are visible
     setTimeout(() => {
       if (map) {
@@ -542,6 +498,33 @@ function placeMarker(lat: number, lng: number) {
     }, 10)
   } catch (error) {
     console.error('Error placing marker:', error)
+  }
+}
+
+// Reverse geocode to get province and district
+async function reverseGeocode(lat: number, lng: number) {
+  try {
+    const response = await fetch(
+      `https://nominatim.openstreetmap.org/reverse?` +
+      `lat=${lat}&` +
+      `lon=${lng}&` +
+      `format=json&` +
+      `addressdetails=1`
+    )
+    
+    if (response.ok) {
+      const data = await response.json()
+      const address = data.address
+      
+      // Extract province (state) and district (city/town/municipality)
+      formData.value.province = address.state || address.province || ''
+      formData.value.district = address.city || address.town || address.municipality || address.county || ''
+      
+      console.log('Reverse geocode result:', { province: formData.value.province, district: formData.value.district })
+    }
+  } catch (error) {
+    console.error('Reverse geocoding error:', error)
+    // Don't show error to user, province/district are optional
   }
 }
 
