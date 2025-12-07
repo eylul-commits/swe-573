@@ -25,7 +25,6 @@ export interface User {
   timebankBalance?: number
   hoursGiven?: number
   hoursReceived?: number
-  avatar?: string
   location?: string
 }
 

@@ -162,19 +162,26 @@ const handshakeStore = useHandshakeStore()
 const userServices = ref<Service[]>([])
 const loadingServices = ref(false)
 const loadingHandshakes = ref(false)
-const profilePictureUrl = ref<string | undefined>(appStore.currentUser?.avatar)
+const profilePictureUrl = ref<string | undefined>(appStore.currentUser?.avatarUrl)
 
 const userHandshakes = computed(() => handshakeStore.handshakes)
 
-// Generate avatar URL with fallback to UI Avatars
+// Watch for changes in currentUser avatarUrl and update profilePictureUrl
+watch(() => appStore.currentUser?.avatarUrl, (newAvatar) => {
+  if (newAvatar && profilePictureUrl.value !== newAvatar) {
+    profilePictureUrl.value = newAvatar
+  }
+}, { immediate: true })
+
 // Watch for profile picture changes and update backend
 watch(profilePictureUrl, async (newUrl: string | undefined) => {
-  if (newUrl !== appStore.currentUser?.avatar) {
+  const currentAvatar = appStore.currentUser?.avatarUrl
+  if (newUrl !== currentAvatar) {
     try {
       const updatedUser = await updateProfile({ avatarUrl: newUrl })
       // Update the app store with the new user data
       if (appStore.currentUser) {
-        appStore.currentUser.avatar = updatedUser.avatarUrl || updatedUser.avatar
+        appStore.currentUser.avatarUrl = updatedUser.avatarUrl
       }
     } catch (error) {
       console.error('Failed to update profile picture:', error)
