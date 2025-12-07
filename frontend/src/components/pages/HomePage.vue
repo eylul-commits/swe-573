@@ -70,12 +70,7 @@
           </div>
           <Button 
             variant="custom"
-            @click="() => {
-              console.log('New Service button clicked')
-              console.log('Current page before:', appStore.currentPage)
-              appStore.setCurrentPage('create-offer')
-              console.log('Current page after:', appStore.currentPage)
-            }"
+            @click="appStore.setCurrentPage('create-offer')"
             class="bg-emerald-600 hover:bg-emerald-700 text-white"
             size="lg"
           >
