@@ -16,6 +16,7 @@ export interface User {
   email: string
   name: string
   bio?: string
+  avatarUrl?: string
   province?: string
   district?: string
   geohash?: string
@@ -64,6 +65,24 @@ export async function getCurrentUser(): Promise<User> {
     return response
   } catch (error: any) {
     throw new Error('Failed to fetch user data')
+  }
+}
+
+export interface UpdateProfileRequest {
+  name?: string
+  bio?: string
+  avatarUrl?: string
+  province?: string
+  district?: string
+  geohash?: string
+}
+
+export async function updateProfile(data: UpdateProfileRequest): Promise<User> {
+  try {
+    const response = await api.put<User>('/auth/me', data)
+    return response
+  } catch (error: any) {
+    throw new Error(error.response?.data?.message || 'Failed to update profile')
   }
 }
 

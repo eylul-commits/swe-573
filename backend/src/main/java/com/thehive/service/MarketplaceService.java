@@ -448,7 +448,7 @@ public class MarketplaceService {
         AuthorDTO dto = new AuthorDTO();
         dto.setId(user.getId());
         dto.setName(user.getName() != null ? user.getName() : user.getEmail());
-        dto.setAvatar(null); // değişecek
+        dto.setAvatar(user.getAvatarUrl());
         dto.setBio(user.getBio());
         dto.setProvince(user.getProvince());
         dto.setDistrict(user.getDistrict());

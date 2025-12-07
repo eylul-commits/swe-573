@@ -3,6 +3,7 @@ package com.thehive.controller;
 import com.thehive.model.dto.AuthResponse;
 import com.thehive.model.dto.LoginRequest;
 import com.thehive.model.dto.RegisterRequest;
+import com.thehive.model.dto.UpdateProfileRequest;
 import com.thehive.model.dto.UserDTO;
 import com.thehive.service.AuthService;
 import lombok.RequiredArgsConstructor;
@@ -31,6 +32,14 @@ public class AuthController {
     @GetMapping("/me")
     public ResponseEntity<UserDTO> getCurrentUser(@RequestHeader(value = "X-User-Id") Integer userId) {
         UserDTO user = authService.getCurrentUser(userId);
+        return ResponseEntity.ok(user);
+    }
+
+    @PutMapping("/me")
+    public ResponseEntity<UserDTO> updateProfile(
+            @RequestHeader(value = "X-User-Id") Integer userId,
+            @RequestBody UpdateProfileRequest request) {
+        UserDTO user = authService.updateProfile(userId, request);
         return ResponseEntity.ok(user);
     }
 }

@@ -7,6 +7,7 @@ CREATE TABLE IF NOT EXISTS users (
     password_hash VARCHAR(255) NOT NULL,
     name VARCHAR(100),
     bio TEXT,
+    avatar_url TEXT,
     province VARCHAR(100),
     district VARCHAR(100),
     geohash VARCHAR(20),

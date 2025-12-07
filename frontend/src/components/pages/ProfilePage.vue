@@ -5,14 +5,12 @@
       
       <!-- User Info Card -->
       <Card class="p-6 mb-6">
-        <div class="flex items-center gap-4 mb-6">
-          <div class="relative">
-            <img 
-              :src="getUserAvatar" 
-              :alt="appStore.currentUser?.name || 'User'" 
-              class="w-20 h-20 rounded-full border-2 border-gray-200 bg-gray-100"
-            />
-          </div>
+        <div class="flex items-center gap-6 mb-6">
+          <ProfilePictureUpload
+            v-model="profilePictureUrl"
+            :alt-text="appStore.currentUser?.name || 'User'"
+            @error="handleUploadError"
+          />
           <div>
             <div class="text-gray-900 text-xl">{{ appStore.currentUser?.name || 'User' }}</div>
             <div class="text-gray-600">{{ appStore.currentUser?.location || 'Location not set' }}</div>
@@ -142,7 +140,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted, computed } from 'vue'
+import { ref, onMounted, computed, watch } from 'vue'
 import { Clock, MapPin } from 'lucide-vue-next'
 import Card from '../ui/Card.vue'
 import Badge from '../ui/Badge.vue'
@@ -151,9 +149,11 @@ import TabsContent from '../ui/TabsContent.vue'
 import TabsList from '../ui/TabsList.vue'
 import TabsTrigger from '../ui/TabsTrigger.vue'
 import HandshakeList from '../HandshakeList.vue'
+import ProfilePictureUpload from '../ui/ProfilePictureUpload.vue'
 import { useAppStore } from '../../stores/appStore'
 import { useHandshakeStore } from '../../stores/handshakeStore'
 import { getUserServices } from '../../services/marketplaceService'
+import { updateProfile } from '../../services/authService'
 import type { Service, Handshake } from '../../types'
 
 const appStore = useAppStore()
@@ -162,26 +162,30 @@ const handshakeStore = useHandshakeStore()
 const userServices = ref<Service[]>([])
 const loadingServices = ref(false)
 const loadingHandshakes = ref(false)
+const profilePictureUrl = ref<string | undefined>(appStore.currentUser?.avatar)
 
 const userHandshakes = computed(() => handshakeStore.handshakes)
 
 // Generate avatar URL with fallback to UI Avatars
-const getUserAvatar = computed(() => {
-  const user = appStore.currentUser
-  if (!user) {
-    return 'https://ui-avatars.com/api/?name=User&background=E2E8F0&color=1F2937&size=128'
+// Watch for profile picture changes and update backend
+watch(profilePictureUrl, async (newUrl: string | undefined) => {
+  if (newUrl !== appStore.currentUser?.avatar) {
+    try {
+      const updatedUser = await updateProfile({ avatarUrl: newUrl })
+      // Update the app store with the new user data
+      if (appStore.currentUser) {
+        appStore.currentUser.avatar = updatedUser.avatarUrl || updatedUser.avatar
+      }
+    } catch (error) {
+      console.error('Failed to update profile picture:', error)
+    }
   }
-  
-  // If user has a custom avatar and it's not empty, use it
-  if (user.avatar && user.avatar.trim().length > 0 && !user.avatar.includes('ui-avatars.com')) {
-    return user.avatar
-  }
-  
-  // Otherwise, generate avatar from user's name using UI Avatars
-  const name = user.name || 'User'
-  const encoded = encodeURIComponent(name)
-  return `https://ui-avatars.com/api/?name=${encoded}&background=E2E8F0&color=1F2937&size=128&bold=true`
 })
+
+function handleUploadError(error: string) {
+  console.error('Upload error:', error)
+}
+
 
 // Load user's services
 onMounted(async () => {
