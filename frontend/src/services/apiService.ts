@@ -43,6 +43,7 @@ interface BackendServiceDTO {
   poster: BackendAuthorDTO;
   tags: string[];
   distance?: string;
+  imageUrls?: string[];
 }
 
 interface BackendServiceRatingDTO {
@@ -152,6 +153,7 @@ function convertBackendServiceToFrontend(backendService: BackendServiceDTO): Ser
     province: backendService.province ?? undefined,
     district: backendService.district ?? undefined,
     geohash: backendService.geohash ?? undefined,
+    imageUrls: backendService.imageUrls || [],
   };
 }
 
