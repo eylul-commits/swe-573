@@ -260,6 +260,7 @@ class AuthServiceTest {
         request.setName("Updated Name");
         
         User updatedUser = new User();
+        updatedUser.setId(userId); // Required for convertToDTO
         updatedUser.setName("Updated Name");
         
         when(userRepository.findById(userId)).thenReturn(Optional.of(testUser));
@@ -289,6 +290,7 @@ class AuthServiceTest {
         request.setAvatarUrl("https://example.com/avatar.jpg");
         
         User updatedUser = new User();
+        updatedUser.setId(userId); // Required for convertToDTO
         updatedUser.setAvatarUrl("https://example.com/avatar.jpg");
         
         when(userRepository.findById(userId)).thenReturn(Optional.of(testUser));
@@ -317,6 +319,7 @@ class AuthServiceTest {
         request.setBio("Updated bio text");
         
         User updatedUser = new User();
+        updatedUser.setId(userId); // Required for convertToDTO
         updatedUser.setBio("Updated bio text");
         
         when(userRepository.findById(userId)).thenReturn(Optional.of(testUser));
@@ -346,6 +349,7 @@ class AuthServiceTest {
         request.setGeohash("sx1y2z3");
         
         User updatedUser = new User();
+        updatedUser.setId(userId); // Required for convertToDTO
         updatedUser.setProvince("Ankara");
         updatedUser.setDistrict("Çankaya");
         updatedUser.setGeohash("sx1y2z3");
@@ -379,6 +383,7 @@ class AuthServiceTest {
         request.setAvatarUrl("https://example.com/new-avatar.jpg");
         
         User updatedUser = new User();
+        updatedUser.setId(userId); // Required for convertToDTO
         updatedUser.setName("New Name");
         updatedUser.setBio("New Bio");
         updatedUser.setAvatarUrl("https://example.com/new-avatar.jpg");
