@@ -41,6 +41,7 @@ export interface Service {
   province?: string;
   district?: string;
   geohash?: string; // Geohash for location
+  imageUrls?: string[]; // Array of image URLs
   schedule?: {
     date?: string;
     time?: string;

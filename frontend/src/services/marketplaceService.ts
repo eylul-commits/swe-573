@@ -25,6 +25,7 @@ interface ServiceDTO {
   updatedAt: string;
   poster: AuthorDTO;
   tags: string[];
+  imageUrls?: string[];
   distance?: string;
 }
 
@@ -43,6 +44,7 @@ interface OfferDTO {
   updatedAt: string;
   provider: AuthorDTO;
   tags: string[];
+  imageUrls?: string[];
 }
 
 interface RequestDTO {
@@ -60,6 +62,7 @@ interface RequestDTO {
   updatedAt: string;
   seeker: AuthorDTO;
   tags: string[];
+  imageUrls?: string[];
 }
 
 function convertAuthorToUser(author: AuthorDTO): User {
@@ -90,6 +93,7 @@ function convertServiceDTOToService(dto: ServiceDTO): Service {
     province: dto.province,
     district: dto.district,
     geohash: dto.geohash,
+    imageUrls: dto.imageUrls || [],
   };
 }
 
@@ -328,6 +332,7 @@ export interface CreateOfferPayload {
   district: string;
   geohash: string;
   tags: string[];
+  imageUrls?: string[];
 }
 
 export interface CreateRequestPayload {
@@ -340,6 +345,7 @@ export interface CreateRequestPayload {
   district: string;
   geohash: string;
   tags: string[];
+  imageUrls?: string[];
 }
 
 export async function createOffer(payload: CreateOfferPayload): Promise<Service | null> {

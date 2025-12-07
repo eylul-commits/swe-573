@@ -176,6 +176,13 @@
               </Badge>
             </div>
           </div>
+
+          <!-- Image Upload Section -->
+          <ImageUpload 
+            v-model="uploadedImages"
+            :max-images="5"
+            @error="handleImageUploadError"
+          />
           
           <!-- Map Section -->
           <div>
@@ -287,6 +294,7 @@ import Button from '../ui/Button.vue'
 import Input from '../ui/Input.vue'
 import Textarea from '../ui/Textarea.vue'
 import Badge from '../ui/Badge.vue'
+import ImageUpload from '../ui/ImageUpload.vue'
 import { useAppStore } from '../../stores/appStore'
 import { createOffer, createRequest, type CreateOfferPayload, type CreateRequestPayload } from '../../services/marketplaceService'
 
@@ -331,6 +339,9 @@ const selectedLocation = ref({ lat: 39.9334, lng: 32.8597 }) // Default to Ankar
 const searchQuery = ref('')
 const searchResults = ref<any[]>([])
 const isSearching = ref(false)
+
+// Image upload state
+const uploadedImages = ref<string[]>([])
 
 
 // Initialize map
@@ -402,6 +413,11 @@ function addTag() {
 
 function removeTag(index: number) {
   formData.value.tags.splice(index, 1)
+}
+
+// Image upload error handler
+function handleImageUploadError(error: string) {
+  errorMessage.value = error
 }
 
 // Search for location using Nominatim
@@ -544,10 +560,15 @@ async function handleSubmit() {
   errorMessage.value = ''
   
   try {
+    const payload = {
+      ...formData.value,
+      imageUrls: uploadedImages.value
+    }
+    
     if (serviceType.value === 'OFFER') {
-      await createOffer(formData.value as CreateOfferPayload)
+      await createOffer(payload as CreateOfferPayload)
     } else {
-      await createRequest(formData.value as CreateRequestPayload)
+      await createRequest(payload as CreateRequestPayload)
     }
     // Success! Navigate to home or services page
     appStore.setCurrentPage('home')

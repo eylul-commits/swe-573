@@ -30,8 +30,40 @@
       <div v-else class="p-6 space-y-6">
         <!-- Service Header Card -->
         <Card class="p-6">
-          <!-- Featured Image -->
-          <div v-if="serviceImages[serviceId]" class="mb-6 -mt-6 -mx-6 overflow-hidden rounded-t-lg">
+          <!-- Image Gallery -->
+          <div v-if="service.imageUrls && service.imageUrls.length > 0" class="mb-6 -mt-6 -mx-6">
+            <!-- Main Image -->
+            <div class="overflow-hidden rounded-t-lg mb-2">
+              <img 
+                :src="service.imageUrls[selectedImageIndex]"
+                :alt="service.title"
+                class="w-full h-64 object-cover cursor-pointer hover:opacity-95 transition-opacity"
+                @click="openImageModal"
+              />
+            </div>
+            
+            <!-- Thumbnail Gallery -->
+            <div v-if="service.imageUrls.length > 1" class="px-6 flex gap-2 overflow-x-auto pb-2">
+              <button
+                v-for="(imageUrl, index) in service.imageUrls"
+                :key="index"
+                @click="selectedImageIndex = index"
+                :class="[
+                  'flex-shrink-0 w-16 h-16 rounded-lg overflow-hidden border-2 transition-all',
+                  selectedImageIndex === index ? 'border-emerald-500 ring-2 ring-emerald-200' : 'border-gray-200 hover:border-gray-300'
+                ]"
+              >
+                <img 
+                  :src="imageUrl"
+                  :alt="`${service.title} - Image ${index + 1}`"
+                  class="w-full h-full object-cover"
+                />
+              </button>
+            </div>
+          </div>
+          
+          <!-- Fallback Image for services without images -->
+          <div v-else-if="serviceImages[serviceId]" class="mb-6 -mt-6 -mx-6 overflow-hidden rounded-t-lg">
             <ImageWithFallback 
               :src="serviceImages[serviceId]"
               :alt="service.title"
@@ -323,6 +355,50 @@
         </Card>
       </div>
     </div>
+
+    <!-- Image Modal -->
+    <div 
+      v-if="showImageModal && service?.imageUrls && service.imageUrls.length > 0"
+      @click="closeImageModal"
+      class="fixed inset-0 z-50 bg-black bg-opacity-90 flex items-center justify-center p-4"
+    >
+      <button
+        @click.stop="closeImageModal"
+        class="absolute top-4 right-4 text-white hover:text-gray-300 text-4xl font-bold z-10"
+      >
+        ×
+      </button>
+      
+      <!-- Navigation Arrows -->
+      <button
+        v-if="service.imageUrls.length > 1"
+        @click.stop="prevImage"
+        class="absolute left-4 text-white hover:text-gray-300 text-4xl font-bold z-10"
+      >
+        ‹
+      </button>
+      
+      <button
+        v-if="service.imageUrls.length > 1"
+        @click.stop="nextImage"
+        class="absolute right-4 text-white hover:text-gray-300 text-4xl font-bold z-10"
+      >
+        ›
+      </button>
+      
+      <!-- Main Image -->
+      <img
+        :src="service.imageUrls[selectedImageIndex]"
+        :alt="`${service.title} - Image ${selectedImageIndex + 1}`"
+        class="max-h-full max-w-full object-contain"
+        @click.stop
+      />
+      
+      <!-- Image Counter -->
+      <div class="absolute bottom-4 left-1/2 transform -translate-x-1/2 text-white text-sm bg-black bg-opacity-50 px-3 py-1 rounded-full">
+        {{ selectedImageIndex + 1 }} / {{ service.imageUrls.length }}
+      </div>
+    </div>
   </div>
 </template>
 
@@ -379,6 +455,10 @@ const serviceRatings = computed(() => ratings.value?.ratings || [])
 
 const questionText = ref('')
 
+// Image gallery state
+const selectedImageIndex = ref(0)
+const showImageModal = ref(false)
+
 // Service images mapping
 const serviceImages: Record<string, string> = {
   "1": "https://images.unsplash.com/photo-1506126613408-eca07ce68773?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHxtZWRpdGF0aW9uJTIwYm9zcGhvcnVzfGVufDF8fHx8MTc2MTA1MjQ0N3ww&ixlib=rb-4.1.0&q=80&w=1080",
@@ -420,6 +500,28 @@ const handleAskQuestion = () => {
     // TODO: Implement backend API call to create a question
     console.log("Asking question:", questionText.value)
     questionText.value = ""
+  }
+}
+
+const openImageModal = () => {
+  showImageModal.value = true
+}
+
+const closeImageModal = () => {
+  showImageModal.value = false
+}
+
+const nextImage = () => {
+  if (service.value?.imageUrls && service.value.imageUrls.length > 0) {
+    selectedImageIndex.value = (selectedImageIndex.value + 1) % service.value.imageUrls.length
+  }
+}
+
+const prevImage = () => {
+  if (service.value?.imageUrls && service.value.imageUrls.length > 0) {
+    selectedImageIndex.value = selectedImageIndex.value === 0 
+      ? service.value.imageUrls.length - 1 
+      : selectedImageIndex.value - 1
   }
 }
 
