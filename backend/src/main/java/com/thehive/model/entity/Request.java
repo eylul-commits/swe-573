@@ -52,6 +52,9 @@ public class Request {
     @Column(length = 20)
     private String geohash;
 
+    @Column(name = "image_urls", columnDefinition = "TEXT")
+    private String imageUrls;
+
     @Enumerated(EnumType.STRING)
     @Column(name = "status", length = 20)
     private ItemStatus status = ItemStatus.ACTIVE;

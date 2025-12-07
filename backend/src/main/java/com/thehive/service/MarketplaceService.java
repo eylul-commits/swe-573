@@ -88,6 +88,11 @@ public class MarketplaceService {
         offer.setGeohash(request.getGeohash());
         offer.setStatus(ItemStatus.ACTIVE);
 
+        // Handle image URLs
+        if (request.getImageUrls() != null && !request.getImageUrls().isEmpty()) {
+            offer.setImageUrls(String.join(",", request.getImageUrls()));
+        }
+
         // Handle tags
         if (request.getTags() != null && !request.getTags().isEmpty()) {
             for (String tagName : request.getTags()) {
@@ -126,6 +131,11 @@ public class MarketplaceService {
         newRequest.setDistrict(request.getDistrict());
         newRequest.setGeohash(request.getGeohash());
         newRequest.setStatus(ItemStatus.ACTIVE);
+
+        // Handle image URLs
+        if (request.getImageUrls() != null && !request.getImageUrls().isEmpty()) {
+            newRequest.setImageUrls(String.join(",", request.getImageUrls()));
+        }
 
         // Handle tags
         if (request.getTags() != null && !request.getTags().isEmpty()) {
@@ -283,6 +293,7 @@ public class MarketplaceService {
         dto.setTags(offer.getTags().stream()
                 .map(SemanticTag::getName)
                 .collect(Collectors.toList()));
+        dto.setImageUrls(parseImageUrls(offer.getImageUrls()));
         return dto;
     }
 
@@ -304,6 +315,7 @@ public class MarketplaceService {
         dto.setTags(request.getTags().stream()
                 .map(SemanticTag::getName)
                 .collect(Collectors.toList()));
+        dto.setImageUrls(parseImageUrls(request.getImageUrls()));
         return dto;
     }
 
@@ -404,6 +416,7 @@ public class MarketplaceService {
         dto.setTags(offer.getTags().stream()
                 .map(SemanticTag::getName)
                 .collect(Collectors.toList()));
+        dto.setImageUrls(parseImageUrls(offer.getImageUrls()));
         return dto;
     }
 
@@ -427,6 +440,7 @@ public class MarketplaceService {
         dto.setTags(request.getTags().stream()
                 .map(SemanticTag::getName)
                 .collect(Collectors.toList()));
+        dto.setImageUrls(parseImageUrls(request.getImageUrls()));
         return dto;
     }
 
@@ -466,6 +480,13 @@ public class MarketplaceService {
             return province;
         }
         return district;
+    }
+
+    private List<String> parseImageUrls(String imageUrls) {
+        if (imageUrls == null || imageUrls.trim().isEmpty()) {
+            return new ArrayList<>();
+        }
+        return List.of(imageUrls.split(","));
     }
 
     @Transactional(readOnly = true)

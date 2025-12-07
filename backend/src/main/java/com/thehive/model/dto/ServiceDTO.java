@@ -32,6 +32,7 @@ public class ServiceDTO {
     private LocalDateTime updatedAt;
     private AuthorDTO poster; // provider for offers, seeker for requests
     private List<String> tags;
+    private List<String> imageUrls;
     private String distance; // optional, for nearby services
 }
 

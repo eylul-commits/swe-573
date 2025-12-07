@@ -27,5 +27,6 @@ public class RequestDTO {
     private LocalDateTime updatedAt;
     private AuthorDTO seeker;
     private List<String> tags;
+    private List<String> imageUrls;
 }
 
