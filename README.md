@@ -14,5 +14,5 @@ Instead of money, the platform fosters **reciprocity, trust, and local collabora
 ## ⚙️ Installation & Setup
 1. **Clone the repository**
    ```bash
-   git clone https://github.com/your-username/swe-573.git
+   git clone https://github.com/eylul-commits/swe-573.git
    cd swe-573
