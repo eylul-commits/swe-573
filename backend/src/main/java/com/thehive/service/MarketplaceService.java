@@ -4,6 +4,8 @@ import com.thehive.exception.ResourceNotFoundException;
 import com.thehive.model.dto.AuthorDTO;
 import com.thehive.model.dto.CreateOfferRequest;
 import com.thehive.model.dto.CreateRequestRequest;
+import com.thehive.model.dto.CreateQuestionRequest;
+import com.thehive.model.dto.CreateAnswerRequest;
 import com.thehive.model.dto.OfferDTO;
 import com.thehive.model.dto.RequestDTO;
 import com.thehive.model.dto.ServiceAnswerDTO;
@@ -23,6 +25,7 @@ import com.thehive.model.enums.ItemStatus;
 import com.thehive.repository.OfferRepository;
 import com.thehive.repository.RequestRepository;
 import com.thehive.repository.QuestionRepository;
+import com.thehive.repository.AnswerRepository;
 import com.thehive.repository.RatingRepository;
 import com.thehive.repository.UserRepository;
 import com.thehive.repository.SemanticTagRepository;
@@ -42,6 +45,7 @@ public class MarketplaceService {
     private final OfferRepository offerRepository;
     private final RequestRepository requestRepository;
     private final QuestionRepository questionRepository;
+    private final AnswerRepository answerRepository;
     private final RatingRepository ratingRepository;
     private final UserRepository userRepository;
     private final SemanticTagRepository semanticTagRepository;
@@ -251,6 +255,75 @@ public class MarketplaceService {
         return questions.stream()
                 .map(this::convertToServiceQuestionDTO)
                 .collect(Collectors.toList());
+    }
+
+    @Transactional
+    public ServiceQuestionDTO createQuestionForService(Integer serviceId, CreateQuestionRequest request, Integer askerId) {
+        // Validate request content
+        if (request.getContent() == null || request.getContent().trim().isEmpty()) {
+            throw new IllegalArgumentException("Question content cannot be null or empty");
+        }
+
+        // Get the asker user
+        User asker = userRepository.findById(askerId)
+                .orElseThrow(() -> new ResourceNotFoundException("User not found with id: " + askerId));
+
+        // Create new question
+        Question question = new Question();
+        question.setAsker(asker);
+        question.setContent(request.getContent());
+
+        // Determine if service is an offer or request and set accordingly
+        var offer = offerRepository.findById(serviceId);
+        if (offer.isPresent()) {
+            question.setOffer(offer.get());
+        } else {
+            var requestEntity = requestRepository.findById(serviceId);
+            if (requestEntity.isPresent()) {
+                question.setRequest(requestEntity.get());
+            } else {
+                throw new ResourceNotFoundException("Service not found with id: " + serviceId);
+            }
+        }
+
+        // Save the question
+        Question savedQuestion = questionRepository.save(question);
+
+        // Convert to DTO and return
+        return convertToServiceQuestionDTO(savedQuestion);
+    }
+
+    @Transactional
+    public ServiceAnswerDTO createAnswerForQuestion(Integer questionId, CreateAnswerRequest request, Integer responderId) {
+        // Validate request content
+        if (request.getContent() == null || request.getContent().trim().isEmpty()) {
+            throw new IllegalArgumentException("Answer content cannot be null or empty");
+        }
+
+        // Get the question
+        Question question = questionRepository.findById(questionId)
+                .orElseThrow(() -> new ResourceNotFoundException("Question not found with id: " + questionId));
+
+        // Check if question already has an answer
+        if (question.getAnswer() != null) {
+            throw new IllegalStateException("Question already has an answer");
+        }
+
+        // Get the responder user
+        User responder = userRepository.findById(responderId)
+                .orElseThrow(() -> new ResourceNotFoundException("User not found with id: " + responderId));
+
+        // Create new answer
+        Answer answer = new Answer();
+        answer.setQuestion(question);
+        answer.setResponder(responder);
+        answer.setContent(request.getContent());
+
+        // Save the answer
+        Answer savedAnswer = answerRepository.save(answer);
+
+        // Convert to DTO and return
+        return convertToServiceAnswerDTO(savedAnswer);
     }
 
     @Transactional(readOnly = true)
