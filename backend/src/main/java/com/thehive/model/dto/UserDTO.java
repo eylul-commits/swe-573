@@ -1,6 +1,7 @@
 package com.thehive.model.dto;
 
 import com.thehive.model.enums.UserRole;
+import com.thehive.model.enums.UserStatus;
 import lombok.Data;
 
 @Data
@@ -14,6 +15,8 @@ public class UserDTO {
     private String district;
     private String geohash;
     private UserRole role;
+    private UserStatus accountStatus;
+    private Integer warningCount;
     private Integer balanceHours;
     private Integer hoursGiven;
     private Integer hoursReceived;
