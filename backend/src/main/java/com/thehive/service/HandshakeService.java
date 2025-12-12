@@ -262,7 +262,7 @@ public class HandshakeService {
         AuthorDTO dto = new AuthorDTO();
         dto.setId(user.getId());
         dto.setName(user.getName() != null ? user.getName() : user.getEmail());
-        dto.setAvatar(null);
+        dto.setAvatar(user.getAvatarUrl()); // Use the user's avatarUrl from profile
         dto.setBio(user.getBio());
         dto.setProvince(user.getProvince());
         dto.setDistrict(user.getDistrict());
