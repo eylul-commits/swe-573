@@ -76,6 +76,16 @@ public class JwtUtil {
         return (extractedEmail.equals(email) && !isTokenExpired(token));
     }
 
+    //validate token by checking signature and expiration
+    public Boolean validateToken(String token) {
+        try {
+            Claims claims = extractAllClaims(token);
+            return !isTokenExpired(token);
+        } catch (Exception e) {
+            return false;
+        }
+    }
+
     public Integer extractUserId(String token) {
         Claims claims = extractAllClaims(token);
         return claims.get("userId", Integer.class);
