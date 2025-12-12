@@ -8,7 +8,8 @@
         </DialogDescription>
       </DialogHeader>
 
-      <div class="space-y-4">
+      <div class="px-6">
+        <div class="space-y-4">
         <div>
           <label class="text-sm font-medium mb-2 block">What are you reporting?</label>
           <Select v-model="form.reportType">
@@ -54,6 +55,26 @@
           />
         </div>
 
+        <div v-if="form.reportType === 'FORUM_POST'">
+          <label class="text-sm font-medium mb-2 block">Forum Post ID</label>
+          <Input
+            v-model.number="form.reportedForumPostId"
+            type="number"
+            placeholder="Forum Post ID"
+            disabled
+          />
+        </div>
+
+        <div v-if="form.reportType === 'FORUM_TOPIC'">
+          <label class="text-sm font-medium mb-2 block">Forum Topic ID</label>
+          <Input
+            v-model.number="form.reportedForumTopicId"
+            type="number"
+            placeholder="Forum Topic ID"
+            disabled
+          />
+        </div>
+
         <div>
           <label class="text-sm font-medium mb-2 block">Reason for Report *</label>
           <Textarea
@@ -62,6 +83,7 @@
             rows="5"
             required
           />
+        </div>
         </div>
       </div>
 
@@ -97,6 +119,8 @@ const props = withDefaults(defineProps<{
   reportedUserName: string
   reportedOfferId?: number
   reportedRequestId?: number
+  reportedForumPostId?: number
+  reportedForumTopicId?: number
   reportType?: ReportType
 }>(), {
   modelValue: false
@@ -117,7 +141,11 @@ const reportedUserName = ref(props.reportedUserName)
 const form = ref<CreateReportRequest>({
   reportType: props.reportType || 'USER',
   reportedUserId: props.reportedUserId,
-  message: ''
+  message: '',
+  ...(props.reportedOfferId && { reportedOfferId: props.reportedOfferId }),
+  ...(props.reportedRequestId && { reportedRequestId: props.reportedRequestId }),
+  ...(props.reportedForumPostId && { reportedForumPostId: props.reportedForumPostId }),
+  ...(props.reportedForumTopicId && { reportedForumTopicId: props.reportedForumTopicId })
 })
 
 watch(() => props.reportedUserId, (newId) => {
@@ -142,6 +170,22 @@ watch(() => props.reportedRequestId, (newId) => {
   }
 })
 
+watch(() => props.reportedForumPostId, (newId) => {
+  if (newId) {
+    form.value.reportedForumPostId = newId
+  } else {
+    delete form.value.reportedForumPostId
+  }
+})
+
+watch(() => props.reportedForumTopicId, (newId) => {
+  if (newId) {
+    form.value.reportedForumTopicId = newId
+  } else {
+    delete form.value.reportedForumTopicId
+  }
+})
+
 const canSubmit = computed(() => {
   return form.value.message.trim().length > 0 && form.value.reportedUserId > 0
 })
@@ -151,7 +195,11 @@ function close() {
   form.value = {
     reportType: props.reportType || 'USER',
     reportedUserId: props.reportedUserId,
-    message: ''
+    message: '',
+    ...(props.reportedOfferId && { reportedOfferId: props.reportedOfferId }),
+    ...(props.reportedRequestId && { reportedRequestId: props.reportedRequestId }),
+    ...(props.reportedForumPostId && { reportedForumPostId: props.reportedForumPostId }),
+    ...(props.reportedForumTopicId && { reportedForumTopicId: props.reportedForumTopicId })
   }
 }
 

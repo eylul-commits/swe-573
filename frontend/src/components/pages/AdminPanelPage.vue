@@ -116,11 +116,12 @@
     </div>
 
     <!-- Resolve Report Dialog -->
-    <Dialog v-model:open="resolveDialogOpen">
+    <Dialog v-model="resolveDialogOpen">
       <DialogContent>
         <DialogHeader>
           <DialogTitle>Resolve Report</DialogTitle>
         </DialogHeader>
+        <div class="px-6">
         <div class="space-y-4">
           <div>
             <label class="text-sm font-medium">Status</label>
@@ -156,15 +157,17 @@
           <Button @click="resolveDialogOpen = false" variant="outline">Cancel</Button>
           <Button @click="handleResolveReport">Resolve</Button>
         </DialogFooter>
+        </div>
       </DialogContent>
     </Dialog>
 
     <!-- User Management Dialog -->
-    <Dialog v-model:open="userManagementDialogOpen">
+    <Dialog v-model="userManagementDialogOpen">
       <DialogContent>
         <DialogHeader>
           <DialogTitle>Manage User</DialogTitle>
         </DialogHeader>
+        <div class="px-6">
         <div class="space-y-4">
           <div>
             <label class="text-sm font-medium">Action</label>
@@ -188,6 +191,7 @@
           <Button @click="userManagementDialogOpen = false" variant="outline">Cancel</Button>
           <Button @click="handleManageUser">Apply</Button>
         </DialogFooter>
+        </div>
       </DialogContent>
     </Dialog>
   </div>
