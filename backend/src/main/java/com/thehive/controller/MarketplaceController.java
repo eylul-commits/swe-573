@@ -13,6 +13,7 @@ import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -44,9 +45,8 @@ public class MarketplaceController {
     }
 
     @PostMapping("/offers")
-    public ResponseEntity<OfferDTO> createOffer(
-            @Valid @RequestBody CreateOfferRequest request,
-            @RequestHeader(value = "X-User-Id", defaultValue = "1") Integer userId) {
+    public ResponseEntity<OfferDTO> createOffer(@Valid @RequestBody CreateOfferRequest request) {
+        Integer userId = (Integer) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
         OfferDTO offer = marketplaceService.createOffer(request, userId);
         return ResponseEntity.status(HttpStatus.CREATED).body(offer);
     }
@@ -70,9 +70,8 @@ public class MarketplaceController {
     }
 
     @PostMapping("/requests")
-    public ResponseEntity<RequestDTO> createRequest(
-            @Valid @RequestBody CreateRequestRequest request,
-            @RequestHeader(value = "X-User-Id", defaultValue = "1") Integer userId) {
+    public ResponseEntity<RequestDTO> createRequest(@Valid @RequestBody CreateRequestRequest request) {
+        Integer userId = (Integer) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
         RequestDTO createdRequest = marketplaceService.createRequest(request, userId);
         return ResponseEntity.status(HttpStatus.CREATED).body(createdRequest);
     }
@@ -109,16 +108,16 @@ public class MarketplaceController {
 
     @GetMapping("/services/nearby")
     public ResponseEntity<List<ServiceDTO>> getNearbyServices(
-            @RequestHeader(value = "X-User-Id", defaultValue = "1") Integer userId,
             @RequestParam(value = "limit", defaultValue = "6") int limit) {
+        Integer userId = (Integer) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
         List<ServiceDTO> services = recommendationService.findNearbyServices(userId, limit);
         return ResponseEntity.ok(services);
     }
 
     @GetMapping("/services/recommended")
     public ResponseEntity<List<ServiceDTO>> getRecommendedServices(
-            @RequestHeader(value = "X-User-Id", defaultValue = "1") Integer userId,
             @RequestParam(value = "limit", defaultValue = "3") int limit) {
+        Integer userId = (Integer) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
         List<ServiceDTO> services = recommendationService.getRecommendedServices(userId, limit);
         return ResponseEntity.ok(services);
     }

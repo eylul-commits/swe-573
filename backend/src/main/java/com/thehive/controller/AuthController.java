@@ -8,6 +8,7 @@ import com.thehive.model.dto.UserDTO;
 import com.thehive.service.AuthService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.annotation.*;
 
 @RestController
@@ -30,15 +31,15 @@ public class AuthController {
     }
 
     @GetMapping("/me")
-    public ResponseEntity<UserDTO> getCurrentUser(@RequestHeader(value = "X-User-Id") Integer userId) {
+    public ResponseEntity<UserDTO> getCurrentUser() {
+        Integer userId = (Integer) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
         UserDTO user = authService.getCurrentUser(userId);
         return ResponseEntity.ok(user);
     }
 
     @PutMapping("/me")
-    public ResponseEntity<UserDTO> updateProfile(
-            @RequestHeader(value = "X-User-Id") Integer userId,
-            @RequestBody UpdateProfileRequest request) {
+    public ResponseEntity<UserDTO> updateProfile(@RequestBody UpdateProfileRequest request) {
+        Integer userId = (Integer) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
         UserDTO user = authService.updateProfile(userId, request);
         return ResponseEntity.ok(user);
     }

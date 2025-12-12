@@ -9,6 +9,7 @@ import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -24,9 +25,8 @@ public class HandshakeController {
      * Create a new handshake when accepting an offer
      */
     @PostMapping
-    public ResponseEntity<HandshakeDTO> createHandshake(
-            @RequestHeader(value = "X-User-Id") Integer userId,
-            @Valid @RequestBody CreateHandshakeRequest request) {
+    public ResponseEntity<HandshakeDTO> createHandshake(@Valid @RequestBody CreateHandshakeRequest request) {
+        Integer userId = (Integer) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
         HandshakeDTO handshake = handshakeService.createHandshake(request, userId);
         return ResponseEntity.status(HttpStatus.CREATED).body(handshake);
     }
@@ -37,8 +37,8 @@ public class HandshakeController {
     @PostMapping("/{handshakeId}/confirm")
     public ResponseEntity<HandshakeDTO> confirmHandshake(
             @PathVariable Integer handshakeId,
-            @RequestHeader(value = "X-User-Id") Integer userId,
             @Valid @RequestBody ConfirmHandshakeRequest request) {
+        Integer userId = (Integer) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
         HandshakeDTO handshake = handshakeService.confirmHandshake(handshakeId, userId, request);
         return ResponseEntity.ok(handshake);
     }
@@ -47,9 +47,8 @@ public class HandshakeController {
      * Create a rating after completion date has passed
      */
     @PostMapping("/rate")
-    public ResponseEntity<HandshakeDTO> createRating(
-            @RequestHeader(value = "X-User-Id") Integer userId,
-            @Valid @RequestBody CreateRatingRequest request) {
+    public ResponseEntity<HandshakeDTO> createRating(@Valid @RequestBody CreateRatingRequest request) {
+        Integer userId = (Integer) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
         HandshakeDTO handshake = handshakeService.createRating(request, userId);
         return ResponseEntity.status(HttpStatus.CREATED).body(handshake);
     }
@@ -58,8 +57,8 @@ public class HandshakeController {
      * Get all handshakes for the current user
      */
     @GetMapping
-    public ResponseEntity<List<HandshakeDTO>> getUserHandshakes(
-            @RequestHeader(value = "X-User-Id") Integer userId) {
+    public ResponseEntity<List<HandshakeDTO>> getUserHandshakes() {
+        Integer userId = (Integer) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
         List<HandshakeDTO> handshakes = handshakeService.getUserHandshakes(userId);
         return ResponseEntity.ok(handshakes);
     }
@@ -68,8 +67,8 @@ public class HandshakeController {
      * Get pending handshakes (waiting for confirmation)
      */
     @GetMapping("/pending")
-    public ResponseEntity<List<HandshakeDTO>> getUserPendingHandshakes(
-            @RequestHeader(value = "X-User-Id") Integer userId) {
+    public ResponseEntity<List<HandshakeDTO>> getUserPendingHandshakes() {
+        Integer userId = (Integer) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
         List<HandshakeDTO> handshakes = handshakeService.getUserPendingHandshakes(userId);
         return ResponseEntity.ok(handshakes);
     }
@@ -78,8 +77,8 @@ public class HandshakeController {
      * Get confirmed handshakes (both parties confirmed)
      */
     @GetMapping("/confirmed")
-    public ResponseEntity<List<HandshakeDTO>> getUserConfirmedHandshakes(
-            @RequestHeader(value = "X-User-Id") Integer userId) {
+    public ResponseEntity<List<HandshakeDTO>> getUserConfirmedHandshakes() {
+        Integer userId = (Integer) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
         List<HandshakeDTO> handshakes = handshakeService.getUserConfirmedHandshakes(userId);
         return ResponseEntity.ok(handshakes);
     }
@@ -88,9 +87,8 @@ public class HandshakeController {
      * Get a specific handshake by ID
      */
     @GetMapping("/{handshakeId}")
-    public ResponseEntity<HandshakeDTO> getHandshakeById(
-            @PathVariable Integer handshakeId,
-            @RequestHeader(value = "X-User-Id") Integer userId) {
+    public ResponseEntity<HandshakeDTO> getHandshakeById(@PathVariable Integer handshakeId) {
+        Integer userId = (Integer) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
         HandshakeDTO handshake = handshakeService.getHandshakeById(handshakeId, userId);
         return ResponseEntity.ok(handshake);
     }

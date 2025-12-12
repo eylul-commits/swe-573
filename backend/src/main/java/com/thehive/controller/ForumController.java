@@ -5,6 +5,7 @@ import com.thehive.service.ForumService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -29,10 +30,8 @@ public class ForumController {
     }
 
     @PostMapping("/topics")
-    public ResponseEntity<ForumTopicDTO> createTopic(
-            @RequestBody CreateForumTopicRequest request,
-            @RequestHeader(value = "X-User-Id", defaultValue = "1") Integer authorId) {
-        // NOTE: In production, get user ID from JWT token/authentication
+    public ResponseEntity<ForumTopicDTO> createTopic(@RequestBody CreateForumTopicRequest request) {
+        Integer authorId = (Integer) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
         ForumTopicDTO topic = forumService.createTopic(request, authorId);
         return ResponseEntity.status(HttpStatus.CREATED).body(topic);
     }
@@ -52,9 +51,8 @@ public class ForumController {
     @PostMapping("/topics/{topicId}/posts")
     public ResponseEntity<ForumPostDTO> createPost(
             @PathVariable Integer topicId,
-            @RequestBody CreateForumPostRequest request,
-            @RequestHeader(value = "X-User-Id", defaultValue = "1") Integer authorId) {
-        // NOTE: In production, get user ID from JWT token/authentication
+            @RequestBody CreateForumPostRequest request) {
+        Integer authorId = (Integer) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
         ForumPostDTO post = forumService.createPost(topicId, request, authorId);
         return ResponseEntity.status(HttpStatus.CREATED).body(post);
     }
