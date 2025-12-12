@@ -2,6 +2,9 @@ package com.thehive.controller;
 
 import com.thehive.model.dto.CreateOfferRequest;
 import com.thehive.model.dto.CreateRequestRequest;
+import com.thehive.model.dto.CreateQuestionRequest;
+import com.thehive.model.dto.CreateAnswerRequest;
+import com.thehive.model.dto.ServiceAnswerDTO;
 import com.thehive.model.dto.OfferDTO;
 import com.thehive.model.dto.RequestDTO;
 import com.thehive.model.dto.ServiceDTO;
@@ -98,6 +101,24 @@ public class MarketplaceController {
     public ResponseEntity<List<ServiceQuestionDTO>> getServiceQuestions(@PathVariable Integer id) {
         List<ServiceQuestionDTO> questions = marketplaceService.getQuestionsForService(id);
         return ResponseEntity.ok(questions);
+    }
+
+    @PostMapping("/services/{id}/questions")
+    public ResponseEntity<ServiceQuestionDTO> createQuestionForService(
+            @PathVariable Integer id,
+            @Valid @RequestBody CreateQuestionRequest request) {
+        Integer userId = (Integer) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
+        ServiceQuestionDTO question = marketplaceService.createQuestionForService(id, request, userId);
+        return ResponseEntity.status(HttpStatus.CREATED).body(question);
+    }
+
+    @PostMapping("/questions/{id}/answer")
+    public ResponseEntity<ServiceAnswerDTO> createAnswerForQuestion(
+            @PathVariable Integer id,
+            @Valid @RequestBody CreateAnswerRequest request) {
+        Integer userId = (Integer) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
+        ServiceAnswerDTO answer = marketplaceService.createAnswerForQuestion(id, request, userId);
+        return ResponseEntity.status(HttpStatus.CREATED).body(answer);
     }
 
     @GetMapping("/services/{id}/ratings")

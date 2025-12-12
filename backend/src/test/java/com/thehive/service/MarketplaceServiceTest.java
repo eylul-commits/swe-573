@@ -4,6 +4,9 @@ import com.thehive.exception.ResourceNotFoundException;
 import com.thehive.model.dto.AuthorDTO;
 import com.thehive.model.dto.CreateOfferRequest;
 import com.thehive.model.dto.CreateRequestRequest;
+import com.thehive.model.dto.CreateQuestionRequest;
+import com.thehive.model.dto.CreateAnswerRequest;
+import com.thehive.model.dto.ServiceAnswerDTO;
 import com.thehive.model.dto.OfferDTO;
 import com.thehive.model.dto.RequestDTO;
 import com.thehive.model.dto.ServiceDTO;
@@ -13,6 +16,7 @@ import com.thehive.model.entity.*;
 import com.thehive.model.enums.ItemStatus;
 import com.thehive.repository.OfferRepository;
 import com.thehive.repository.QuestionRepository;
+import com.thehive.repository.AnswerRepository;
 import com.thehive.repository.RatingRepository;
 import com.thehive.repository.RequestRepository;
 import com.thehive.repository.SemanticTagRepository;
@@ -42,6 +46,9 @@ class MarketplaceServiceTest {
 
     @Mock
     private QuestionRepository questionRepository;
+
+    @Mock
+    private AnswerRepository answerRepository;
 
     @Mock
     private RatingRepository ratingRepository;
@@ -1208,6 +1215,388 @@ class MarketplaceServiceTest {
 
         assertNotNull(result);
         assertEquals(0, result.size());
+    }
+
+    // ==================== CREATE QUESTION FOR SERVICE TESTS ====================
+
+    @Test
+    void createQuestionForService_ShouldCreateQuestionForOffer() {
+        // Arrange
+        Integer serviceId = 1;
+        Integer askerId = 2;
+        CreateQuestionRequest request = new CreateQuestionRequest();
+        request.setContent("Is this offer still available?");
+
+        User asker = new User();
+        asker.setId(askerId);
+        asker.setName("Question Asker");
+        asker.setEmail("asker@example.com");
+        asker.setUserBadges(new HashSet<>());
+
+        Question savedQuestion = new Question();
+        savedQuestion.setId(1);
+        savedQuestion.setAsker(asker);
+        savedQuestion.setContent(request.getContent());
+        savedQuestion.setOffer(testOffer);
+        savedQuestion.setCreatedAt(LocalDateTime.now());
+
+        when(userRepository.findById(askerId)).thenReturn(Optional.of(asker));
+        when(offerRepository.findById(serviceId)).thenReturn(Optional.of(testOffer));
+        when(questionRepository.save(any(Question.class))).thenReturn(savedQuestion);
+
+        // Act
+        ServiceQuestionDTO result = marketplaceService.createQuestionForService(serviceId, request, askerId);
+
+        // Assert
+        assertNotNull(result);
+        assertEquals(1, result.getId());
+        assertEquals("Is this offer still available?", result.getContent());
+        assertNotNull(result.getAuthor());
+        assertEquals("Question Asker", result.getAuthor().getName());
+        assertNull(result.getAnswer());
+
+        verify(userRepository, times(1)).findById(askerId);
+        verify(offerRepository, times(1)).findById(serviceId);
+        verify(questionRepository, times(1)).save(any(Question.class));
+    }
+
+    @Test
+    void createQuestionForService_ShouldCreateQuestionForRequest() {
+        // Arrange
+        Integer serviceId = 1;
+        Integer askerId = 2;
+        CreateQuestionRequest request = new CreateQuestionRequest();
+        request.setContent("Can this be done online?");
+
+        User asker = new User();
+        asker.setId(askerId);
+        asker.setName("Question Asker");
+        asker.setEmail("asker@example.com");
+        asker.setUserBadges(new HashSet<>());
+
+        Question savedQuestion = new Question();
+        savedQuestion.setId(1);
+        savedQuestion.setAsker(asker);
+        savedQuestion.setContent(request.getContent());
+        savedQuestion.setRequest(testRequest);
+        savedQuestion.setCreatedAt(LocalDateTime.now());
+
+        when(userRepository.findById(askerId)).thenReturn(Optional.of(asker));
+        when(offerRepository.findById(serviceId)).thenReturn(Optional.empty());
+        when(requestRepository.findById(serviceId)).thenReturn(Optional.of(testRequest));
+        when(questionRepository.save(any(Question.class))).thenReturn(savedQuestion);
+
+        // Act
+        ServiceQuestionDTO result = marketplaceService.createQuestionForService(serviceId, request, askerId);
+
+        // Assert
+        assertNotNull(result);
+        assertEquals(1, result.getId());
+        assertEquals("Can this be done online?", result.getContent());
+        assertNotNull(result.getAuthor());
+        assertEquals("Question Asker", result.getAuthor().getName());
+
+        verify(userRepository, times(1)).findById(askerId);
+        verify(offerRepository, times(1)).findById(serviceId);
+        verify(requestRepository, times(1)).findById(serviceId);
+        verify(questionRepository, times(1)).save(any(Question.class));
+    }
+
+    @Test
+    void createQuestionForService_ShouldThrowException_WhenUserNotFound() {
+        // Arrange
+        Integer serviceId = 1;
+        Integer askerId = 999;
+        CreateQuestionRequest request = new CreateQuestionRequest();
+        request.setContent("Test question");
+
+        when(userRepository.findById(askerId)).thenReturn(Optional.empty());
+
+        // Act & Assert
+        assertThrows(ResourceNotFoundException.class, () -> {
+            marketplaceService.createQuestionForService(serviceId, request, askerId);
+        });
+
+        verify(userRepository, times(1)).findById(askerId);
+        verify(offerRepository, never()).findById(any());
+        verify(questionRepository, never()).save(any());
+    }
+
+    @Test
+    void createQuestionForService_ShouldThrowException_WhenServiceNotFound() {
+        // Arrange
+        Integer serviceId = 999;
+        Integer askerId = 2;
+        CreateQuestionRequest request = new CreateQuestionRequest();
+        request.setContent("Test question");
+
+        User asker = new User();
+        asker.setId(askerId);
+        asker.setUserBadges(new HashSet<>());
+
+        when(userRepository.findById(askerId)).thenReturn(Optional.of(asker));
+        when(offerRepository.findById(serviceId)).thenReturn(Optional.empty());
+        when(requestRepository.findById(serviceId)).thenReturn(Optional.empty());
+
+        // Act & Assert
+        assertThrows(ResourceNotFoundException.class, () -> {
+            marketplaceService.createQuestionForService(serviceId, request, askerId);
+        });
+
+        verify(userRepository, times(1)).findById(askerId);
+        verify(offerRepository, times(1)).findById(serviceId);
+        verify(requestRepository, times(1)).findById(serviceId);
+        verify(questionRepository, never()).save(any());
+    }
+
+    // ==================== CREATE ANSWER FOR QUESTION TESTS ====================
+
+    @Test
+    void createAnswerForQuestion_ShouldCreateAnswer() {
+        // Arrange
+        Integer questionId = 1;
+        Integer responderId = 2;
+        CreateAnswerRequest request = new CreateAnswerRequest();
+        request.setContent("Yes, it's still available!");
+
+        User responder = new User();
+        responder.setId(responderId);
+        responder.setName("Service Provider");
+        responder.setEmail("provider@example.com");
+        responder.setUserBadges(new HashSet<>());
+
+        Question question = new Question();
+        question.setId(questionId);
+        question.setAsker(testUser);
+        question.setContent("Is this offer still available?");
+        question.setOffer(testOffer);
+        question.setAnswer(null); // No answer yet
+
+        Answer savedAnswer = new Answer();
+        savedAnswer.setId(1);
+        savedAnswer.setQuestion(question);
+        savedAnswer.setResponder(responder);
+        savedAnswer.setContent(request.getContent());
+        savedAnswer.setCreatedAt(LocalDateTime.now());
+
+        when(questionRepository.findById(questionId)).thenReturn(Optional.of(question));
+        when(userRepository.findById(responderId)).thenReturn(Optional.of(responder));
+        when(answerRepository.save(any(Answer.class))).thenReturn(savedAnswer);
+
+        // Act
+        ServiceAnswerDTO result = marketplaceService.createAnswerForQuestion(questionId, request, responderId);
+
+        // Assert
+        assertNotNull(result);
+        assertEquals(1, result.getId());
+        assertEquals("Yes, it's still available!", result.getContent());
+        assertNotNull(result.getResponder());
+        assertEquals("Service Provider", result.getResponder().getName());
+
+        verify(questionRepository, times(1)).findById(questionId);
+        verify(userRepository, times(1)).findById(responderId);
+        verify(answerRepository, times(1)).save(any(Answer.class));
+    }
+
+    @Test
+    void createAnswerForQuestion_ShouldThrowException_WhenQuestionNotFound() {
+        // Arrange
+        Integer questionId = 999;
+        Integer responderId = 2;
+        CreateAnswerRequest request = new CreateAnswerRequest();
+        request.setContent("Test answer");
+
+        when(questionRepository.findById(questionId)).thenReturn(Optional.empty());
+
+        // Act & Assert
+        assertThrows(ResourceNotFoundException.class, () -> {
+            marketplaceService.createAnswerForQuestion(questionId, request, responderId);
+        });
+
+        verify(questionRepository, times(1)).findById(questionId);
+        verify(userRepository, never()).findById(any());
+        verify(answerRepository, never()).save(any());
+    }
+
+    @Test
+    void createAnswerForQuestion_ShouldThrowException_WhenUserNotFound() {
+        // Arrange
+        Integer questionId = 1;
+        Integer responderId = 999;
+        CreateAnswerRequest request = new CreateAnswerRequest();
+        request.setContent("Test answer");
+
+        Question question = new Question();
+        question.setId(questionId);
+        question.setAnswer(null);
+
+        when(questionRepository.findById(questionId)).thenReturn(Optional.of(question));
+        when(userRepository.findById(responderId)).thenReturn(Optional.empty());
+
+        // Act & Assert
+        assertThrows(ResourceNotFoundException.class, () -> {
+            marketplaceService.createAnswerForQuestion(questionId, request, responderId);
+        });
+
+        verify(questionRepository, times(1)).findById(questionId);
+        verify(userRepository, times(1)).findById(responderId);
+        verify(answerRepository, never()).save(any());
+    }
+
+    @Test
+    void createAnswerForQuestion_ShouldThrowException_WhenQuestionAlreadyAnswered() {
+        // Arrange
+        Integer questionId = 1;
+        Integer responderId = 2;
+        CreateAnswerRequest request = new CreateAnswerRequest();
+        request.setContent("Another answer");
+
+        User existingResponder = new User();
+        existingResponder.setId(3);
+        existingResponder.setName("Previous Responder");
+        existingResponder.setUserBadges(new HashSet<>());
+
+        Answer existingAnswer = new Answer();
+        existingAnswer.setId(1);
+        existingAnswer.setResponder(existingResponder);
+        existingAnswer.setContent("Previous answer");
+
+        Question question = new Question();
+        question.setId(questionId);
+        question.setAnswer(existingAnswer); // Already has an answer
+
+        when(questionRepository.findById(questionId)).thenReturn(Optional.of(question));
+
+        // Act & Assert
+        IllegalStateException exception = assertThrows(IllegalStateException.class, () -> {
+            marketplaceService.createAnswerForQuestion(questionId, request, responderId);
+        });
+
+        assertEquals("Question already has an answer", exception.getMessage());
+
+        verify(questionRepository, times(1)).findById(questionId);
+        verify(userRepository, never()).findById(any());
+        verify(answerRepository, never()).save(any());
+    }
+
+    @Test
+    void createQuestionForService_ShouldThrowException_WhenContentIsNull() {
+        // Arrange
+        Integer serviceId = 1;
+        Integer askerId = 2;
+        CreateQuestionRequest request = new CreateQuestionRequest();
+        request.setContent(null); // Null content
+
+        // Act & Assert
+        IllegalArgumentException exception = assertThrows(IllegalArgumentException.class, () -> {
+            marketplaceService.createQuestionForService(serviceId, request, askerId);
+        });
+
+        assertEquals("Question content cannot be null or empty", exception.getMessage());
+
+        verify(userRepository, never()).findById(any());
+        verify(offerRepository, never()).findById(any());
+        verify(questionRepository, never()).save(any());
+    }
+
+    @Test
+    void createQuestionForService_ShouldThrowException_WhenContentIsEmpty() {
+        // Arrange
+        Integer serviceId = 1;
+        Integer askerId = 2;
+        CreateQuestionRequest request = new CreateQuestionRequest();
+        request.setContent(""); // Empty content
+
+        // Act & Assert
+        IllegalArgumentException exception = assertThrows(IllegalArgumentException.class, () -> {
+            marketplaceService.createQuestionForService(serviceId, request, askerId);
+        });
+
+        assertEquals("Question content cannot be null or empty", exception.getMessage());
+
+        verify(userRepository, never()).findById(any());
+        verify(offerRepository, never()).findById(any());
+        verify(questionRepository, never()).save(any());
+    }
+
+    @Test
+    void createQuestionForService_ShouldThrowException_WhenContentIsWhitespace() {
+        // Arrange
+        Integer serviceId = 1;
+        Integer askerId = 2;
+        CreateQuestionRequest request = new CreateQuestionRequest();
+        request.setContent("   "); // Whitespace only
+
+        // Act & Assert
+        IllegalArgumentException exception = assertThrows(IllegalArgumentException.class, () -> {
+            marketplaceService.createQuestionForService(serviceId, request, askerId);
+        });
+
+        assertEquals("Question content cannot be null or empty", exception.getMessage());
+
+        verify(userRepository, never()).findById(any());
+        verify(offerRepository, never()).findById(any());
+        verify(questionRepository, never()).save(any());
+    }
+
+    @Test
+    void createAnswerForQuestion_ShouldThrowException_WhenContentIsNull() {
+        // Arrange
+        Integer questionId = 1;
+        Integer responderId = 2;
+        CreateAnswerRequest request = new CreateAnswerRequest();
+        request.setContent(null); // Null content
+
+        // Act & Assert
+        IllegalArgumentException exception = assertThrows(IllegalArgumentException.class, () -> {
+            marketplaceService.createAnswerForQuestion(questionId, request, responderId);
+        });
+
+        assertEquals("Answer content cannot be null or empty", exception.getMessage());
+
+        verify(questionRepository, never()).findById(any());
+        verify(userRepository, never()).findById(any());
+        verify(answerRepository, never()).save(any());
+    }
+
+    @Test
+    void createAnswerForQuestion_ShouldThrowException_WhenContentIsEmpty() {
+        // Arrange
+        Integer questionId = 1;
+        Integer responderId = 2;
+        CreateAnswerRequest request = new CreateAnswerRequest();
+        request.setContent(""); // Empty content
+
+        // Act & Assert
+        IllegalArgumentException exception = assertThrows(IllegalArgumentException.class, () -> {
+            marketplaceService.createAnswerForQuestion(questionId, request, responderId);
+        });
+
+        assertEquals("Answer content cannot be null or empty", exception.getMessage());
+
+        verify(questionRepository, never()).findById(any());
+        verify(userRepository, never()).findById(any());
+        verify(answerRepository, never()).save(any());
+    }
+
+    @Test
+    void createAnswerForQuestion_ShouldThrowException_WhenContentIsWhitespace() {
+        // Arrange
+        Integer questionId = 1;
+        Integer responderId = 2;
+        CreateAnswerRequest request = new CreateAnswerRequest();
+        request.setContent("   "); // Whitespace only
+
+        // Act & Assert
+        IllegalArgumentException exception = assertThrows(IllegalArgumentException.class, () -> {
+            marketplaceService.createAnswerForQuestion(questionId, request, responderId);
+        });
+
+        assertEquals("Answer content cannot be null or empty", exception.getMessage());
+
+        verify(questionRepository, never()).findById(any());
+        verify(userRepository, never()).findById(any());
+        verify(answerRepository, never()).save(any());
     }
 }
 

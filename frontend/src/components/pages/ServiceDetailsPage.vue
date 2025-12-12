@@ -242,11 +242,13 @@
                 <Button 
                   @click="handleAskQuestion"
                   class="bg-gray-900 hover:bg-gray-800 text-white w-full"
-                  :disabled="!questionText.trim()"
+                  :disabled="!questionText.trim() || isAskingQuestion"
                 >
                   <Send class="w-4 h-4 mr-2" />
-                  Send Question
+                  <span v-if="isAskingQuestion">Sending...</span>
+                  <span v-else>Send Question</span>
                 </Button>
+                <p v-if="questionError" class="text-sm text-red-600 mt-2">{{ questionError }}</p>
               </div>
 
               <!-- Existing Questions -->
@@ -271,6 +273,24 @@
                           <div class="text-xs text-gray-500">{{ q.answer.createdAt }}</div>
                         </div>
                         <p class="text-sm text-gray-700">{{ q.answer.content }}</p>
+                      </div>
+
+                      <div v-else-if="service?.poster.id === appStore.currentUser?.id.toString()" class="mt-3 pl-4 border-l-2 border-gray-200 bg-gray-50 p-3 rounded">
+                        <div class="text-xs text-gray-700 mb-2">Answer this question:</div>
+                        <Textarea
+                          v-model="answerTexts[q.id]"
+                          placeholder="Type your answer here..."
+                          class="mb-2 min-h-[80px]"
+                        />
+                        <Button 
+                          @click="handleAnswerQuestion(q.id)"
+                          class="bg-emerald-600 hover:bg-emerald-700 text-white"
+                          :disabled="!answerTexts[q.id]?.trim() || isAnswering[q.id]"
+                        >
+                          <span v-if="isAnswering[q.id]">Sending...</span>
+                          <span v-else>Send Answer</span>
+                        </Button>
+                        <p v-if="answerErrors[q.id]" class="text-xs text-red-600 mt-1">{{ answerErrors[q.id] }}</p>
                       </div>
 
                       <div v-else class="mt-2 text-xs text-gray-500 italic">
@@ -406,7 +426,7 @@ import TabsContent from '../ui/TabsContent.vue'
 import TabsList from '../ui/TabsList.vue'
 import TabsTrigger from '../ui/TabsTrigger.vue'
 import Textarea from '../ui/Textarea.vue'
-import { getServiceById, getServiceRatings, getServiceQuestions  } from '../../services/dataService'
+import { getServiceById, getServiceRatings, getServiceQuestions, askServiceQuestion, answerQuestion } from '../../services/dataService'
 import { createHandshake } from '../../services/handshakeService'
 import { createHandshakeChannel, isStreamChatInitialized } from '../../clients/streamChatClient'
 import { useAppStore } from '../../stores/appStore'
@@ -444,6 +464,11 @@ const reviewCount = computed(() => ratings.value?.summary.totalReviews || 0)
 const serviceRatings = computed(() => ratings.value?.ratings || [])
 
 const questionText = ref('')
+const isAskingQuestion = ref(false)
+const questionError = ref('')
+const answerTexts = ref<Record<string, string>>({})
+const isAnswering = ref<Record<string, boolean>>({})
+const answerErrors = ref<Record<string, string>>({})
 
 // Image gallery state
 const selectedImageIndex = ref(0)
@@ -472,11 +497,62 @@ const getAvailability = (id: string) => {
   return "Flexible scheduling"
 }
 
-const handleAskQuestion = () => {
-  if (questionText.value.trim()) {
-    // TODO: Implement backend API call to create a question
-    console.log("Asking question:", questionText.value)
-    questionText.value = ""
+const handleAskQuestion = async () => {
+  if (!questionText.value.trim() || !serviceId.value) {
+    return
+  }
+
+  if (!appStore.currentUser) {
+    questionError.value = 'Please log in to ask a question'
+    return
+  }
+
+  isAskingQuestion.value = true
+  questionError.value = ''
+
+  try {
+    const newQuestion = await askServiceQuestion(serviceId.value, questionText.value.trim())
+    // Add the new question to the list
+    questions.value.push(newQuestion)
+    questionText.value = ''
+  } catch (error: any) {
+    console.error('Failed to ask question:', error)
+    questionError.value = error.message || 'Failed to ask question. Please try again.'
+  } finally {
+    isAskingQuestion.value = false
+  }
+}
+
+const handleAnswerQuestion = async (questionId: string) => {
+  const answerText = answerTexts.value[questionId]
+  if (!answerText?.trim()) {
+    return
+  }
+
+  if (!appStore.currentUser) {
+    answerErrors.value[questionId] = 'Please log in to answer questions'
+    return
+  }
+
+  isAnswering.value[questionId] = true
+  answerErrors.value[questionId] = ''
+
+  try {
+    const newAnswer = await answerQuestion(questionId, answerText.trim())
+    // Update the question with the new answer
+    const questionIndex = questions.value.findIndex(q => q.id === questionId)
+    if (questionIndex !== -1) {
+      questions.value[questionIndex] = {
+        ...questions.value[questionIndex],
+        answer: newAnswer
+      }
+    }
+    answerTexts.value[questionId] = ''
+  } catch (error: any) {
+    console.error('Failed to answer question:', error)
+    answerErrors.value[questionId] = error.message || 'Failed to answer question. Please try again.'
+  } finally {
+    isAnswering.value[questionId] = false
   }
 }
 
