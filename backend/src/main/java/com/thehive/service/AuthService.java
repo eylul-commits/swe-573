@@ -157,6 +157,8 @@ public class AuthService {
         dto.setDistrict(user.getDistrict());
         dto.setGeohash(user.getGeohash());
         dto.setRole(user.getRole());
+        dto.setAccountStatus(user.getAccountStatus());
+        dto.setWarningCount(user.getWarningCount());
         dto.setBalanceHours(user.getBalanceHours());
         
         // Calculate hours given and received from timebank transactions
