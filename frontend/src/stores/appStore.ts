@@ -71,6 +71,15 @@ export const useAppStore = defineStore('app', () => {
     }
   }
 
+  const clearAuthState = () => {
+    currentUser.value = null
+    authToken.value = null
+    localStorage.removeItem('authToken')
+    localStorage.removeItem('currentUser')
+    localStorage.removeItem('streamChatToken')
+    streamChatReady.value = false
+  }
+
   const logout = async () => {
     // Disconnect from Stream Chat
     try {
@@ -80,13 +89,8 @@ export const useAppStore = defineStore('app', () => {
       console.error('Failed to disconnect from Stream Chat:', error)
     }
 
-    currentUser.value = null
-    authToken.value = null
-    localStorage.removeItem('authToken')
-    localStorage.removeItem('currentUser')
-    localStorage.removeItem('streamChatToken')
+    clearAuthState()
     currentPage.value = 'home'
-    streamChatReady.value = false
   }
 
   const setCurrentPage = (page: string) => {
@@ -124,6 +128,13 @@ export const useAppStore = defineStore('app', () => {
     }
   }
 
+  // Listen for auth cleared events (when tokens are cleared due to 401/403)
+  if (typeof window !== 'undefined') {
+    window.addEventListener('auth:cleared', () => {
+      clearAuthState()
+    })
+  }
+
   return {
     // State
     currentUser,
@@ -139,6 +150,7 @@ export const useAppStore = defineStore('app', () => {
     // Actions
     setCurrentUser,
     logout,
+    clearAuthState,
     setCurrentPage,
     setSelectedServiceId,
     setSelectedThreadId,

@@ -19,19 +19,25 @@ export const getDefaultHeaders = (): HeadersInit => {
     headers['Authorization'] = `Bearer ${token}`;
   }
 
-  // Add user ID header if available
-  const userStr = localStorage.getItem('currentUser');
-  if (userStr) {
-    try {
-      const user = JSON.parse(userStr);
-      headers['X-User-Id'] = user.id.toString();
-    } catch (e) {
-      // If parsing fails, don't add the header
-    }
-  }
-
   return headers;
 };
+
+/**
+ * Custom API error class that includes status code and response data
+ */
+export class ApiError extends Error {
+  status: number;
+  statusText: string;
+  data?: any;
+
+  constructor(message: string, status: number, statusText: string, data?: any) {
+    super(message);
+    this.name = 'ApiError';
+    this.status = status;
+    this.statusText = statusText;
+    this.data = data;
+  }
+}
 
 /**
  * Generic API fetch wrapper with error handling
@@ -53,8 +59,37 @@ export async function apiFetch<T>(
   try {
     const response = await fetch(url, config);
 
+    // Handle authentication errors (401/403)
+    if (response.status === 401 || response.status === 403) {
+      // Clear invalid tokens
+      localStorage.removeItem('authToken');
+      localStorage.removeItem('currentUser');
+      localStorage.removeItem('streamChatToken');
+      
+      // Dispatch custom event to notify store to clear auth state
+      window.dispatchEvent(new CustomEvent('auth:cleared'));
+      
+      console.warn('Authentication failed - tokens cleared');
+    }
+
     if (!response.ok) {
-      throw new Error(`API Error: ${response.status} ${response.statusText}`);
+      // Try to parse error response body
+      let errorData: any = null;
+      try {
+        const contentType = response.headers.get('content-type');
+        if (contentType && contentType.includes('application/json')) {
+          errorData = await response.json();
+        }
+      } catch (e) {
+        // If parsing fails, ignore
+      }
+
+      throw new ApiError(
+        errorData?.message || `API Error: ${response.status} ${response.statusText}`,
+        response.status,
+        response.statusText,
+        errorData
+      );
     }
 
     // Handle no-content responses
@@ -64,6 +99,12 @@ export async function apiFetch<T>(
 
     return await response.json();
   } catch (error) {
+    // Re-throw ApiError as-is
+    if (error instanceof ApiError) {
+      throw error;
+    }
+    
+    // Wrap other errors
     console.error('API request failed:', error);
     throw error;
   }
