@@ -36,7 +36,7 @@
           <Card class="p-6">
             <div class="flex items-start gap-4 mb-4">
               <Avatar class="w-12 h-12 flex-shrink-0">
-                <AvatarImage :src="thread.author.avatar || 'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=100&h=100&fit=crop'" />
+                <AvatarImage :src="getAvatarUrl(thread.author.avatar, thread.author.name)" />
               </Avatar>
               <div class="flex-1">
                 <h1 class="text-2xl font-semibold text-gray-900 mb-2">
@@ -69,7 +69,7 @@
             <Card v-for="post in posts" :key="post.id" class="p-6">
               <div class="flex gap-4">
                 <Avatar class="w-10 h-10 flex-shrink-0">
-                  <AvatarImage :src="post.author.avatar || 'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=100&h=100&fit=crop'" />
+                  <AvatarImage :src="getAvatarUrl(post.author.avatar, post.author.name)" />
                 </Avatar>
                 <div class="flex-1">
                   <div class="flex items-center gap-2 mb-2">
@@ -127,6 +127,7 @@ import Badge from '../ui/Badge.vue'
 import Textarea from '../ui/Textarea.vue'
 import { useAppStore } from '../../stores/appStore'
 import { formatDistanceToNow } from '../../utils/dateUtils'
+import { getAvatarUrl } from '../../utils/avatarUtils'
 import {
   getForumTopicById,
   getPostsByTopicId,
