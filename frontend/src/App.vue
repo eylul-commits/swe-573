@@ -33,6 +33,7 @@ import ThreadDetailsPage from './components/pages/ThreadDetailsPage.vue'
 import CreateServicePage from './components/pages/CreateServicePage.vue'
 import ProfilePage from './components/pages/ProfilePage.vue'
 import SettingsPage from './components/pages/SettingsPage.vue'
+import AdminPanelPage from './components/pages/AdminPanelPage.vue'
 
 const appStore = useAppStore()
 
@@ -79,6 +80,8 @@ const currentPageComponent = computed(() => {
       return ProfilePage
     case 'settings':
       return SettingsPage
+    case 'admin':
+      return AdminPanelPage
     default:
       return HomePage
   }

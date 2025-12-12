@@ -182,7 +182,19 @@
 
         <!-- Provider Info Card -->
         <Card class="p-6">
-          <h2 class="text-gray-900 mb-4">{{ service.type === 'OFFER' ? 'Offered by' : 'Requested by' }}</h2>
+          <div class="flex items-start justify-between mb-4">
+            <h2 class="text-gray-900">{{ service.type === 'OFFER' ? 'Offered by' : 'Requested by' }}</h2>
+            <Button 
+              v-if="service.poster.id !== appStore.currentUser?.id.toString()"
+              @click="openReportModal"
+              variant="outline"
+              size="sm"
+              class="text-red-600 hover:text-red-700 hover:bg-red-50"
+            >
+              <Flag class="w-4 h-4 mr-1" />
+              Report
+            </Button>
+          </div>
           <div class="flex items-start gap-4">
             <Avatar class="w-16 h-16">
               <AvatarImage :src="service.poster.avatar" :alt="service.poster.name" />
@@ -410,12 +422,24 @@
         {{ selectedImageIndex + 1 }} / {{ service.imageUrls.length }}
       </div>
     </div>
+
+    <!-- Report Content Modal -->
+    <ReportContentModal
+      v-if="service"
+      v-model="reportModalOpen"
+      :reported-user-id="parseInt(service.poster.id)"
+      :reported-user-name="service.poster.name"
+      :reported-offer-id="service.type === 'OFFER' ? parseInt(service.id) : undefined"
+      :reported-request-id="service.type === 'REQUEST' ? parseInt(service.id) : undefined"
+      :report-type="service.type === 'OFFER' ? 'OFFER' : 'REQUEST'"
+      @submitted="onReportSubmitted"
+    />
   </div>
 </template>
 
 <script setup lang="ts">
 import { computed, ref, watch } from 'vue'
-import { MapPin, Clock, Calendar, Star, Send, MessageCircle, ArrowLeft } from 'lucide-vue-next'
+import { MapPin, Clock, Calendar, Star, Send, MessageCircle, ArrowLeft, Flag } from 'lucide-vue-next'
 import Card from '../ui/Card.vue'
 import Badge from '../ui/Badge.vue'
 import Button from '../ui/Button.vue'
@@ -430,6 +454,7 @@ import { getServiceById, getServiceRatings, getServiceQuestions, askServiceQuest
 import { createHandshake } from '../../services/handshakeService'
 import { createHandshakeChannel, isStreamChatInitialized } from '../../clients/streamChatClient'
 import { useAppStore } from '../../stores/appStore'
+import ReportContentModal from '../ReportContentModal.vue'
 import type { Service, ServiceQuestion, ServiceRatingsResponse } from '../../types'
 
 const appStore = useAppStore()
@@ -473,6 +498,9 @@ const answerErrors = ref<Record<string, string>>({})
 // Image gallery state
 const selectedImageIndex = ref(0)
 const showImageModal = ref(false)
+
+// Report modal state
+const reportModalOpen = ref(false)
 
 // Helper function to determine user badge
 const getUserBadge = (hoursGiven: number, _hoursReceived: number, balance: number) => {
@@ -576,6 +604,14 @@ const prevImage = () => {
       ? service.value.imageUrls.length - 1 
       : selectedImageIndex.value - 1
   }
+}
+
+const openReportModal = () => {
+  reportModalOpen.value = true
+}
+
+const onReportSubmitted = () => {
+  reportModalOpen.value = false
 }
 
 const handleAcceptService = async () => {
