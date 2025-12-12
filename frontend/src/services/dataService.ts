@@ -10,6 +10,8 @@ import {
   fetchAllTags,
   fetchServiceRatings,
   fetchServiceQuestions,
+  createServiceQuestion,
+  createQuestionAnswer,
 } from "./apiService";
 
 // Cache for services to avoid repeated API calls
@@ -142,5 +144,29 @@ export const getServiceQuestions = async (
   } catch (error) {
     console.error(`Failed to load questions for service ${serviceId}:`, error);
     return [];
+  }
+};
+
+export const askServiceQuestion = async (
+  serviceId: string,
+  content: string
+): Promise<ServiceQuestion> => {
+  try {
+    return await createServiceQuestion(serviceId, content);
+  } catch (error) {
+    console.error(`Failed to ask question for service ${serviceId}:`, error);
+    throw error;
+  }
+};
+
+export const answerQuestion = async (
+  questionId: string,
+  content: string
+): Promise<ServiceQuestion['answer']> => {
+  try {
+    return await createQuestionAnswer(questionId, content);
+  } catch (error) {
+    console.error(`Failed to answer question ${questionId}:`, error);
+    throw error;
   }
 };

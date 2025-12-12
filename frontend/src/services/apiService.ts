@@ -276,6 +276,58 @@ export async function fetchServiceQuestions(id: string): Promise<ServiceQuestion
   }
 }
 
+export async function createServiceQuestion(
+  serviceId: string,
+  content: string
+): Promise<ServiceQuestion> {
+  try {
+    const response = await api.post<BackendServiceQuestionDTO>(
+      `/marketplace/services/${serviceId}/questions`,
+      { content }
+    );
+
+    return {
+      id: response.id.toString(),
+      content: response.content,
+      createdAt: response.createdAt,
+      author: convertBackendAuthorToSummary(response.author),
+      answer: response.answer
+        ? {
+            id: response.answer.id.toString(),
+            content: response.answer.content,
+            createdAt: response.answer.createdAt,
+            responder: convertBackendAuthorToSummary(response.answer.responder),
+          }
+        : undefined,
+    };
+  } catch (error) {
+    console.error(`Failed to create question for service ${serviceId}:`, error);
+    throw error;
+  }
+}
+
+export async function createQuestionAnswer(
+  questionId: string,
+  content: string
+): Promise<ServiceQuestion['answer']> {
+  try {
+    const response = await api.post<BackendServiceAnswerDTO>(
+      `/marketplace/questions/${questionId}/answer`,
+      { content }
+    );
+
+    return {
+      id: response.id.toString(),
+      content: response.content,
+      createdAt: response.createdAt,
+      responder: convertBackendAuthorToSummary(response.responder),
+    };
+  } catch (error) {
+    console.error(`Failed to create answer for question ${questionId}:`, error);
+    throw error;
+  }
+}
+
 /**
  * Fetch nearby services for a user
  */
