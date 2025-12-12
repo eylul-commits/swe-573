@@ -7,24 +7,15 @@ CREATE TABLE IF NOT EXISTS users (
     password_hash VARCHAR(255) NOT NULL,
     name VARCHAR(100),
     bio TEXT,
+    avatar_url TEXT,
     province VARCHAR(100),
     district VARCHAR(100),
+    geohash VARCHAR(20),
     role VARCHAR(20) DEFAULT 'USER',
     balance_hours INT DEFAULT 3,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
-
--- Add geohash column if it doesn't exist
-DO $$
-BEGIN
-    IF NOT EXISTS (
-        SELECT 1 FROM information_schema.columns 
-        WHERE table_name = 'users' AND column_name = 'geohash'
-    ) THEN
-        ALTER TABLE users ADD COLUMN geohash VARCHAR(20);
-    END IF;
-END $$;
 
 -- Offers table
 CREATE TABLE IF NOT EXISTS offers (
@@ -37,21 +28,12 @@ CREATE TABLE IF NOT EXISTS offers (
     end_date DATE,
     province VARCHAR(100),
     district VARCHAR(100),
+    geohash VARCHAR(20),
+    image_urls TEXT,
     status VARCHAR(20) DEFAULT 'ACTIVE',
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
-
--- Add geohash column if it doesn't exist
-DO $$
-BEGIN
-    IF NOT EXISTS (
-        SELECT 1 FROM information_schema.columns 
-        WHERE table_name = 'offers' AND column_name = 'geohash'
-    ) THEN
-        ALTER TABLE offers ADD COLUMN geohash VARCHAR(20);
-    END IF;
-END $$;
 
 -- Requests table
 CREATE TABLE IF NOT EXISTS requests (
@@ -64,21 +46,12 @@ CREATE TABLE IF NOT EXISTS requests (
     end_date DATE,
     province VARCHAR(100),
     district VARCHAR(100),
+    geohash VARCHAR(20),
+    image_urls TEXT,
     status VARCHAR(20) DEFAULT 'ACTIVE',
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
-
--- Add geohash column if it doesn't exist
-DO $$
-BEGIN
-    IF NOT EXISTS (
-        SELECT 1 FROM information_schema.columns 
-        WHERE table_name = 'requests' AND column_name = 'geohash'
-    ) THEN
-        ALTER TABLE requests ADD COLUMN geohash VARCHAR(20);
-    END IF;
-END $$;
 
 -- Semantic tags table
 CREATE TABLE IF NOT EXISTS semantic_tags (

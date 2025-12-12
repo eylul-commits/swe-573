@@ -9,6 +9,7 @@ public class UserDTO {
     private String email;
     private String name;
     private String bio;
+    private String avatarUrl;
     private String province;
     private String district;
     private String geohash;

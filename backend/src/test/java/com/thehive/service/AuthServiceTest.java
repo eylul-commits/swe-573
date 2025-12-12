@@ -5,6 +5,7 @@ import com.thehive.config.StreamChatConfig;
 import com.thehive.model.dto.AuthResponse;
 import com.thehive.model.dto.LoginRequest;
 import com.thehive.model.dto.RegisterRequest;
+import com.thehive.model.dto.UpdateProfileRequest;
 import com.thehive.model.dto.UserDTO;
 import com.thehive.model.entity.User;
 import com.thehive.model.enums.UserRole;
@@ -249,5 +250,209 @@ class AuthServiceTest {
         // Verify
         verify(userRepository).findById(userId);
     }
-}
 
+    //Update Profile Tests
+    @Test
+    void updateProfile_WithValidUserId_ShouldUpdateName() {
+        // Arrange
+        Integer userId = 1;
+        UpdateProfileRequest request = new UpdateProfileRequest();
+        request.setName("Updated Name");
+        
+        User updatedUser = new User();
+        updatedUser.setId(userId); // Required for convertToDTO
+        updatedUser.setName("Updated Name");
+        
+        when(userRepository.findById(userId)).thenReturn(Optional.of(testUser));
+        when(userRepository.save(any(User.class))).thenReturn(updatedUser);
+        when(timebankTransactionRepository.findBySenderId(userId)).thenReturn(Collections.emptyList());
+        when(timebankTransactionRepository.findByReceiverId(userId)).thenReturn(Collections.emptyList());
+        doNothing().when(streamChatClient).upsertUser(any(Integer.class), anyString());
+
+        // Act
+        UserDTO result = authService.updateProfile(userId, request);
+
+        // Assert
+        assertNotNull(result);
+        assertEquals("Updated Name", result.getName());
+        
+        // Verify
+        verify(userRepository).findById(userId);
+        verify(userRepository).save(any(User.class));
+        verify(streamChatClient).upsertUser(userId, "Updated Name");
+    }
+
+    @Test
+    void updateProfile_WithValidUserId_ShouldUpdateAvatarUrl() {
+        // Arrange
+        Integer userId = 1;
+        UpdateProfileRequest request = new UpdateProfileRequest();
+        request.setAvatarUrl("https://example.com/avatar.jpg");
+        
+        User updatedUser = new User();
+        updatedUser.setId(userId); // Required for convertToDTO
+        updatedUser.setAvatarUrl("https://example.com/avatar.jpg");
+        
+        when(userRepository.findById(userId)).thenReturn(Optional.of(testUser));
+        when(userRepository.save(any(User.class))).thenReturn(updatedUser);
+        when(timebankTransactionRepository.findBySenderId(userId)).thenReturn(Collections.emptyList());
+        when(timebankTransactionRepository.findByReceiverId(userId)).thenReturn(Collections.emptyList());
+
+        // Act
+        UserDTO result = authService.updateProfile(userId, request);
+
+        // Assert
+        assertNotNull(result);
+        assertEquals("https://example.com/avatar.jpg", result.getAvatarUrl());
+        
+        // Verify
+        verify(userRepository).findById(userId);
+        verify(userRepository).save(any(User.class));
+        verify(streamChatClient, never()).upsertUser(any(Integer.class), anyString());
+    }
+
+    @Test
+    void updateProfile_WithValidUserId_ShouldUpdateBio() {
+        // Arrange
+        Integer userId = 1;
+        UpdateProfileRequest request = new UpdateProfileRequest();
+        request.setBio("Updated bio text");
+        
+        User updatedUser = new User();
+        updatedUser.setId(userId); // Required for convertToDTO
+        updatedUser.setBio("Updated bio text");
+        
+        when(userRepository.findById(userId)).thenReturn(Optional.of(testUser));
+        when(userRepository.save(any(User.class))).thenReturn(updatedUser);
+        when(timebankTransactionRepository.findBySenderId(userId)).thenReturn(Collections.emptyList());
+        when(timebankTransactionRepository.findByReceiverId(userId)).thenReturn(Collections.emptyList());
+
+        // Act
+        UserDTO result = authService.updateProfile(userId, request);
+
+        // Assert
+        assertNotNull(result);
+        assertEquals("Updated bio text", result.getBio());
+        
+        // Verify
+        verify(userRepository).findById(userId);
+        verify(userRepository).save(any(User.class));
+    }
+
+    @Test
+    void updateProfile_WithValidUserId_ShouldUpdateLocationFields() {
+        // Arrange
+        Integer userId = 1;
+        UpdateProfileRequest request = new UpdateProfileRequest();
+        request.setProvince("Ankara");
+        request.setDistrict("Çankaya");
+        request.setGeohash("sx1y2z3");
+        
+        User updatedUser = new User();
+        updatedUser.setId(userId); // Required for convertToDTO
+        updatedUser.setProvince("Ankara");
+        updatedUser.setDistrict("Çankaya");
+        updatedUser.setGeohash("sx1y2z3");
+        
+        when(userRepository.findById(userId)).thenReturn(Optional.of(testUser));
+        when(userRepository.save(any(User.class))).thenReturn(updatedUser);
+        when(timebankTransactionRepository.findBySenderId(userId)).thenReturn(Collections.emptyList());
+        when(timebankTransactionRepository.findByReceiverId(userId)).thenReturn(Collections.emptyList());
+
+        // Act
+        UserDTO result = authService.updateProfile(userId, request);
+
+        // Assert
+        assertNotNull(result);
+        assertEquals("Ankara", result.getProvince());
+        assertEquals("Çankaya", result.getDistrict());
+        assertEquals("sx1y2z3", result.getGeohash());
+        
+        // Verify
+        verify(userRepository).findById(userId);
+        verify(userRepository).save(any(User.class));
+    }
+
+    @Test
+    void updateProfile_WithValidUserId_ShouldUpdateMultipleFields() {
+        // Arrange
+        Integer userId = 1;
+        UpdateProfileRequest request = new UpdateProfileRequest();
+        request.setName("New Name");
+        request.setBio("New Bio");
+        request.setAvatarUrl("https://example.com/new-avatar.jpg");
+        
+        User updatedUser = new User();
+        updatedUser.setId(userId); // Required for convertToDTO
+        updatedUser.setName("New Name");
+        updatedUser.setBio("New Bio");
+        updatedUser.setAvatarUrl("https://example.com/new-avatar.jpg");
+        
+        when(userRepository.findById(userId)).thenReturn(Optional.of(testUser));
+        when(userRepository.save(any(User.class))).thenReturn(updatedUser);
+        when(timebankTransactionRepository.findBySenderId(userId)).thenReturn(Collections.emptyList());
+        when(timebankTransactionRepository.findByReceiverId(userId)).thenReturn(Collections.emptyList());
+        doNothing().when(streamChatClient).upsertUser(any(Integer.class), anyString());
+
+        // Act
+        UserDTO result = authService.updateProfile(userId, request);
+
+        // Assert
+        assertNotNull(result);
+        assertEquals("New Name", result.getName());
+        assertEquals("New Bio", result.getBio());
+        assertEquals("https://example.com/new-avatar.jpg", result.getAvatarUrl());
+        
+        // Verify
+        verify(userRepository).findById(userId);
+        verify(userRepository).save(any(User.class));
+        verify(streamChatClient).upsertUser(userId, "New Name");
+    }
+
+    @Test
+    void updateProfile_WithInvalidUserId_ShouldThrowException() {
+        // Arrange
+        Integer userId = 999;
+        UpdateProfileRequest request = new UpdateProfileRequest();
+        request.setName("New Name");
+        
+        when(userRepository.findById(userId)).thenReturn(Optional.empty());
+
+        // Act & Assert
+        RuntimeException exception = assertThrows(RuntimeException.class, () -> {
+            authService.updateProfile(userId, request);
+        });
+
+        assertEquals("User not found", exception.getMessage());
+
+        // Verify
+        verify(userRepository).findById(userId);
+        verify(userRepository, never()).save(any(User.class));
+        verify(streamChatClient, never()).upsertUser(any(Integer.class), anyString());
+    }
+
+    @Test
+    void updateProfile_WithNullFields_ShouldNotUpdateFields() {
+        // Arrange
+        Integer userId = 1;
+        UpdateProfileRequest request = new UpdateProfileRequest();
+        // All fields are null
+        
+        when(userRepository.findById(userId)).thenReturn(Optional.of(testUser));
+        when(userRepository.save(any(User.class))).thenReturn(testUser);
+        when(timebankTransactionRepository.findBySenderId(userId)).thenReturn(Collections.emptyList());
+        when(timebankTransactionRepository.findByReceiverId(userId)).thenReturn(Collections.emptyList());
+
+        // Act
+        UserDTO result = authService.updateProfile(userId, request);
+
+        // Assert
+        assertNotNull(result);
+        assertEquals(testUser.getName(), result.getName());
+        
+        // Verify
+        verify(userRepository).findById(userId);
+        verify(userRepository).save(any(User.class));
+        verify(streamChatClient, never()).upsertUser(any(Integer.class), anyString());
+    }
+}

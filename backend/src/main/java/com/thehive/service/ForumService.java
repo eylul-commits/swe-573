@@ -157,7 +157,7 @@ public class ForumService {
         AuthorDTO dto = new AuthorDTO();
         dto.setId(user.getId());
         dto.setName(user.getName() != null ? user.getName() : user.getEmail());
-        dto.setAvatar(null); // Could be added to User entity later
+        dto.setAvatar(user.getAvatarUrl()); // Use the user's avatarUrl from profile
         
         if (user.getUserBadges() != null && !user.getUserBadges().isEmpty()) {
             // Get the most recent badge based on earned_at timestamp

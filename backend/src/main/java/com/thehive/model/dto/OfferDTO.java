@@ -27,5 +27,6 @@ public class OfferDTO {
     private LocalDateTime updatedAt;
     private AuthorDTO provider;
     private List<String> tags;
+    private List<String> imageUrls;
 }
 

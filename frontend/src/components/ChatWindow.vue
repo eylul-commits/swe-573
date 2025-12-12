@@ -4,7 +4,7 @@
     <div class="bg-amber-500 text-white px-4 py-3 flex items-center justify-between">
       <div class="flex items-center gap-3">
         <Avatar class="w-10 h-10">
-          <AvatarImage :src="otherUser?.avatar" :alt="otherUser?.name" />
+          <AvatarImage :src="getAvatarUrl(otherUser?.avatar, otherUser?.name)" :alt="otherUser?.name" />
           <AvatarFallback>{{ otherUser?.name?.charAt(0) || '?' }}</AvatarFallback>
         </Avatar>
         <div>
@@ -133,6 +133,7 @@ import Button from './ui/Button.vue';
 import Input from './ui/Input.vue';
 import type { Handshake, AuthorSummary } from '../types';
 import { useAppStore } from '../stores/appStore';
+import { getAvatarUrl } from '../utils/avatarUtils';
 import {
   getStreamChatClient,
   getHandshakeChannel,

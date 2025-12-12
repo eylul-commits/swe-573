@@ -5,6 +5,7 @@ import com.thehive.config.StreamChatConfig;
 import com.thehive.model.dto.AuthResponse;
 import com.thehive.model.dto.LoginRequest;
 import com.thehive.model.dto.RegisterRequest;
+import com.thehive.model.dto.UpdateProfileRequest;
 import com.thehive.model.dto.UserDTO;
 import com.thehive.model.entity.TimebankTransaction;
 import com.thehive.model.entity.User;
@@ -83,9 +84,9 @@ public class AuthService {
         return new AuthResponse(token, userDTO, streamChatToken);
     }
 
-    /**
-     * Generate Stream Chat token for user
-     */
+    /*
+      Generate Stream Chat token for user // No test added for this method
+    */
     private String generateStreamChatToken(User user) {
         try {
             if (streamChatConfig.isConfigured()) {
@@ -110,12 +111,48 @@ public class AuthService {
         return convertToDTO(user);
     }
 
+    @Transactional
+    public UserDTO updateProfile(Integer userId, UpdateProfileRequest request) {
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new RuntimeException("User not found"));
+        
+        // Update fields if provided
+        if (request.getName() != null) {
+            user.setName(request.getName());
+        }
+        if (request.getBio() != null) {
+            user.setBio(request.getBio());
+        }
+        if (request.getAvatarUrl() != null) {
+            user.setAvatarUrl(request.getAvatarUrl());
+        }
+        if (request.getProvince() != null) {
+            user.setProvince(request.getProvince());
+        }
+        if (request.getDistrict() != null) {
+            user.setDistrict(request.getDistrict());
+        }
+        if (request.getGeohash() != null) {
+            user.setGeohash(request.getGeohash());
+        }
+        
+        user = userRepository.save(user);
+        
+        // Update Stream Chat user if name changed
+        if (request.getName() != null) {
+            streamChatClient.upsertUser(user.getId(), user.getName());
+        }
+        
+        return convertToDTO(user);
+    }
+
     private UserDTO convertToDTO(User user) {
         UserDTO dto = new UserDTO();
         dto.setId(user.getId());
         dto.setEmail(user.getEmail());
         dto.setName(user.getName());
         dto.setBio(user.getBio());
+        dto.setAvatarUrl(user.getAvatarUrl());
         dto.setProvince(user.getProvince());
         dto.setDistrict(user.getDistrict());
         dto.setGeohash(user.getGeohash());

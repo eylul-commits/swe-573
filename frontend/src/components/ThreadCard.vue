@@ -3,7 +3,7 @@
     <div class="flex gap-4">
       <!-- Avatar -->
       <Avatar class="w-10 h-10 flex-shrink-0">
-        <AvatarImage :src="topic.author.avatar || 'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=100&h=100&fit=crop'" />
+        <AvatarImage :src="getAvatarUrl(topic.author.avatar, topic.author.name)" />
       </Avatar>
 
       <!-- Content -->
@@ -54,6 +54,7 @@ import AvatarImage from './ui/AvatarImage.vue'
 import Card from './ui/Card.vue'
 import type { ForumTopic } from '../types/forum'
 import { formatDistanceToNow } from '../utils/dateUtils'
+import { getAvatarUrl } from '../utils/avatarUtils'
 import { useAppStore } from '../stores/appStore'
 
 const props = defineProps<{

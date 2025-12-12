@@ -41,5 +41,7 @@ public class CreateRequestRequest {
     private String geohash;
     
     private List<String> tags;
+    
+    private List<String> imageUrls;
 }
 

@@ -48,7 +48,7 @@
               <div class="flex items-start gap-3">
                 <div class="relative">
                   <Avatar class="w-12 h-12">
-                    <AvatarImage :src="getOtherUser(handshake).avatar" :alt="getOtherUser(handshake).name" />
+                    <AvatarImage :src="getAvatarUrl(getOtherUser(handshake).avatar, getOtherUser(handshake).name)" :alt="getOtherUser(handshake).name" />
                     <AvatarFallback>{{ getOtherUser(handshake).name.charAt(0) }}</AvatarFallback>
                   </Avatar>
                   <!-- Status Indicator -->
@@ -162,6 +162,7 @@ import RatingModal from '../RatingModal.vue';
 import { useHandshakeStore } from '../../stores/handshakeStore';
 import { useAppStore } from '../../stores/appStore';
 import { isStreamChatInitialized } from '../../clients/streamChatClient';
+import { getAvatarUrl } from '../../utils/avatarUtils';
 import type { Handshake, AuthorSummary } from '../../types';
 
 const handshakeStore = useHandshakeStore();
