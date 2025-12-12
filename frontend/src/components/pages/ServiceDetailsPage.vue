@@ -62,15 +62,6 @@
             </div>
           </div>
           
-          <!-- Fallback Image for services without images -->
-          <div v-else-if="serviceImages[serviceId]" class="mb-6 -mt-6 -mx-6 overflow-hidden rounded-t-lg">
-            <ImageWithFallback 
-              :src="serviceImages[serviceId]"
-              :alt="service.title"
-              class="w-full h-64 object-cover"
-            />
-          </div>
-          
           <div class="flex items-start justify-between mb-4">
             <div class="flex-1">
               <h1 class="text-gray-900 mb-3">{{ service.title }}</h1>
@@ -415,7 +406,6 @@ import TabsContent from '../ui/TabsContent.vue'
 import TabsList from '../ui/TabsList.vue'
 import TabsTrigger from '../ui/TabsTrigger.vue'
 import Textarea from '../ui/Textarea.vue'
-import ImageWithFallback from '../ui/ImageWithFallback.vue'
 import { getServiceById, getServiceRatings, getServiceQuestions  } from '../../services/dataService'
 import { createHandshake } from '../../services/handshakeService'
 import { createHandshakeChannel, isStreamChatInitialized } from '../../clients/streamChatClient'
@@ -458,19 +448,6 @@ const questionText = ref('')
 // Image gallery state
 const selectedImageIndex = ref(0)
 const showImageModal = ref(false)
-
-// Service images mapping
-const serviceImages: Record<string, string> = {
-  "1": "https://images.unsplash.com/photo-1506126613408-eca07ce68773?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHxtZWRpdGF0aW9uJTIwYm9zcGhvcnVzfGVufDF8fHx8MTc2MTA1MjQ0N3ww&ixlib=rb-4.1.0&q=80&w=1080",
-  "2": "https://images.unsplash.com/photo-1416879595882-3373a0480b5b?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHxiYWxjb255JTIwZ2FyZGVuJTIwcGxhbnRzfGVufDF8fHx8MTc2MTA1MjQ0N3ww&ixlib=rb-4.1.0&q=80&w=1080",
-  "3": "https://images.unsplash.com/photo-1452587925148-ce544e77e70d?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHxzdHJlZXQlMjBwaG90b2dyYXBoeSUyMGNpdHl8ZW58MXx8fHwxNzYxMDUyNDQ3fDA&ixlib=rb-4.1.0&q=80&w=1080",
-  "4": "https://images.unsplash.com/photo-1503676260728-1c00da094a0b?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHxlbmdsaXNoJTIwY29udmVyc2F0aW9ufGVufDF8fHx8MTc2MTA1MjQ0N3ww&ixlib=rb-4.1.0&q=80&w=1080",
-  "5": "https://images.unsplash.com/photo-1600001793718-012b51a11a78?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHx0dXJraXNoJTIwY29va2luZyUyMGtpdGNoZW58ZW58MXx8fHwxNzYxMDUyNDQ4fDA&ixlib=rb-4.1.0&q=80&w=1080",
-  "6": "https://images.unsplash.com/photo-1612515809491-1e0a8b3697e8?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHxzaWduJTIwbGFuZ3VhZ2V8ZW58MXx8fHwxNzYxMDUyNDQ3fDA&ixlib=rb-4.1.0&q=80&w=1080",
-  "7": "https://images.unsplash.com/photo-1544367567-0f2fcb009e0b?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHx5b2dhJTIwc2VhfGVufDF8fHx8MTc2MTA1MjQ0N3ww&ixlib=rb-4.1.0&q=80&w=1080",
-  "8": "https://images.unsplash.com/photo-1556910096-6f5e72db6803?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHx0dXJraXNoJTIwaG9tZSUyMGNvb2tpbmd8ZW58MXx8fHwxNzYxMDUyNDQ3fDA&ixlib=rb-4.1.0&q=80&w=1080",
-  "9": "https://images.unsplash.com/photo-1524995997946-a1c2e315a42f?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHxib29rcyUyMGNvbW11bml0eXxlbnwxfHx8fDE3NjEwNTI0NDd8MA&ixlib=rb-4.1.0&q=80&w=1080",
-}
 
 // Helper function to determine user badge
 const getUserBadge = (hoursGiven: number, _hoursReceived: number, balance: number) => {
