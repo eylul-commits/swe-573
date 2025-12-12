@@ -3,8 +3,20 @@ import { ref, computed } from 'vue'
 import type { User } from '../services/authService'
 
 export const useAppStore = defineStore('app', () => {
-  // State
-  const currentUser = ref<User | null>(null)
+  // Restore currentUser from localStorage on initialization
+  const restoreUserFromStorage = (): User | null => {
+    try {
+      const userStr = localStorage.getItem('currentUser')
+      if (userStr) {
+        return JSON.parse(userStr) as User
+      }
+    } catch (error) {
+      console.error('Failed to restore user from localStorage:', error)
+    }
+    return null
+  }
+
+  const currentUser = ref<User | null>(restoreUserFromStorage())
   const authToken = ref<string | null>(localStorage.getItem('authToken'))
   const streamChatReady = ref(false)
   const currentPage = ref('home')
@@ -59,6 +71,15 @@ export const useAppStore = defineStore('app', () => {
     }
   }
 
+  const clearAuthState = () => {
+    currentUser.value = null
+    authToken.value = null
+    localStorage.removeItem('authToken')
+    localStorage.removeItem('currentUser')
+    localStorage.removeItem('streamChatToken')
+    streamChatReady.value = false
+  }
+
   const logout = async () => {
     // Disconnect from Stream Chat
     try {
@@ -68,13 +89,8 @@ export const useAppStore = defineStore('app', () => {
       console.error('Failed to disconnect from Stream Chat:', error)
     }
 
-    currentUser.value = null
-    authToken.value = null
-    localStorage.removeItem('authToken')
-    localStorage.removeItem('currentUser')
-    localStorage.removeItem('streamChatToken')
+    clearAuthState()
     currentPage.value = 'home'
-    streamChatReady.value = false
   }
 
   const setCurrentPage = (page: string) => {
@@ -89,6 +105,35 @@ export const useAppStore = defineStore('app', () => {
     selectedThreadId.value = id
   }
 
+  // Initialize app state from localStorage
+  const initializeFromStorage = async () => {
+    // if we have user and token try to restore Stream Chat connection
+    if (authToken.value && currentUser.value) {
+      const streamChatToken = localStorage.getItem('streamChatToken')
+      if (streamChatToken) {
+        try {
+          const { initializeStreamChat } = await import('../clients/streamChatClient')
+          await initializeStreamChat(
+            currentUser.value.id.toString(),
+            currentUser.value.name || currentUser.value.email,
+            streamChatToken
+          )
+          console.log('✓ Stream Chat restored from localStorage')
+          streamChatReady.value = true
+        } catch (error) {
+          console.error('✗ Failed to restore Stream Chat:', error)
+          streamChatReady.value = false
+        }
+      }
+    }
+  }
+
+  // Listen for auth cleared events (when tokens are cleared due to 401/403)
+  if (typeof window !== 'undefined') {
+    window.addEventListener('auth:cleared', () => {
+      clearAuthState()
+    })
+  }
 
   return {
     // State
@@ -105,9 +150,11 @@ export const useAppStore = defineStore('app', () => {
     // Actions
     setCurrentUser,
     logout,
+    clearAuthState,
     setCurrentPage,
     setSelectedServiceId,
     setSelectedThreadId,
+    initializeFromStorage,
   }
 })
 

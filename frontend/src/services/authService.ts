@@ -1,4 +1,4 @@
-import { api } from '../config/api'
+import { api, ApiError } from '../config/api'
 
 export interface LoginRequest {
   email: string
@@ -39,10 +39,13 @@ export async function login(credentials: LoginRequest): Promise<AuthResponse> {
     const response = await api.post<AuthResponse>('/auth/login', credentials)
     return response
   } catch (error: any) {
-    if (error.response?.status === 401) {
-      throw new Error('Invalid email or password')
+    if (error instanceof ApiError) {
+      if (error.status === 401) {
+        throw new Error('Invalid email or password')
+      }
+      throw new Error(error.message || 'Login failed')
     }
-    throw new Error(error.response?.data?.message || 'Login failed')
+    throw new Error('Login failed')
   }
 }
 
@@ -51,10 +54,13 @@ export async function register(data: RegisterRequest): Promise<AuthResponse> {
     const response = await api.post<AuthResponse>('/auth/register', data)
     return response
   } catch (error: any) {
-    if (error.response?.status === 400) {
-      throw new Error(error.response?.data?.message || 'Email already registered')
+    if (error instanceof ApiError) {
+      if (error.status === 400) {
+        throw new Error(error.data?.message || 'Email already registered')
+      }
+      throw new Error(error.message || 'Registration failed')
     }
-    throw new Error(error.response?.data?.message || 'Registration failed')
+    throw new Error('Registration failed')
   }
 }
 
@@ -63,6 +69,9 @@ export async function getCurrentUser(): Promise<User> {
     const response = await api.get<User>('/auth/me')
     return response
   } catch (error: any) {
+    if (error instanceof ApiError && error.status === 401) {
+      throw new Error('Authentication required. Please login again.')
+    }
     throw new Error('Failed to fetch user data')
   }
 }
@@ -81,7 +90,10 @@ export async function updateProfile(data: UpdateProfileRequest): Promise<User> {
     const response = await api.put<User>('/auth/me', data)
     return response
   } catch (error: any) {
-    throw new Error(error.response?.data?.message || 'Failed to update profile')
+    if (error instanceof ApiError) {
+      throw new Error(error.message || 'Failed to update profile')
+    }
+    throw new Error('Failed to update profile')
   }
 }
 

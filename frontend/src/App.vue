@@ -19,7 +19,7 @@
 </template>
 
 <script setup lang="ts">
-import { computed } from 'vue'
+import { computed, onMounted } from 'vue'
 import { useAppStore } from './stores/appStore'
 import Sidebar from './components/Sidebar.vue'
 import LoginPage from './components/pages/LoginPage.vue'
@@ -35,6 +35,11 @@ import ProfilePage from './components/pages/ProfilePage.vue'
 import SettingsPage from './components/pages/SettingsPage.vue'
 
 const appStore = useAppStore()
+
+// Initialize app state from localStorage on mount
+onMounted(() => {
+  appStore.initializeFromStorage()
+})
 
 const handleNavigate = (page: string) => {
   appStore.setCurrentPage(page)
