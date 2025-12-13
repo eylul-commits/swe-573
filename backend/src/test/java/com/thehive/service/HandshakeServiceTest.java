@@ -9,6 +9,7 @@ import com.thehive.model.dto.ServiceRatingDTO;
 import com.thehive.model.entity.Handshake;
 import com.thehive.model.entity.Offer;
 import com.thehive.model.entity.Rating;
+import com.thehive.model.entity.Request;
 import com.thehive.model.entity.User;
 import com.thehive.model.enums.HandshakeStatus;
 import com.thehive.model.enums.ItemStatus;
@@ -878,6 +879,87 @@ class HandshakeServiceTest {
         ServiceRatingDTO dto = result.get(0);
         assertNull(dto.getComment());
         assertEquals(3, dto.getPunctuality());
+    }
+
+    @Test
+    void getUserRatings_IncludesServiceInfo_WhenHandshakeHasOffer() {
+        // Arrange
+        Handshake handshakeWithOffer = new Handshake();
+        handshakeWithOffer.setId(1);
+        handshakeWithOffer.setOffer(offer);
+        handshakeWithOffer.setSeeker(seeker);
+        handshakeWithOffer.setProvider(provider);
+        handshakeWithOffer.setStatus(HandshakeStatus.COMPLETED);
+
+        Rating rating = new Rating();
+        rating.setId(1);
+        rating.setRater(provider);
+        rating.setRatee(seeker);
+        rating.setHandshake(handshakeWithOffer);
+        rating.setPunctuality(5);
+        rating.setFriendliness(4);
+        rating.setCommunicative(5);
+        rating.setPreparedness(4);
+        rating.setComment("Great service!");
+        rating.setCreatedAt(LocalDateTime.now());
+
+        when(ratingRepository.findByRateeId(1)).thenReturn(Collections.singletonList(rating));
+
+        // Act
+        List<ServiceRatingDTO> result = handshakeService.getUserRatings(1);
+
+        // Assert
+        assertNotNull(result);
+        assertEquals(1, result.size());
+        ServiceRatingDTO dto = result.get(0);
+        assertNotNull(dto.getServiceId());
+        assertEquals(offer.getId(), dto.getServiceId());
+        assertNotNull(dto.getServiceTitle());
+        assertEquals("Math Tutoring", dto.getServiceTitle());
+    }
+
+    @Test
+    void getUserRatings_IncludesServiceInfo_WhenHandshakeHasRequest() {
+        // Arrange
+        Request request = new Request();
+        request.setId(2);
+        request.setTitle("Need Help with Physics");
+        request.setSeeker(seeker);
+        request.setStatus(ItemStatus.ACTIVE);
+        request.setTags(new HashSet<>());
+
+        Handshake handshakeWithRequest = new Handshake();
+        handshakeWithRequest.setId(2);
+        handshakeWithRequest.setRequest(request);
+        handshakeWithRequest.setSeeker(seeker);
+        handshakeWithRequest.setProvider(provider);
+        handshakeWithRequest.setStatus(HandshakeStatus.COMPLETED);
+
+        Rating rating = new Rating();
+        rating.setId(2);
+        rating.setRater(provider);
+        rating.setRatee(seeker);
+        rating.setHandshake(handshakeWithRequest);
+        rating.setPunctuality(4);
+        rating.setFriendliness(5);
+        rating.setCommunicative(4);
+        rating.setPreparedness(5);
+        rating.setComment("Excellent work!");
+        rating.setCreatedAt(LocalDateTime.now());
+
+        when(ratingRepository.findByRateeId(1)).thenReturn(Collections.singletonList(rating));
+
+        // Act
+        List<ServiceRatingDTO> result = handshakeService.getUserRatings(1);
+
+        // Assert
+        assertNotNull(result);
+        assertEquals(1, result.size());
+        ServiceRatingDTO dto = result.get(0);
+        assertNotNull(dto.getServiceId());
+        assertEquals(request.getId(), dto.getServiceId());
+        assertNotNull(dto.getServiceTitle());
+        assertEquals("Need Help with Physics", dto.getServiceTitle());
     }
 }
 

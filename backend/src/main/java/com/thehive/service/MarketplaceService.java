@@ -329,9 +329,11 @@ public class MarketplaceService {
     @Transactional(readOnly = true)
     public ServiceRatingsResponseDTO getRatingsForService(Integer serviceId) {
         if (offerRepository.existsById(serviceId)) {
+            Offer offer = offerRepository.findById(serviceId)
+                    .orElseThrow(() -> new ResourceNotFoundException("Offer not found with id: " + serviceId));
             List<Rating> ratings = ratingRepository.findByHandshakeOfferId(serviceId);
             List<ServiceRatingDTO> ratingDTOs = ratings.stream()
-                    .map(this::convertToServiceRatingDTO)
+                    .map(rating -> convertToServiceRatingDTO(rating, offer.getId(), offer.getTitle()))
                     .collect(Collectors.toList());
 
             ServiceRatingSummaryDTO summary = calculateRatingSummary(ratings);
@@ -339,9 +341,15 @@ public class MarketplaceService {
         }
 
         if (requestRepository.existsById(serviceId)) {
-            // Requests currently do not have direct ratings
-            return new ServiceRatingsResponseDTO(Collections.emptyList(),
-                    new ServiceRatingSummaryDTO(0, 0, 0, 0, 0));
+            Request request = requestRepository.findById(serviceId)
+                    .orElseThrow(() -> new ResourceNotFoundException("Request not found with id: " + serviceId));
+            List<Rating> ratings = ratingRepository.findByHandshakeRequestId(serviceId);
+            List<ServiceRatingDTO> ratingDTOs = ratings.stream()
+                    .map(rating -> convertToServiceRatingDTO(rating, request.getId(), request.getTitle()))
+                    .collect(Collectors.toList());
+
+            ServiceRatingSummaryDTO summary = calculateRatingSummary(ratings);
+            return new ServiceRatingsResponseDTO(ratingDTOs, summary);
         }
 
         throw new ResourceNotFoundException("Service not found with id: " + serviceId);
@@ -417,6 +425,10 @@ public class MarketplaceService {
     }
 
     private ServiceRatingDTO convertToServiceRatingDTO(Rating rating) {
+        return convertToServiceRatingDTO(rating, null, null);
+    }
+
+    private ServiceRatingDTO convertToServiceRatingDTO(Rating rating, Integer serviceId, String serviceTitle) {
         ServiceRatingDTO dto = new ServiceRatingDTO();
         dto.setId(rating.getId());
         dto.setRater(convertToAuthorDTO(rating.getRater()));
@@ -426,6 +438,8 @@ public class MarketplaceService {
         dto.setPreparedness(rating.getPreparedness());
         dto.setComment(rating.getComment());
         dto.setCreatedAt(rating.getCreatedAt());
+        dto.setServiceId(serviceId);
+        dto.setServiceTitle(serviceTitle);
         return dto;
     }
 

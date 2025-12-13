@@ -335,6 +335,19 @@ public class HandshakeService {
         dto.setPreparedness(rating.getPreparedness());
         dto.setComment(rating.getComment());
         dto.setCreatedAt(rating.getCreatedAt());
+        
+        // Get service information from handshake
+        Handshake handshake = rating.getHandshake();
+        if (handshake != null) {
+            if (handshake.getOffer() != null) {
+                dto.setServiceId(handshake.getOffer().getId());
+                dto.setServiceTitle(handshake.getOffer().getTitle());
+            } else if (handshake.getRequest() != null) {
+                dto.setServiceId(handshake.getRequest().getId());
+                dto.setServiceTitle(handshake.getRequest().getTitle());
+            }
+        }
+        
         return dto;
     }
 }

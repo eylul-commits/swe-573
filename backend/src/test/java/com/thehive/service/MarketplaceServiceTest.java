@@ -1126,6 +1126,7 @@ class MarketplaceServiceTest {
         rating.setCreatedAt(LocalDateTime.now());
 
         when(offerRepository.existsById(1)).thenReturn(true);
+        when(offerRepository.findById(1)).thenReturn(Optional.of(testOffer));
         when(ratingRepository.findByHandshakeOfferId(1)).thenReturn(Arrays.asList(rating));
 
         ServiceRatingsResponseDTO result = marketplaceService.getRatingsForService(1);
@@ -1133,17 +1134,55 @@ class MarketplaceServiceTest {
         assertNotNull(result);
         assertEquals(1, result.getRatings().size());
         assertEquals(5.0, result.getSummary().getPunctuality());
+        
+        // Verify service information is included in the rating DTO
+        assertNotNull(result.getRatings().get(0).getServiceId());
+        assertEquals(testOffer.getId(), result.getRatings().get(0).getServiceId());
+        assertNotNull(result.getRatings().get(0).getServiceTitle());
+        assertEquals("Cooking Lessons", result.getRatings().get(0).getServiceTitle());
     }
 
     @Test
-    void getRatingsForService_ShouldReturnEmptyForRequest() {
+    void getRatingsForService_ShouldReturnRatingsForRequest() {
+        Rating rating = new Rating();
+        rating.setId(2);
+        rating.setRater(testUser);
+        rating.setPunctuality(4);
+        rating.setFriendliness(5);
+        rating.setCommunicative(4);
+        rating.setPreparedness(5);
+        rating.setCreatedAt(LocalDateTime.now());
+
         when(offerRepository.existsById(1)).thenReturn(false);
         when(requestRepository.existsById(1)).thenReturn(true);
+        when(requestRepository.findById(1)).thenReturn(Optional.of(testRequest));
+        when(ratingRepository.findByHandshakeRequestId(1)).thenReturn(Arrays.asList(rating));
+
+        ServiceRatingsResponseDTO result = marketplaceService.getRatingsForService(1);
+
+        assertNotNull(result);
+        assertEquals(1, result.getRatings().size());
+        assertEquals(4.0, result.getSummary().getPunctuality());
+        
+        // Verify service information is included in the rating DTO
+        assertNotNull(result.getRatings().get(0).getServiceId());
+        assertEquals(testRequest.getId(), result.getRatings().get(0).getServiceId());
+        assertNotNull(result.getRatings().get(0).getServiceTitle());
+        assertEquals("Math Tutoring Needed", result.getRatings().get(0).getServiceTitle());
+    }
+
+    @Test
+    void getRatingsForService_ShouldReturnEmptyForRequestWithNoRatings() {
+        when(offerRepository.existsById(1)).thenReturn(false);
+        when(requestRepository.existsById(1)).thenReturn(true);
+        when(requestRepository.findById(1)).thenReturn(Optional.of(testRequest));
+        when(ratingRepository.findByHandshakeRequestId(1)).thenReturn(Collections.emptyList());
 
         ServiceRatingsResponseDTO result = marketplaceService.getRatingsForService(1);
 
         assertNotNull(result);
         assertEquals(0, result.getRatings().size());
+        assertEquals(0.0, result.getSummary().getPunctuality());
     }
 
     @Test
