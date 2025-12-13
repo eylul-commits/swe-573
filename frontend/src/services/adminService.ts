@@ -46,6 +46,18 @@ export interface ResolveReportRequest {
   action?: 'WARN' | 'DEACTIVATE' | 'NO_ACTION';
 }
 
+export interface UserAction {
+  id: number;
+  userId: number;
+  adminId: number;
+  adminName: string;
+  adminEmail: string;
+  actionType: 'WARN' | 'DEACTIVATE' | 'ACTIVATE';
+  reason?: string;
+  reportId?: number;
+  createdAt: string;
+}
+
 export async function getAdminStatistics(): Promise<AdminStatistics> {
   try {
     return await api.get<AdminStatistics>('/admin/statistics');
@@ -97,6 +109,15 @@ export async function resolveReport(id: number, request: ResolveReportRequest): 
     return await api.post<Report>(`/admin/reports/${id}/resolve`, request);
   } catch (error) {
     console.error(`Failed to resolve report ${id}:`, error);
+    throw error;
+  }
+}
+
+export async function getUserActions(userId: number): Promise<UserAction[]> {
+  try {
+    return await api.get<UserAction[]>(`/admin/users/${userId}/actions`);
+  } catch (error) {
+    console.error(`Failed to fetch user actions for user ${userId}:`, error);
     throw error;
   }
 }

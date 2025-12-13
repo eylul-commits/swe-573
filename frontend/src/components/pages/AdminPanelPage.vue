@@ -90,7 +90,7 @@
         <!-- Users Tab -->
         <TabsContent value="users" class="mt-4">
           <div class="space-y-4">
-            <Card v-for="user in users" :key="user.id" class="p-4">
+            <Card v-for="user in users" :key="user.id" class="p-4 cursor-pointer hover:bg-gray-50" @click="openUserDetailsDialog(user)">
               <div class="flex justify-between items-start">
                 <div>
                   <div class="font-semibold">{{ user.name }} ({{ user.email }})</div>
@@ -103,7 +103,7 @@
                   </div>
                 </div>
                 <div class="flex gap-2">
-                  <Button @click="openUserManagementDialog(user)" size="sm" variant="outline">
+                  <Button @click.stop="openUserManagementDialog(user)" size="sm" variant="outline">
                     Manage
                   </Button>
                 </div>
@@ -192,11 +192,98 @@
         </div>
       </DialogContent>
     </Dialog>
+
+    <!-- User Details Dialog -->
+    <Dialog v-model="userDetailsDialogOpen">
+      <DialogContent class="max-w-3xl max-h-[80vh] overflow-y-auto">
+        <DialogHeader>
+          <DialogTitle>User Details: {{ selectedUser?.name }}</DialogTitle>
+        </DialogHeader>
+        <div class="px-6">
+          <div v-if="selectedUser" class="space-y-6">
+            <!-- User Info -->
+            <div>
+              <h3 class="font-semibold mb-2">User Information</h3>
+              <div class="text-sm space-y-1">
+                <div><strong>Email:</strong> {{ selectedUser.email }}</div>
+                <div><strong>Role:</strong> {{ selectedUser.role }}</div>
+                <div><strong>Status:</strong> {{ selectedUser.accountStatus }}</div>
+                <div><strong>Warning Count:</strong> {{ selectedUser.warningCount }}</div>
+                <div><strong>Balance Hours:</strong> {{ selectedUser.balanceHours }}</div>
+              </div>
+            </div>
+
+            <!-- Actions Taken -->
+            <div>
+              <h3 class="font-semibold mb-3">Actions Taken</h3>
+              <div v-if="userActions.length === 0" class="text-sm text-gray-500">
+                No actions have been taken for this user.
+              </div>
+              <div v-else class="space-y-3">
+                <Card v-for="action in userActions" :key="action.id" class="p-3">
+                  <div class="flex justify-between items-start mb-2">
+                    <div class="flex items-center gap-2">
+                      <Badge :variant="getActionVariant(action.actionType)">
+                        {{ action.actionType }}
+                      </Badge>
+                      <span class="text-xs text-gray-500">
+                        {{ formatDate(action.createdAt) }}
+                      </span>
+                    </div>
+                  </div>
+                  <div class="text-sm mb-1">
+                    <strong>Admin:</strong> {{ action.adminName }} ({{ action.adminEmail }})
+                  </div>
+                  <div v-if="action.reason" class="text-sm text-gray-600 mb-1">
+                    <strong>Reason:</strong> {{ action.reason }}
+                  </div>
+                  <div v-if="action.reportId" class="text-xs text-gray-500">
+                    Related to Report #{{ action.reportId }}
+                  </div>
+                </Card>
+              </div>
+            </div>
+
+            <!-- Warnings -->
+            <div>
+              <h3 class="font-semibold mb-3">Previous Warnings</h3>
+              <div v-if="warnings.length === 0" class="text-sm text-gray-500">
+                No warnings have been issued to this user.
+              </div>
+              <div v-else class="space-y-3">
+                <Card v-for="warning in warnings" :key="warning.id" class="p-3 border-yellow-200 bg-yellow-50">
+                  <div class="flex justify-between items-start mb-2">
+                    <div class="flex items-center gap-2">
+                      <Badge variant="destructive">WARNING</Badge>
+                      <span class="text-xs text-gray-500">
+                        {{ formatDate(warning.createdAt) }}
+                      </span>
+                    </div>
+                  </div>
+                  <div class="text-sm mb-1">
+                    <strong>Issued by:</strong> {{ warning.adminName }} ({{ warning.adminEmail }})
+                  </div>
+                  <div v-if="warning.reason" class="text-sm text-gray-700">
+                    <strong>Reason:</strong> {{ warning.reason }}
+                  </div>
+                  <div v-if="warning.reportId" class="text-xs text-gray-500 mt-1">
+                    Related to Report #{{ warning.reportId }}
+                  </div>
+                </Card>
+              </div>
+            </div>
+          </div>
+        </div>
+        <DialogFooter>
+          <Button @click="userDetailsDialogOpen = false" variant="outline">Close</Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
   </div>
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted } from 'vue'
+import { ref, onMounted, computed } from 'vue'
 import Card from '../ui/Card.vue'
 import Button from '../ui/Button.vue'
 import Badge from '../ui/Badge.vue'
@@ -215,7 +302,7 @@ import SelectItem from '../ui/SelectItem.vue'
 import SelectTrigger from '../ui/SelectTrigger.vue'
 import SelectValue from '../ui/SelectValue.vue'
 import Textarea from '../ui/Textarea.vue'
-import { getAdminStatistics, getAllUsers, getAllReports, resolveReport as resolveReportApi, manageUser, type ResolveReportRequest, type UserManagementRequest } from '../../services/adminService'
+import { getAdminStatistics, getAllUsers, getAllReports, resolveReport as resolveReportApi, manageUser, getUserActions, type ResolveReportRequest, type UserManagementRequest, type UserAction } from '../../services/adminService'
 import type { AdminStatistics, User } from '../../services/adminService'
 import type { Report } from '../../services/reportService'
 
@@ -225,8 +312,10 @@ const users = ref<User[]>([])
 const activeTab = ref('reports')
 const resolveDialogOpen = ref(false)
 const userManagementDialogOpen = ref(false)
+const userDetailsDialogOpen = ref(false)
 const selectedReport = ref<Report | null>(null)
 const selectedUser = ref<User | null>(null)
+const userActions = ref<UserAction[]>([])
 
 const resolveForm = ref<ResolveReportRequest>({
   status: 'RESOLVED',
@@ -311,6 +400,10 @@ async function handleManageUser() {
     userManagementDialogOpen.value = false
     await loadUsers()
     await loadStatistics()
+    // Refresh user actions if details dialog is open
+    if (userDetailsDialogOpen.value && selectedUser.value) {
+      userActions.value = await getUserActions(selectedUser.value.id)
+    }
   } catch (error) {
     console.error('Failed to manage user:', error)
     alert('Failed to manage user')
@@ -327,6 +420,30 @@ function getStatusVariant(status: string) {
 
 function formatDate(dateString: string) {
   return new Date(dateString).toLocaleString()
+}
+
+async function openUserDetailsDialog(user: User) {
+  selectedUser.value = user
+  userDetailsDialogOpen.value = true
+  try {
+    userActions.value = await getUserActions(user.id)
+  } catch (error) {
+    console.error('Failed to load user actions:', error)
+    userActions.value = []
+  }
+}
+
+const warnings = computed(() => {
+  return userActions.value.filter(action => action.actionType === 'WARN')
+})
+
+function getActionVariant(actionType: string) {
+  switch (actionType) {
+    case 'WARN': return 'destructive'
+    case 'DEACTIVATE': return 'destructive'
+    case 'ACTIVATE': return 'secondary'
+    default: return 'default'
+  }
 }
 </script>
 
