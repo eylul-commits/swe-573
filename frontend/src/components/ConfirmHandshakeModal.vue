@@ -4,7 +4,7 @@
       <DialogHeader>
         <DialogTitle>Confirm Handshake</DialogTitle>
         <DialogDescription>
-          Set a completion date for this service exchange. Both parties must confirm with the same date.
+          {{ isServiceCreator ? 'Set a completion date for this service exchange. The other party will confirm with the same date.' : (handshake?.agreedDate ? 'Confirm the completion date set by the service creator.' : 'The service creator will set the completion date. Please wait for them to select a date.') }}
         </DialogDescription>
       </DialogHeader>
 
@@ -16,7 +16,7 @@
           <div class="text-sm text-gray-600 space-y-1">
             <p><span class="font-medium">Provider:</span> {{ handshake.provider.name }}</p>
             <p><span class="font-medium">Seeker:</span> {{ handshake.seeker.name }}</p>
-            <p><span class="font-medium">Agreed Hours:</span> {{ handshake.agreedHours }} hours</p>
+            <p><span class="font-medium">Duration Hours:</span> {{ handshake.durationHours }} hours</p>
           </div>
         </div>
 
@@ -39,13 +39,20 @@
           </label>
           <Input
             id="completion-date"
-            v-model="completionDate"
+            v-model="formDate"
             type="datetime-local"
             :min="minDate"
+            :disabled="!isServiceCreator"
             required
           />
-          <p class="text-xs text-gray-500">
+          <p v-if="isServiceCreator" class="text-xs text-gray-500">
             Choose when the service will be completed. You'll be able to rate each other after this date.
+          </p>
+          <p v-else-if="handshake?.agreedDate" class="text-xs text-gray-500">
+            This date was set by the service creator. You can confirm the handshake with this date.
+          </p>
+          <p v-else class="text-xs text-gray-500">
+            Only the service creator can select the completion date. Please wait for them to set it.
           </p>
         </div>
 
@@ -66,7 +73,7 @@
         </Button>
         <Button
           @click="onConfirm"
-          :disabled="loading || !completionDate"
+          :disabled="loading || !formDate"
           class="bg-amber-500 hover:bg-amber-600"
         >
           {{ loading ? 'Confirming...' : 'Confirm Handshake' }}
@@ -88,6 +95,7 @@ import Button from './ui/Button.vue';
 import Input from './ui/Input.vue';
 import type { Handshake } from '../types';
 import { useHandshakeStore } from '../stores/handshakeStore';
+import { useAppStore } from '../stores/appStore';
 
 const props = defineProps<{
   modelValue: boolean;
@@ -100,41 +108,67 @@ const emit = defineEmits<{
 }>();
 
 const handshakeStore = useHandshakeStore();
+const appStore = useAppStore();
 
 const isOpen = computed({
   get: () => props.modelValue,
   set: (value) => emit('update:modelValue', value),
 });
 
-const completionDate = ref('');
+const formDate = ref('');
 const loading = ref(false);
 const error = ref<string | null>(null);
 
-// Calculate minimum date (tomorrow)
+// Check if current user is the service creator (provider)
+const isServiceCreator = computed(() => {
+  if (!props.handshake || !appStore.currentUser) return false;
+  return props.handshake.provider.id == appStore.currentUser.id.toString();
+});
+
+// Calculate minimum date (today)
 const minDate = computed(() => {
-  const tomorrow = new Date();
-  tomorrow.setDate(tomorrow.getDate() + 1);
-  return tomorrow.toISOString().slice(0, 16);
+  const today = new Date();
+  return today.toISOString().slice(0, 16);
 });
 
 // Reset form when modal opens
 watch(() => props.modelValue, (newValue) => {
   if (newValue) {
-    completionDate.value = '';
+    // If there's already an agreed date, use it (for both creator and non-creator)
+    if (props.handshake?.agreedDate) {
+      const date = new Date(props.handshake.agreedDate);
+      formDate.value = date.toISOString().slice(0, 16);
+    } else {
+      formDate.value = '';
+    }
     error.value = null;
     loading.value = false;
   }
 });
 
+// Watch for handshake prop changes
+watch(() => props.handshake?.agreedDate, (newAgreedDate) => {
+  if (props.modelValue && newAgreedDate) {
+    const date = new Date(newAgreedDate);
+    formDate.value = date.toISOString().slice(0, 16);
+  } else if (props.modelValue && !newAgreedDate && !isServiceCreator.value) {
+    formDate.value = '';
+  }
+});
+
 async function onConfirm() {
-  if (!props.handshake || !completionDate.value) return;
+  if (!props.handshake || !formDate.value) return;
 
   loading.value = true;
   error.value = null;
 
   try {
+    const dateString = formDate.value.length === 16 
+      ? `${formDate.value}:00` 
+      : formDate.value;
+    
     const updatedHandshake = await handshakeStore.confirmHandshake(props.handshake.id, {
-      completedAt: new Date(completionDate.value).toISOString(),
+      agreedDate: dateString,
     });
 
     emit('confirmed', updatedHandshake);

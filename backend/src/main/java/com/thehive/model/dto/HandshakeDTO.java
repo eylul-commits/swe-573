@@ -18,11 +18,11 @@ public class HandshakeDTO {
     private AuthorDTO seeker;
     private AuthorDTO provider;
     private HandshakeStatus status;
-    private Integer agreedHours;
+    private Integer durationHours;
     private Boolean seekerConfirmed;
     private Boolean providerConfirmed;
     private LocalDateTime createdAt;
-    private LocalDateTime completedAt;
-    private Boolean canRate; // true if completedAt has passed and user hasn't rated yet
+    private LocalDateTime agreedDate;
+    private Boolean canRate; // true if agreedDate has passed and user hasn't rated yet
 }
 

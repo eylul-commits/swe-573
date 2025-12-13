@@ -101,7 +101,7 @@ export async function createHandshakeChannel(
       handshake_id: handshake.id,
       offer_id: handshake.offerId || null,
       request_id: handshake.requestId || null,
-      agreed_hours: handshake.agreedHours,
+      duration_hours: handshake.durationHours,
       status: handshake.status,
     });
 

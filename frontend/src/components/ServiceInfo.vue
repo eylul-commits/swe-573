@@ -616,13 +616,9 @@ const handleAcceptService = async () => {
   acceptSuccess.value = ''
 
   try {
-    // Parse the timebank hours
-    const agreedHours = parseInt(service.value.timebank.replace(/[^\d]/g, '')) || 1
-
     // Create the handshake (pass either offerId or requestId based on type)
     const handshakeRequest: any = {
-      providerId: parseInt(service.value.poster.id),
-      agreedHours: agreedHours
+      providerId: parseInt(service.value.poster.id)
     }
     
     if (service.value.type === 'OFFER') {
@@ -653,7 +649,7 @@ const handleAcceptService = async () => {
 
   } catch (error: any) {
     console.error('Failed to accept service:', error)
-    acceptError.value = error.response?.data?.message || 'Failed to accept. Try again.'
+    acceptError.value = error.message || 'Failed to accept. Try again.'
   } finally {
     isAccepting.value = false
   }

@@ -42,8 +42,8 @@ public class Handshake {
     @Column(length = 20)
     private HandshakeStatus status = HandshakeStatus.PENDING;
 
-    @Column(name = "agreed_hours")
-    private Integer agreedHours;
+    @Column(name = "duration_hours")
+    private Integer durationHours;
 
     @Column(name = "seeker_confirmed")
     private Boolean seekerConfirmed = false;
@@ -55,8 +55,8 @@ public class Handshake {
     @Column(name = "created_at", updatable = false)
     private LocalDateTime createdAt;
 
-    @Column(name = "completed_at")
-    private LocalDateTime completedAt;
+    @Column(name = "agreed_at")
+    private LocalDateTime agreedDate;
 
     // Relationships
     @OneToMany(mappedBy = "handshake", cascade = CascadeType.ALL)

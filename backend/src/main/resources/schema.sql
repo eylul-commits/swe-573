@@ -84,11 +84,11 @@ CREATE TABLE IF NOT EXISTS handshakes (
     seeker_id INT NOT NULL,
     provider_id INT NOT NULL,
     status VARCHAR(20) DEFAULT 'PENDING',
-    agreed_hours INT,
+    duration_hours INT,
     seeker_confirmed BOOLEAN DEFAULT FALSE,
     provider_confirmed BOOLEAN DEFAULT FALSE,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    completed_at TIMESTAMP,
+    agreed_at TIMESTAMP,
     CONSTRAINT chk_offer_or_request CHECK (
         (offer_id IS NOT NULL AND request_id IS NULL) OR
         (offer_id IS NULL AND request_id IS NOT NULL)

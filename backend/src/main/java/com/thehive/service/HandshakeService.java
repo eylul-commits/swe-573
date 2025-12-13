@@ -82,7 +82,7 @@ public class HandshakeService {
         handshake.setRequest(serviceRequest);
         handshake.setSeeker(seeker);
         handshake.setProvider(provider);
-        handshake.setAgreedHours(request.getAgreedHours() != null ? request.getAgreedHours() : defaultHours);
+        handshake.setDurationHours(defaultHours);
         handshake.setStatus(HandshakeStatus.PENDING);
         handshake.setSeekerConfirmed(false);
         handshake.setProviderConfirmed(false);
@@ -109,18 +109,27 @@ public class HandshakeService {
             throw new IllegalStateException("Handshake is already " + handshake.getStatus());
         }
 
-        // Update confirmation status
-        if (isSeeker) {
-            handshake.setSeekerConfirmed(true);
-        } else {
-            handshake.setProviderConfirmed(true);
+        // Validate that agreed date is not in the past
+        if (request.getAgreedDate() != null && request.getAgreedDate().isBefore(LocalDateTime.now())) {
+            throw new IllegalArgumentException("Agreed date cannot be in the past");
         }
 
-        // If both confirmed, update status and set completion date
-        if (handshake.getSeekerConfirmed() && handshake.getProviderConfirmed()) {
-            handshake.setStatus(HandshakeStatus.CONFIRMED);
-            handshake.setCompletedAt(request.getCompletedAt());
+        // Update confirmation status
+        if (isProvider) {
+            // Provider can only change the date if seeker hasn't confirmed yet
+            if (handshake.getSeekerConfirmed() && handshake.getAgreedDate() != null 
+                    && request.getAgreedDate() != null 
+                    && !handshake.getAgreedDate().equals(request.getAgreedDate())) {
+                throw new IllegalStateException("Cannot change agreed date after seeker has confirmed");
+            }
+            handshake.setAgreedDate(request.getAgreedDate());
+            handshake.setProviderConfirmed(true);
+        } else {
+            handshake.setSeekerConfirmed(true);
         }
+
+        // If both confirmed, update status
+        if (handshake.getSeekerConfirmed() && handshake.getProviderConfirmed()) handshake.setStatus(HandshakeStatus.CONFIRMED);
 
         Handshake savedHandshake = handshakeRepository.save(handshake);
         return convertToDTO(savedHandshake, userId);
@@ -144,9 +153,9 @@ public class HandshakeService {
             throw new IllegalStateException("Handshake must be confirmed before rating");
         }
 
-        // Check if completion date has passed
-        if (handshake.getCompletedAt() == null || handshake.getCompletedAt().isAfter(LocalDateTime.now())) {
-            throw new IllegalStateException("Cannot rate before the completion date");
+        // Check if agreed date has passed
+        if (handshake.getAgreedDate() == null || handshake.getAgreedDate().isAfter(LocalDateTime.now())) {
+            throw new IllegalStateException("Cannot rate before the agreed date");
         }
 
         // Check if user has already rated
@@ -239,17 +248,17 @@ public class HandshakeService {
         dto.setSeeker(convertToAuthorDTO(handshake.getSeeker()));
         dto.setProvider(convertToAuthorDTO(handshake.getProvider()));
         dto.setStatus(handshake.getStatus());
-        dto.setAgreedHours(handshake.getAgreedHours());
+        dto.setDurationHours(handshake.getDurationHours());
         dto.setSeekerConfirmed(handshake.getSeekerConfirmed());
         dto.setProviderConfirmed(handshake.getProviderConfirmed());
         dto.setCreatedAt(handshake.getCreatedAt());
-        dto.setCompletedAt(handshake.getCompletedAt());
+        dto.setAgreedDate(handshake.getAgreedDate());
 
         // Check if user can rate
         boolean canRate = false;
         if (handshake.getStatus() == HandshakeStatus.CONFIRMED &&
-                handshake.getCompletedAt() != null &&
-                handshake.getCompletedAt().isBefore(LocalDateTime.now())) {
+                handshake.getAgreedDate() != null &&
+                handshake.getAgreedDate().isBefore(LocalDateTime.now())) {
             // Check if user hasn't rated yet
             canRate = !ratingRepository.existsByHandshakeIdAndRaterId(handshake.getId(), currentUserId);
         }

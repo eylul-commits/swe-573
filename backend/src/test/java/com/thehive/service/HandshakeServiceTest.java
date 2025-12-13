@@ -91,7 +91,7 @@ class HandshakeServiceTest {
         handshake.setSeeker(seeker);
         handshake.setProvider(provider);
         handshake.setStatus(HandshakeStatus.PENDING);
-        handshake.setAgreedHours(5);
+        handshake.setDurationHours(5);
         handshake.setSeekerConfirmed(false);
         handshake.setProviderConfirmed(false);
         handshake.setCreatedAt(LocalDateTime.now());
@@ -103,7 +103,6 @@ class HandshakeServiceTest {
         CreateHandshakeRequest request = new CreateHandshakeRequest();
         request.setOfferId(1);
         request.setProviderId(2);
-        request.setAgreedHours(5);
 
         when(offerRepository.findById(1)).thenReturn(Optional.of(offer));
         when(userRepository.findById(1)).thenReturn(Optional.of(seeker));
@@ -159,7 +158,7 @@ class HandshakeServiceTest {
     void confirmHandshake_SeekerConfirms() {
         // Arrange
         ConfirmHandshakeRequest request = new ConfirmHandshakeRequest();
-        request.setCompletedAt(LocalDateTime.now().plusDays(7));
+        request.setAgreedDate(LocalDateTime.now().plusDays(7));
 
         when(handshakeRepository.findById(1)).thenReturn(Optional.of(handshake));
         when(handshakeRepository.save(any(Handshake.class))).thenAnswer(i -> i.getArgument(0));
@@ -182,14 +181,14 @@ class HandshakeServiceTest {
         handshake.setSeekerConfirmed(true); // Seeker already confirmed
         
         ConfirmHandshakeRequest request = new ConfirmHandshakeRequest();
-        LocalDateTime completionDate = LocalDateTime.now().plusDays(7);
-        request.setCompletedAt(completionDate);
+        LocalDateTime agreedDate = LocalDateTime.now().plusDays(7);
+        request.setAgreedDate(agreedDate);
 
         when(handshakeRepository.findById(1)).thenReturn(Optional.of(handshake));
         when(handshakeRepository.save(any(Handshake.class))).thenAnswer(i -> {
             Handshake h = i.getArgument(0);
             h.setStatus(HandshakeStatus.CONFIRMED);
-            h.setCompletedAt(completionDate);
+            h.setAgreedDate(agreedDate);
             return h;
         });
 
@@ -201,7 +200,7 @@ class HandshakeServiceTest {
         assertTrue(result.getSeekerConfirmed());
         assertTrue(result.getProviderConfirmed());
         assertEquals(HandshakeStatus.CONFIRMED, result.getStatus());
-        assertNotNull(result.getCompletedAt());
+        assertNotNull(result.getAgreedDate());
         
         verify(handshakeRepository).save(any(Handshake.class));
     }
@@ -210,7 +209,7 @@ class HandshakeServiceTest {
     void confirmHandshake_HandshakeNotFound() {
         // Arrange
         ConfirmHandshakeRequest request = new ConfirmHandshakeRequest();
-        request.setCompletedAt(LocalDateTime.now().plusDays(7));
+        request.setAgreedDate(LocalDateTime.now().plusDays(7));
 
         when(handshakeRepository.findById(999)).thenReturn(Optional.empty());
 
@@ -223,7 +222,7 @@ class HandshakeServiceTest {
     void confirmHandshake_UserNotPartOfHandshake() {
         // Arrange
         ConfirmHandshakeRequest request = new ConfirmHandshakeRequest();
-        request.setCompletedAt(LocalDateTime.now().plusDays(7));
+        request.setAgreedDate(LocalDateTime.now().plusDays(7));
 
         when(handshakeRepository.findById(1)).thenReturn(Optional.of(handshake));
 
@@ -233,10 +232,92 @@ class HandshakeServiceTest {
     }
 
     @Test
+    void confirmHandshake_PastDateRejected() {
+        // Arrange
+        ConfirmHandshakeRequest request = new ConfirmHandshakeRequest();
+        request.setAgreedDate(LocalDateTime.now().minusDays(1)); // Past date
+
+        when(handshakeRepository.findById(1)).thenReturn(Optional.of(handshake));
+
+        // Act & Assert - Past dates should be rejected
+        assertThrows(IllegalArgumentException.class, 
+            () -> handshakeService.confirmHandshake(1, 1, request));
+    }
+
+    @Test
+    void confirmHandshake_SeekerCannotSetDate() {
+        // Arrange
+        ConfirmHandshakeRequest request = new ConfirmHandshakeRequest();
+        LocalDateTime providedDate = LocalDateTime.now().plusDays(7);
+        request.setAgreedDate(providedDate);
+
+        when(handshakeRepository.findById(1)).thenReturn(Optional.of(handshake));
+        when(handshakeRepository.save(any(Handshake.class))).thenAnswer(i -> i.getArgument(0));
+
+        // Act - Seeker (userId=1) tries to confirm with a date
+        HandshakeDTO result = handshakeService.confirmHandshake(1, 1, request);
+
+        // Assert - Seeker confirmed but date should NOT be set (only provider can set date)
+        assertNotNull(result);
+        assertTrue(result.getSeekerConfirmed());
+        assertFalse(result.getProviderConfirmed());
+        assertEquals(HandshakeStatus.PENDING, result.getStatus());
+        assertNull(result.getAgreedDate()); // Date should be null, not set by seeker
+        
+        verify(handshakeRepository).save(any(Handshake.class));
+    }
+
+    @Test
+    void confirmHandshake_ProviderCanChangeDateBeforeSeekerConfirms() {
+        // Arrange - Provider has already confirmed with a date
+        handshake.setProviderConfirmed(true);
+        LocalDateTime firstDate = LocalDateTime.now().plusDays(5);
+        handshake.setAgreedDate(firstDate);
+        
+        ConfirmHandshakeRequest request = new ConfirmHandshakeRequest();
+        LocalDateTime newDate = LocalDateTime.now().plusDays(10);
+        request.setAgreedDate(newDate);
+
+        when(handshakeRepository.findById(1)).thenReturn(Optional.of(handshake));
+        when(handshakeRepository.save(any(Handshake.class))).thenAnswer(i -> i.getArgument(0));
+
+        // Act - Provider (userId=2) changes the date before seeker confirms
+        HandshakeDTO result = handshakeService.confirmHandshake(1, 2, request);
+
+        // Assert - Date should be updated since seeker hasn't confirmed yet
+        assertNotNull(result);
+        assertTrue(result.getProviderConfirmed());
+        assertFalse(result.getSeekerConfirmed());
+        assertEquals(HandshakeStatus.PENDING, result.getStatus());
+        assertEquals(newDate, result.getAgreedDate()); // Date should be updated
+        
+        verify(handshakeRepository).save(any(Handshake.class));
+    }
+
+    @Test
+    void confirmHandshake_ProviderCannotChangeDateAfterSeekerConfirms() {
+        // Arrange - Both have confirmed with a date
+        handshake.setProviderConfirmed(true);
+        handshake.setSeekerConfirmed(true);
+        LocalDateTime originalDate = LocalDateTime.now().plusDays(5);
+        handshake.setAgreedDate(originalDate);
+        
+        ConfirmHandshakeRequest request = new ConfirmHandshakeRequest();
+        LocalDateTime newDate = LocalDateTime.now().plusDays(10);
+        request.setAgreedDate(newDate);
+
+        when(handshakeRepository.findById(1)).thenReturn(Optional.of(handshake));
+
+        // Act & Assert - Provider cannot change date after seeker has confirmed
+        assertThrows(IllegalStateException.class, 
+            () -> handshakeService.confirmHandshake(1, 2, request));
+    }
+
+    @Test
     void createRating_Success() {
         // Arrange
         handshake.setStatus(HandshakeStatus.CONFIRMED);
-        handshake.setCompletedAt(LocalDateTime.now().minusDays(1)); // Date passed
+        handshake.setAgreedDate(LocalDateTime.now().minusDays(1)); // Date passed
 
         CreateRatingRequest request = new CreateRatingRequest();
         request.setHandshakeId(1);
@@ -268,7 +349,7 @@ class HandshakeServiceTest {
     void createRating_BeforeCompletionDate() {
         // Arrange
         handshake.setStatus(HandshakeStatus.CONFIRMED);
-        handshake.setCompletedAt(LocalDateTime.now().plusDays(1)); // Future date
+        handshake.setAgreedDate(LocalDateTime.now().plusDays(1)); // Future date
 
         CreateRatingRequest request = new CreateRatingRequest();
         request.setHandshakeId(1);
@@ -289,7 +370,7 @@ class HandshakeServiceTest {
     void createRating_AlreadyRated() {
         // Arrange
         handshake.setStatus(HandshakeStatus.CONFIRMED);
-        handshake.setCompletedAt(LocalDateTime.now().minusDays(1));
+        handshake.setAgreedDate(LocalDateTime.now().minusDays(1));
 
         CreateRatingRequest request = new CreateRatingRequest();
         request.setHandshakeId(1);
@@ -311,7 +392,7 @@ class HandshakeServiceTest {
     void createRating_BothUsersRated_StatusChangesToCompleted() {
         // Arrange
         handshake.setStatus(HandshakeStatus.CONFIRMED);
-        handshake.setCompletedAt(LocalDateTime.now().minusDays(1));
+        handshake.setAgreedDate(LocalDateTime.now().minusDays(1));
 
         CreateRatingRequest request = new CreateRatingRequest();
         request.setHandshakeId(1);
@@ -429,7 +510,7 @@ class HandshakeServiceTest {
     void canRate_ReturnsTrueAfterCompletionDate() {
         // Arrange
         handshake.setStatus(HandshakeStatus.CONFIRMED);
-        handshake.setCompletedAt(LocalDateTime.now().minusDays(1));
+        handshake.setAgreedDate(LocalDateTime.now().minusDays(1));
         
         when(handshakeRepository.findById(1)).thenReturn(Optional.of(handshake));
 
@@ -444,7 +525,7 @@ class HandshakeServiceTest {
     void canRate_ReturnsFalseBeforeCompletionDate() {
         // Arrange
         handshake.setStatus(HandshakeStatus.CONFIRMED);
-        handshake.setCompletedAt(LocalDateTime.now().plusDays(1));
+        handshake.setAgreedDate(LocalDateTime.now().plusDays(1));
         
         when(handshakeRepository.findById(1)).thenReturn(Optional.of(handshake));
 
@@ -459,7 +540,7 @@ class HandshakeServiceTest {
     void canRate_ReturnsFalseIfAlreadyRated() {
         // Arrange
         handshake.setStatus(HandshakeStatus.CONFIRMED);
-        handshake.setCompletedAt(LocalDateTime.now().minusDays(1));
+        handshake.setAgreedDate(LocalDateTime.now().minusDays(1));
         
         when(handshakeRepository.findById(1)).thenReturn(Optional.of(handshake));
         when(ratingRepository.existsByHandshakeIdAndRaterId(1, 1)).thenReturn(true);

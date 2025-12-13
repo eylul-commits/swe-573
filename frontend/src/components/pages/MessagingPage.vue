@@ -76,7 +76,7 @@
                   
                   <div class="flex items-center gap-2 text-xs text-gray-500">
                     <HandshakeIcon class="w-3 h-3" />
-                    <span>{{ handshake.agreedHours }}h</span>
+                    <span>{{ handshake.durationHours }}h</span>
                     <span>•</span>
                     <span>{{ formatDate(handshake.createdAt) }}</span>
                   </div>
@@ -179,6 +179,15 @@ async function refreshHandshakes() {
   loading.value = true;
   try {
     await handshakeStore.loadHandshakes();
+    // Sync selectedHandshake with updated store data
+    if (selectedHandshake.value) {
+      const updatedHandshake = handshakeStore.handshakes.find(
+        (h) => h.id === selectedHandshake.value?.id
+      );
+      if (updatedHandshake) {
+        selectedHandshake.value = updatedHandshake;
+      }
+    }
   } finally {
     loading.value = false;
   }
