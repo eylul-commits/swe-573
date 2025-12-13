@@ -210,6 +210,24 @@ class AuthServiceTest {
         verify(jwtUtil, never()).generateToken(anyString(), any(Integer.class));
     }
 
+    @Test
+    void login_WithDeactivatedAccount_ShouldThrowException() {
+        // Arrange
+        testUser.setAccountStatus(UserStatus.DEACTIVATED);
+        when(userRepository.findByEmail(loginRequest.getEmail())).thenReturn(Optional.of(testUser));
+        when(passwordEncoder.matches(loginRequest.getPassword(), testUser.getPasswordHash())).thenReturn(true);
+
+        // Act & Assert
+        RuntimeException exception = assertThrows(RuntimeException.class, () -> {
+            authService.login(loginRequest);
+        });
+
+        assertEquals("Account is deactivated", exception.getMessage());
+
+        // Verify
+        verify(jwtUtil, never()).generateToken(anyString(), any(Integer.class));
+    }
+
     //Get Current User Tests
     @Test
     void getCurrentUser_WithValidUserId_ShouldSucceed() {

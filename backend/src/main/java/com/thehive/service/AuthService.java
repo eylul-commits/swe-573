@@ -79,6 +79,11 @@ public class AuthService {
             throw new RuntimeException("Invalid email or password");
         }
 
+        // Check if account is deactivated
+        if (user.getAccountStatus() == UserStatus.DEACTIVATED) {
+            throw new RuntimeException("Account is deactivated");
+        }
+
         // Check and update warning status if needed
         checkAndUpdateWarningStatus(user);
 
