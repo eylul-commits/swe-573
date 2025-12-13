@@ -109,6 +109,11 @@ public class HandshakeService {
             throw new IllegalStateException("Handshake is already " + handshake.getStatus());
         }
 
+        // Validate that agreed date is not in the past
+        if (request.getAgreedDate() != null && request.getAgreedDate().isBefore(LocalDateTime.now())) {
+            throw new IllegalArgumentException("Agreed date cannot be in the past");
+        }
+
         // Update confirmation status
         if (isSeeker) {
             handshake.setSeekerConfirmed(true);

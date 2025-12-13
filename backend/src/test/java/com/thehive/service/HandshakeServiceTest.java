@@ -232,6 +232,19 @@ class HandshakeServiceTest {
     }
 
     @Test
+    void confirmHandshake_PastDateRejected() {
+        // Arrange
+        ConfirmHandshakeRequest request = new ConfirmHandshakeRequest();
+        request.setAgreedDate(LocalDateTime.now().minusDays(1)); // Past date
+
+        when(handshakeRepository.findById(1)).thenReturn(Optional.of(handshake));
+
+        // Act & Assert - Past dates should be rejected
+        assertThrows(IllegalArgumentException.class, 
+            () -> handshakeService.confirmHandshake(1, 1, request));
+    }
+
+    @Test
     void createRating_Success() {
         // Arrange
         handshake.setStatus(HandshakeStatus.CONFIRMED);
