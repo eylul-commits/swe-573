@@ -217,6 +217,32 @@ public class HandshakeService {
                 .collect(Collectors.toList());
     }
 
+    @Transactional
+    public HandshakeDTO cancelHandshake(Integer handshakeId, Integer userId) {
+        Handshake handshake = handshakeRepository.findById(handshakeId)
+                .orElseThrow(() -> new ResourceNotFoundException("Handshake not found with id: " + handshakeId));
+
+        // Check if user is part of this handshake
+        if (!handshake.getSeeker().getId().equals(userId) && !handshake.getProvider().getId().equals(userId)) {
+            throw new IllegalStateException("User is not part of this handshake");
+        }
+
+        // Check if handshake can be cancelled (only if PENDING and not both confirmed)
+        if (handshake.getStatus() != HandshakeStatus.PENDING) {
+            throw new IllegalStateException("Only pending handshakes can be cancelled");
+        }
+
+        if (handshake.getSeekerConfirmed() && handshake.getProviderConfirmed()) {
+            throw new IllegalStateException("Cannot cancel handshake that is confirmed by both parties");
+        }
+
+        // Cancel the handshake
+        handshake.setStatus(HandshakeStatus.CANCELLED);
+
+        Handshake savedHandshake = handshakeRepository.save(handshake);
+        return convertToDTO(savedHandshake, userId);
+    }
+
     @Transactional(readOnly = true)
     public HandshakeDTO getHandshakeById(Integer handshakeId, Integer userId) {
         Handshake handshake = handshakeRepository.findById(handshakeId)

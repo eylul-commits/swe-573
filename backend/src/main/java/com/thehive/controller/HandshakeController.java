@@ -84,6 +84,16 @@ public class HandshakeController {
     }
 
     /**
+     * Cancel a handshake (only if pending and not both confirmed)
+     */
+    @PostMapping("/{handshakeId}/cancel")
+    public ResponseEntity<HandshakeDTO> cancelHandshake(@PathVariable Integer handshakeId) {
+        Integer userId = (Integer) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
+        HandshakeDTO handshake = handshakeService.cancelHandshake(handshakeId, userId);
+        return ResponseEntity.ok(handshake);
+    }
+
+    /**
      * Get a specific handshake by ID
      */
     @GetMapping("/{handshakeId}")

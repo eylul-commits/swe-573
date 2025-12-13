@@ -14,6 +14,7 @@ import {
   createHandshake as createHandshakeAPI,
   confirmHandshake as confirmHandshakeAPI,
   createRating as createRatingAPI,
+  cancelHandshake as cancelHandshakeAPI,
   getHandshakeById,
 } from '../services/handshakeService';
 import type {
@@ -169,6 +170,40 @@ export const useHandshakeStore = defineStore('handshake', () => {
     }
   }
 
+  async function cancelHandshake(handshakeId: number): Promise<Handshake> {
+    loading.value = true;
+    error.value = null;
+    try {
+      const handshake = await cancelHandshakeAPI(handshakeId);
+      // Update in store
+      const index = handshakes.value.findIndex((h) => h.id === handshakeId);
+      if (index !== -1) {
+        handshakes.value[index] = handshake;
+      }
+      if (selectedHandshake.value?.id === handshakeId) {
+        selectedHandshake.value = handshake;
+      }
+
+      // Update Stream Chat channel status
+      try {
+        const { isStreamChatInitialized, updateChannelStatus } = await import('../clients/streamChatClient');
+        if (isStreamChatInitialized() && handshake.status === 'CANCELLED') {
+          await updateChannelStatus(handshakeId, 'CANCELLED');
+        }
+      } catch (chatError) {
+        console.error('Failed to update Stream Chat channel:', chatError);
+      }
+
+      return handshake;
+    } catch (e) {
+      error.value = 'Failed to cancel handshake';
+      console.error('Error cancelling handshake:', e);
+      throw e;
+    } finally {
+      loading.value = false;
+    }
+  }
+
   async function createRating(request: CreateRatingRequest): Promise<Handshake> {
     loading.value = true;
     error.value = null;
@@ -242,6 +277,7 @@ export const useHandshakeStore = defineStore('handshake', () => {
     loadConfirmedHandshakes,
     createHandshake,
     confirmHandshake,
+    cancelHandshake,
     createRating,
     loadHandshakeById,
     setSelectedHandshake,

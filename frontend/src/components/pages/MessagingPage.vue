@@ -21,11 +21,25 @@
     <div class="flex-1 flex overflow-hidden">
       <!-- Handshakes List (Conversations) -->
       <div :class="[selectedHandshake ? 'hidden md:block' : 'block', 'w-full md:w-80 border-r border-gray-200 flex flex-col']">
-        <div class="px-4 py-3 border-b border-gray-200 flex items-center justify-between">
-          <h3 class="text-sm text-gray-700">Conversations</h3>
-          <Badge v-if="handshakeStore.handshakes.length" variant="secondary">
-            {{ handshakeStore.handshakes.length }}
-          </Badge>
+        <div class="px-4 py-3 border-b border-gray-200">
+          <div class="flex items-center justify-between mb-2">
+            <h3 class="text-sm text-gray-700">Conversations</h3>
+            <Badge v-if="filteredHandshakes.length" variant="secondary">
+              {{ filteredHandshakes.length }}
+            </Badge>
+          </div>
+          <div class="flex items-center gap-2">
+            <Button
+              @click="toggleHideCompleted"
+              variant="ghost"
+              size="sm"
+              class="text-xs h-7 px-2"
+            >
+              <EyeOff v-if="hideCompleted" class="w-3 h-3 mr-1" />
+              <Eye v-else class="w-3 h-3 mr-1" />
+              {{ hideCompleted ? 'Show completed/canceled' : 'Hide completed/canceled' }}
+            </Button>
+          </div>
         </div>
         
         <!-- Loading State -->
@@ -36,15 +50,15 @@
         <!-- Handshakes List -->
         <ScrollArea v-else class="flex-1">
           <div class="divide-y divide-gray-100">
-            <button
-              v-for="handshake in handshakeStore.handshakes"
-              :key="handshake.id"
-              @click="selectHandshake(handshake)"
-              :class="[
-                'w-full px-4 py-3 hover:bg-gray-50 transition-colors text-left',
-                selectedHandshake?.id === handshake.id ? 'bg-amber-50' : ''
-              ]"
-            >
+            <template v-for="handshake in filteredHandshakes" :key="handshake?.id">
+              <button
+                v-if="handshake && handshake.id"
+                @click="selectHandshake(handshake)"
+                :class="[
+                  'w-full px-4 py-3 hover:bg-gray-50 transition-colors text-left',
+                  selectedHandshake?.id === handshake.id ? 'bg-amber-50' : ''
+                ]"
+              >
               <div class="flex items-start gap-3">
                 <div class="relative">
                   <Avatar class="w-12 h-12">
@@ -55,9 +69,9 @@
                   <div 
                     :class="[
                       'absolute -bottom-1 -right-1 w-4 h-4 rounded-full border-2 border-white',
-                      handshake.status === 'PENDING' ? 'bg-amber-500' :
-                      handshake.status === 'CONFIRMED' ? 'bg-green-500' :
-                      handshake.status === 'COMPLETED' ? 'bg-blue-500' : 'bg-gray-400'
+                      handshake?.status === 'PENDING' ? 'bg-amber-500' :
+                      handshake?.status === 'CONFIRMED' ? 'bg-green-500' :
+                      handshake?.status === 'COMPLETED' ? 'bg-blue-500' : 'bg-gray-400'
                     ]"
                   />
                 </div>
@@ -65,31 +79,40 @@
                 <div class="flex-1 min-w-0">
                   <div class="flex items-center justify-between mb-1">
                     <span class="text-sm font-medium text-gray-900 truncate">
-                      {{ getOtherUser(handshake).name }}
+                      {{ getOtherUser(handshake)?.name || 'Unknown' }}
                     </span>
-                    <Badge :variant="getStatusVariant(handshake.status)" class="text-xs">
-                      {{ handshake.status }}
+                    <Badge :variant="getStatusVariant(handshake?.status || '')" class="text-xs">
+                      {{ handshake?.status || '' }}
                     </Badge>
                   </div>
                   
-                  <p class="text-xs text-gray-600 truncate mb-1">{{ handshake.offerTitle }}</p>
+                  <p class="text-xs text-gray-600 truncate mb-1">{{ handshake?.offerTitle || '' }}</p>
                   
                   <div class="flex items-center gap-2 text-xs text-gray-500">
                     <HandshakeIcon class="w-3 h-3" />
-                    <span>{{ handshake.durationHours }}h</span>
+                    <span>{{ handshake?.durationHours || 0 }}h</span>
                     <span>•</span>
-                    <span>{{ formatDate(handshake.createdAt) }}</span>
+                    <span>{{ handshake?.createdAt ? formatDate(handshake.createdAt) : '' }}</span>
                   </div>
                 </div>
               </div>
-            </button>
+              </button>
+            </template>
           </div>
 
           <!-- Empty State in List -->
-          <div v-if="!loading && handshakeStore.handshakes.length === 0" class="px-4 py-8 text-center">
+          <div v-if="!loading && filteredHandshakes.length === 0" class="px-4 py-8 text-center">
             <MessageSquare class="w-12 h-12 text-gray-300 mx-auto mb-3" />
-            <p class="text-sm text-gray-600">No conversations yet</p>
-            <p class="text-xs text-gray-500 mt-1">Accept an offer to start chatting</p>
+            <p class="text-sm text-gray-600">
+              {{ hideCompleted && handshakeStore.handshakes.length > 0 
+                ? 'No active conversations' 
+                : 'No conversations yet' }}
+            </p>
+            <p class="text-xs text-gray-500 mt-1">
+              {{ hideCompleted && handshakeStore.handshakes.length > 0
+                ? 'All conversations are completed or canceled'
+                : 'Accept an offer to start chatting' }}
+            </p>
           </div>
         </ScrollArea>
       </div>
@@ -114,6 +137,7 @@
           :stream-chat-enabled="streamChatEnabled"
           :show-stream-chat-info="false"
           @open-confirm-modal="openConfirmModal"
+          @handshake-cancelled="onHandshakeCancelled"
         />
       </div>
 
@@ -147,9 +171,9 @@
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted, computed } from 'vue';
+import { ref, onMounted, onUnmounted, computed } from 'vue';
 import { storeToRefs } from 'pinia';
-import { MessageSquare, ArrowLeft, RefreshCw, Handshake as HandshakeIcon } from 'lucide-vue-next';
+import { MessageSquare, ArrowLeft, RefreshCw, Handshake as HandshakeIcon, Eye, EyeOff } from 'lucide-vue-next';
 import Avatar from '../ui/Avatar.vue';
 import AvatarImage from '../ui/AvatarImage.vue';
 import AvatarFallback from '../ui/AvatarFallback.vue';
@@ -175,17 +199,55 @@ const confirmModalOpen = ref(false);
 const ratingModalOpen = ref(false);
 const streamChatEnabled = computed(() => streamChatReady.value && isStreamChatInitialized());
 
+// Filter for hiding completed/canceled conversations
+const HIDE_COMPLETED_KEY = 'messaging-hide-completed';
+const getInitialHideCompleted = (): boolean => {
+  const stored = localStorage.getItem(HIDE_COMPLETED_KEY);
+  return stored === 'true';
+};
+const hideCompleted = ref<boolean>(getInitialHideCompleted());
+
+// Filtered handshakes based on hideCompleted preference
+const filteredHandshakes = computed(() => {
+  if (!handshakeStore.handshakes || handshakeStore.handshakes.length === 0) {
+    return [];
+  }
+  if (!hideCompleted.value) {
+    return [...handshakeStore.handshakes];
+  }
+  return handshakeStore.handshakes.filter(
+    (h) => h && h.status !== 'COMPLETED' && h.status !== 'CANCELLED'
+  );
+});
+
+function toggleHideCompleted() {
+  hideCompleted.value = !hideCompleted.value;
+  localStorage.setItem(HIDE_COMPLETED_KEY, hideCompleted.value.toString());
+  
+  // If the selected handshake is now hidden, clear selection
+  if (hideCompleted.value && selectedHandshake.value) {
+    const isHidden = selectedHandshake.value.status === 'COMPLETED' || 
+                     selectedHandshake.value.status === 'CANCELLED';
+    if (isHidden) {
+      selectedHandshake.value = null;
+    }
+  }
+}
+
 async function refreshHandshakes() {
   loading.value = true;
   try {
     await handshakeStore.loadHandshakes();
     // Sync selectedHandshake with updated store data
-    if (selectedHandshake.value) {
+    if (selectedHandshake.value && handshakeStore.handshakes) {
       const updatedHandshake = handshakeStore.handshakes.find(
-        (h) => h.id === selectedHandshake.value?.id
+        (h) => h && h.id === selectedHandshake.value?.id
       );
       if (updatedHandshake) {
         selectedHandshake.value = updatedHandshake;
+      } else {
+        // If the selected handshake no longer exists, clear selection
+        selectedHandshake.value = null;
       }
     }
   } finally {
@@ -198,12 +260,12 @@ function selectHandshake(handshake: Handshake) {
 }
 
 function getOtherUser(handshake: Handshake): AuthorSummary {
-  if (!appStore.currentUser) return handshake.provider;
+  if (!handshake || !appStore.currentUser) return handshake?.provider || { id: '', name: 'Unknown', avatar: '' };
   
   const currentUserId = appStore.currentUser.id.toString();
-  const isSeeker = handshake.seeker.id.toString() === currentUserId;
+  const isSeeker = handshake.seeker?.id?.toString() === currentUserId;
   
-  return isSeeker ? handshake.provider : handshake.seeker;
+  return isSeeker ? (handshake.provider || { id: '', name: 'Unknown', avatar: '' }) : (handshake.seeker || { id: '', name: 'Unknown', avatar: '' });
 }
 
 function getStatusVariant(status: string): 'default' | 'success' | 'warning' | 'error' {
@@ -248,8 +310,18 @@ function onRatingSubmitted(handshake: Handshake) {
   refreshHandshakes();
 }
 
+function onHandshakeCancelled(handshake: Handshake) {
+  selectedHandshake.value = handshake;
+  refreshHandshakes();
+}
+
 onMounted(() => {
   refreshHandshakes();
+});
+
+onUnmounted(() => {
+  // Clean up selected handshake to prevent errors during unmounting
+  selectedHandshake.value = null;
 });
 </script>
 

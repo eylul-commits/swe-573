@@ -551,5 +551,181 @@ class HandshakeServiceTest {
         // Assert
         assertFalse(result.getCanRate());
     }
+
+    @Test
+    void cancelHandshake_SeekerCancels_Success() {
+        // Arrange - Pending handshake, neither confirmed
+        handshake.setStatus(HandshakeStatus.PENDING);
+        handshake.setSeekerConfirmed(false);
+        handshake.setProviderConfirmed(false);
+
+        when(handshakeRepository.findById(1)).thenReturn(Optional.of(handshake));
+        when(handshakeRepository.save(any(Handshake.class))).thenAnswer(i -> {
+            Handshake h = i.getArgument(0);
+            h.setStatus(HandshakeStatus.CANCELLED);
+            return h;
+        });
+
+        // Act - Seeker (userId=1) cancels
+        HandshakeDTO result = handshakeService.cancelHandshake(1, 1);
+
+        // Assert
+        assertNotNull(result);
+        assertEquals(HandshakeStatus.CANCELLED, result.getStatus());
+        verify(handshakeRepository).save(any(Handshake.class));
+    }
+
+    @Test
+    void cancelHandshake_ProviderCancels_Success() {
+        // Arrange - Pending handshake, neither confirmed
+        handshake.setStatus(HandshakeStatus.PENDING);
+        handshake.setSeekerConfirmed(false);
+        handshake.setProviderConfirmed(false);
+
+        when(handshakeRepository.findById(1)).thenReturn(Optional.of(handshake));
+        when(handshakeRepository.save(any(Handshake.class))).thenAnswer(i -> {
+            Handshake h = i.getArgument(0);
+            h.setStatus(HandshakeStatus.CANCELLED);
+            return h;
+        });
+
+        // Act - Provider (userId=2) cancels
+        HandshakeDTO result = handshakeService.cancelHandshake(1, 2);
+
+        // Assert
+        assertNotNull(result);
+        assertEquals(HandshakeStatus.CANCELLED, result.getStatus());
+        verify(handshakeRepository).save(any(Handshake.class));
+    }
+
+    @Test
+    void cancelHandshake_SeekerCancelsAfterProviderConfirmed_Success() {
+        // Arrange - Pending handshake, only provider confirmed
+        handshake.setStatus(HandshakeStatus.PENDING);
+        handshake.setSeekerConfirmed(false);
+        handshake.setProviderConfirmed(true);
+
+        when(handshakeRepository.findById(1)).thenReturn(Optional.of(handshake));
+        when(handshakeRepository.save(any(Handshake.class))).thenAnswer(i -> {
+            Handshake h = i.getArgument(0);
+            h.setStatus(HandshakeStatus.CANCELLED);
+            return h;
+        });
+
+        // Act - Seeker cancels even though provider confirmed
+        HandshakeDTO result = handshakeService.cancelHandshake(1, 1);
+
+        // Assert
+        assertNotNull(result);
+        assertEquals(HandshakeStatus.CANCELLED, result.getStatus());
+        verify(handshakeRepository).save(any(Handshake.class));
+    }
+
+    @Test
+    void cancelHandshake_ProviderCancelsAfterSeekerConfirmed_Success() {
+        // Arrange - Pending handshake, only seeker confirmed
+        handshake.setStatus(HandshakeStatus.PENDING);
+        handshake.setSeekerConfirmed(true);
+        handshake.setProviderConfirmed(false);
+
+        when(handshakeRepository.findById(1)).thenReturn(Optional.of(handshake));
+        when(handshakeRepository.save(any(Handshake.class))).thenAnswer(i -> {
+            Handshake h = i.getArgument(0);
+            h.setStatus(HandshakeStatus.CANCELLED);
+            return h;
+        });
+
+        // Act - Provider cancels even though seeker confirmed
+        HandshakeDTO result = handshakeService.cancelHandshake(1, 2);
+
+        // Assert
+        assertNotNull(result);
+        assertEquals(HandshakeStatus.CANCELLED, result.getStatus());
+        verify(handshakeRepository).save(any(Handshake.class));
+    }
+
+    @Test
+    void cancelHandshake_HandshakeNotFound() {
+        // Arrange
+        when(handshakeRepository.findById(999)).thenReturn(Optional.empty());
+
+        // Act & Assert
+        assertThrows(ResourceNotFoundException.class, 
+            () -> handshakeService.cancelHandshake(999, 1));
+    }
+
+    @Test
+    void cancelHandshake_UserNotPartOfHandshake() {
+        // Arrange
+        when(handshakeRepository.findById(1)).thenReturn(Optional.of(handshake));
+
+        // Act & Assert - User ID 999 is not part of this handshake
+        assertThrows(IllegalStateException.class, 
+            () -> handshakeService.cancelHandshake(1, 999));
+    }
+
+    @Test
+    void cancelHandshake_CannotCancelIfNotPending() {
+        // Arrange - Handshake is already CONFIRMED
+        handshake.setStatus(HandshakeStatus.CONFIRMED);
+        handshake.setSeekerConfirmed(true);
+        handshake.setProviderConfirmed(true);
+
+        when(handshakeRepository.findById(1)).thenReturn(Optional.of(handshake));
+
+        // Act & Assert - Cannot cancel non-pending handshake
+        assertThrows(IllegalStateException.class, 
+            () -> handshakeService.cancelHandshake(1, 1));
+        
+        verify(handshakeRepository, never()).save(any(Handshake.class));
+    }
+
+    @Test
+    void cancelHandshake_CannotCancelIfBothConfirmed() {
+        // Arrange - PENDING but both parties confirmed
+        handshake.setStatus(HandshakeStatus.PENDING);
+        handshake.setSeekerConfirmed(true);
+        handshake.setProviderConfirmed(true);
+
+        when(handshakeRepository.findById(1)).thenReturn(Optional.of(handshake));
+
+        // Act & Assert - Cannot cancel if both parties confirmed
+        assertThrows(IllegalStateException.class, 
+            () -> handshakeService.cancelHandshake(1, 1));
+        
+        verify(handshakeRepository, never()).save(any(Handshake.class));
+    }
+
+    @Test
+    void cancelHandshake_CannotCancelIfCompleted() {
+        // Arrange - Handshake is COMPLETED
+        handshake.setStatus(HandshakeStatus.COMPLETED);
+        handshake.setSeekerConfirmed(true);
+        handshake.setProviderConfirmed(true);
+
+        when(handshakeRepository.findById(1)).thenReturn(Optional.of(handshake));
+
+        // Act & Assert - Cannot cancel completed handshake
+        assertThrows(IllegalStateException.class, 
+            () -> handshakeService.cancelHandshake(1, 1));
+        
+        verify(handshakeRepository, never()).save(any(Handshake.class));
+    }
+
+    @Test
+    void cancelHandshake_CannotCancelIfAlreadyCancelled() {
+        // Arrange - Handshake is already CANCELLED
+        handshake.setStatus(HandshakeStatus.CANCELLED);
+        handshake.setSeekerConfirmed(false);
+        handshake.setProviderConfirmed(false);
+
+        when(handshakeRepository.findById(1)).thenReturn(Optional.of(handshake));
+
+        // Act & Assert - Cannot cancel already cancelled handshake
+        assertThrows(IllegalStateException.class, 
+            () -> handshakeService.cancelHandshake(1, 1));
+        
+        verify(handshakeRepository, never()).save(any(Handshake.class));
+    }
 }
 
