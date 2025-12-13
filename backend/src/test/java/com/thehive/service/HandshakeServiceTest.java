@@ -245,6 +245,29 @@ class HandshakeServiceTest {
     }
 
     @Test
+    void confirmHandshake_SeekerCannotSetDate() {
+        // Arrange
+        ConfirmHandshakeRequest request = new ConfirmHandshakeRequest();
+        LocalDateTime providedDate = LocalDateTime.now().plusDays(7);
+        request.setAgreedDate(providedDate);
+
+        when(handshakeRepository.findById(1)).thenReturn(Optional.of(handshake));
+        when(handshakeRepository.save(any(Handshake.class))).thenAnswer(i -> i.getArgument(0));
+
+        // Act - Seeker (userId=1) tries to confirm with a date
+        HandshakeDTO result = handshakeService.confirmHandshake(1, 1, request);
+
+        // Assert - Seeker confirmed but date should NOT be set (only provider can set date)
+        assertNotNull(result);
+        assertTrue(result.getSeekerConfirmed());
+        assertFalse(result.getProviderConfirmed());
+        assertEquals(HandshakeStatus.PENDING, result.getStatus());
+        assertNull(result.getAgreedDate()); // Date should be null, not set by seeker
+        
+        verify(handshakeRepository).save(any(Handshake.class));
+    }
+
+    @Test
     void createRating_Success() {
         // Arrange
         handshake.setStatus(HandshakeStatus.CONFIRMED);

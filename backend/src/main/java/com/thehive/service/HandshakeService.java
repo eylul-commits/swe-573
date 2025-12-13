@@ -115,17 +115,15 @@ public class HandshakeService {
         }
 
         // Update confirmation status
-        if (isSeeker) {
-            handshake.setSeekerConfirmed(true);
-        } else {
+        if (isProvider) {
+            handshake.setAgreedDate(request.getAgreedDate());
             handshake.setProviderConfirmed(true);
+        } else {
+            handshake.setSeekerConfirmed(true);
         }
 
-        // If both confirmed, update status and set agreed date
-        if (handshake.getSeekerConfirmed() && handshake.getProviderConfirmed()) {
-            handshake.setStatus(HandshakeStatus.CONFIRMED);
-            handshake.setAgreedDate(request.getAgreedDate());
-        }
+        // If both confirmed, update status
+        if (handshake.getSeekerConfirmed() && handshake.getProviderConfirmed()) handshake.setStatus(HandshakeStatus.CONFIRMED);
 
         Handshake savedHandshake = handshakeRepository.save(handshake);
         return convertToDTO(savedHandshake, userId);
