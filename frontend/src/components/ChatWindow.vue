@@ -22,15 +22,29 @@
           <p class="text-amber-700 text-xs mt-1">
             {{ confirmationStatus }}
           </p>
+          <p v-if="isProvider && handshake.agreedDate" class="text-amber-700 text-xs mt-1">
+            Current date: {{ formatDate(handshake.agreedDate) }}
+          </p>
         </div>
-        <Button
-          v-if="!isCurrentUserConfirmed"
-          @click="$emit('openConfirmModal')"
-          size="sm"
-          class="bg-amber-500 hover:bg-amber-600"
-        >
-          Confirm Handshake
-        </Button>
+        <div class="flex gap-2">
+          <Button
+            v-if="!isCurrentUserConfirmed"
+            @click="$emit('openConfirmModal')"
+            size="sm"
+            class="bg-amber-500 hover:bg-amber-600"
+          >
+            Confirm Handshake
+          </Button>
+          <Button
+            v-if="isProvider && handshake.agreedDate && !handshake.seekerConfirmed"
+            @click="$emit('openConfirmModal')"
+            size="sm"
+            variant="outline"
+            class="border-amber-500 text-amber-700 hover:bg-amber-100"
+          >
+            Change Date
+          </Button>
+        </div>
       </div>
     </div>
 
@@ -197,6 +211,13 @@ const isCurrentUserConfirmed = computed(() => {
   const isSeeker = props.handshake.seeker.id.toString() === currentUserId;
   
   return isSeeker ? props.handshake.seekerConfirmed : props.handshake.providerConfirmed;
+});
+
+const isProvider = computed(() => {
+  if (!props.handshake || !appStore.currentUser) return false;
+  
+  const currentUserId = appStore.currentUser.id.toString();
+  return props.handshake.provider.id.toString() === currentUserId;
 });
 
 function formatDate(dateString: string | null): string {

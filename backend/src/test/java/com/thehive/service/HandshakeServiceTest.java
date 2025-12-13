@@ -268,6 +268,52 @@ class HandshakeServiceTest {
     }
 
     @Test
+    void confirmHandshake_ProviderCanChangeDateBeforeSeekerConfirms() {
+        // Arrange - Provider has already confirmed with a date
+        handshake.setProviderConfirmed(true);
+        LocalDateTime firstDate = LocalDateTime.now().plusDays(5);
+        handshake.setAgreedDate(firstDate);
+        
+        ConfirmHandshakeRequest request = new ConfirmHandshakeRequest();
+        LocalDateTime newDate = LocalDateTime.now().plusDays(10);
+        request.setAgreedDate(newDate);
+
+        when(handshakeRepository.findById(1)).thenReturn(Optional.of(handshake));
+        when(handshakeRepository.save(any(Handshake.class))).thenAnswer(i -> i.getArgument(0));
+
+        // Act - Provider (userId=2) changes the date before seeker confirms
+        HandshakeDTO result = handshakeService.confirmHandshake(1, 2, request);
+
+        // Assert - Date should be updated since seeker hasn't confirmed yet
+        assertNotNull(result);
+        assertTrue(result.getProviderConfirmed());
+        assertFalse(result.getSeekerConfirmed());
+        assertEquals(HandshakeStatus.PENDING, result.getStatus());
+        assertEquals(newDate, result.getAgreedDate()); // Date should be updated
+        
+        verify(handshakeRepository).save(any(Handshake.class));
+    }
+
+    @Test
+    void confirmHandshake_ProviderCannotChangeDateAfterSeekerConfirms() {
+        // Arrange - Both have confirmed with a date
+        handshake.setProviderConfirmed(true);
+        handshake.setSeekerConfirmed(true);
+        LocalDateTime originalDate = LocalDateTime.now().plusDays(5);
+        handshake.setAgreedDate(originalDate);
+        
+        ConfirmHandshakeRequest request = new ConfirmHandshakeRequest();
+        LocalDateTime newDate = LocalDateTime.now().plusDays(10);
+        request.setAgreedDate(newDate);
+
+        when(handshakeRepository.findById(1)).thenReturn(Optional.of(handshake));
+
+        // Act & Assert - Provider cannot change date after seeker has confirmed
+        assertThrows(IllegalStateException.class, 
+            () -> handshakeService.confirmHandshake(1, 2, request));
+    }
+
+    @Test
     void createRating_Success() {
         // Arrange
         handshake.setStatus(HandshakeStatus.CONFIRMED);

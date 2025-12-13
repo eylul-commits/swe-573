@@ -116,6 +116,12 @@ public class HandshakeService {
 
         // Update confirmation status
         if (isProvider) {
+            // Provider can only change the date if seeker hasn't confirmed yet
+            if (handshake.getSeekerConfirmed() && handshake.getAgreedDate() != null 
+                    && request.getAgreedDate() != null 
+                    && !handshake.getAgreedDate().equals(request.getAgreedDate())) {
+                throw new IllegalStateException("Cannot change agreed date after seeker has confirmed");
+            }
             handshake.setAgreedDate(request.getAgreedDate());
             handshake.setProviderConfirmed(true);
         } else {
