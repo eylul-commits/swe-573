@@ -32,12 +32,11 @@
           </div>
           <div class="flex items-center gap-2 text-sm text-gray-600">
             <Calendar class="w-4 h-4" />
-            <span>
-              {{ formattedStartDate }}
-            </span>
-          </div>
-          <div class="text-sm text-gray-600">
             {{ scheduleText }}
+          </div>
+          <div class="flex items-center gap-2 text-sm text-gray-600">
+            <Clock class="w-4 h-4" />
+            Flexible scheduling <!-- TODO: Add availability -->
           </div>
           <div class="text-sm text-gray-500 col-span-2">
             Posted {{ postedTime }}
@@ -125,9 +124,9 @@
               :disabled="isAccepting || service.poster.id === appStore.currentUser?.id.toString()"
               class="bg-gray-900 hover:bg-gray-800 text-white w-full disabled:opacity-50 disabled:cursor-not-allowed"
             >
-              <span v-if="isAccepting">{{ service.type === 'OFFER' ? 'Accepting...' : 'Sending...' }}</span>
+              <span v-if="isAccepting">{{ service.type === 'OFFER' ? 'Showing Interest...' : 'Sending...' }}</span>
               <span v-else-if="service.poster.id === appStore.currentUser?.id.toString()">Your Service</span>
-              <span v-else>{{ service.type === 'OFFER' ? 'Accept Offer' : 'Offer Help' }}</span>
+              <span v-else>{{ service.type === 'OFFER' ? 'Show Interest' : 'Offer Help' }}</span>
             </Button>
             <p v-if="acceptError" class="text-xs text-red-600">{{ acceptError }}</p>
             <p v-if="acceptSuccess" class="text-xs text-emerald-600">{{ acceptSuccess }}</p>
@@ -492,13 +491,6 @@ watch(
   { immediate: true }
 )
 
-const formattedStartDate = computed(() => {
-  if (!service.value?.startDate) {
-    return 'Start date not specified'
-  }
-  return `Starts ${formatDate(service.value.startDate)}`
-})
-
 const scheduleText = computed(() => {
   const start = service.value?.startDate
   const end = service.value?.endDate
@@ -507,15 +499,15 @@ const scheduleText = computed(() => {
     if (start === end) {
       return `Scheduled for ${formatDate(start)}`
     }
-    return `${formatDate(start)} - ${formatDate(end)}`
+    return `Available from ${formatDate(start)} to ${formatDate(end)}`
   }
 
   if (start) {
-    return `Starts ${formatDate(start)}`
+    return `Available from ${formatDate(start)}`
   }
 
   if (end) {
-    return `Available until ${formatDate(end)}`
+    return `Expires on ${formatDate(end)}`
   }
 
   return 'Schedule not specified'
