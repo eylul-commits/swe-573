@@ -649,7 +649,7 @@ const handleAcceptService = async () => {
 
   } catch (error: any) {
     console.error('Failed to accept service:', error)
-    acceptError.value = error.response?.data?.message || 'Failed to accept. Try again.'
+    acceptError.value = error.message || 'Failed to accept. Try again.'
   } finally {
     isAccepting.value = false
   }
