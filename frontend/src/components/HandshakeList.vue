@@ -38,7 +38,7 @@
           <!-- Provider -->
           <div class="flex items-center gap-3">
             <Avatar class="w-10 h-10">
-              <AvatarImage :src="handshake.provider.avatar" :alt="handshake.provider.name" />
+              <AvatarImage :src="getAvatarUrl(handshake.provider.avatar, handshake.provider.name)" :alt="handshake.provider.name" />
               <AvatarFallback>{{ handshake.provider.name.charAt(0) }}</AvatarFallback>
             </Avatar>
             <div class="flex-1 min-w-0">
@@ -53,7 +53,7 @@
           <!-- Seeker -->
           <div class="flex items-center gap-3">
             <Avatar class="w-10 h-10">
-              <AvatarImage :src="handshake.seeker.avatar" :alt="handshake.seeker.name" />
+              <AvatarImage :src="getAvatarUrl(handshake.seeker.avatar, handshake.seeker.name)" :alt="handshake.seeker.name" />
               <AvatarFallback>{{ handshake.seeker.name.charAt(0) }}</AvatarFallback>
             </Avatar>
             <div class="flex-1 min-w-0">
@@ -138,6 +138,7 @@ import AvatarFallback from './ui/AvatarFallback.vue';
 import type { Handshake } from '../types';
 import { useAppStore } from '../stores/appStore';
 import { useHandshakeStore } from '../stores/handshakeStore';
+import { getAvatarUrl } from '../utils/avatarUtils';
 
 defineProps<{
   handshakes: Handshake[];
