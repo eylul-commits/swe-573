@@ -5,6 +5,7 @@ import com.thehive.model.dto.ConfirmHandshakeRequest;
 import com.thehive.model.dto.CreateHandshakeRequest;
 import com.thehive.model.dto.CreateRatingRequest;
 import com.thehive.model.dto.HandshakeDTO;
+import com.thehive.model.dto.ServiceRatingDTO;
 import com.thehive.model.entity.Handshake;
 import com.thehive.model.entity.Offer;
 import com.thehive.model.entity.Rating;
@@ -726,6 +727,157 @@ class HandshakeServiceTest {
             () -> handshakeService.cancelHandshake(1, 1));
         
         verify(handshakeRepository, never()).save(any(Handshake.class));
+    }
+
+    @Test
+    void getUserRatings_Success_ReturnsListOfRatings() {
+        // Arrange
+        Rating rating1 = new Rating();
+        rating1.setId(1);
+        rating1.setRater(provider);
+        rating1.setRatee(seeker);
+        rating1.setPunctuality(5);
+        rating1.setFriendliness(4);
+        rating1.setCommunicative(5);
+        rating1.setPreparedness(4);
+        rating1.setComment("Great service!");
+        rating1.setCreatedAt(LocalDateTime.now().minusDays(5));
+
+        Rating rating2 = new Rating();
+        rating2.setId(2);
+        rating2.setRater(provider);
+        rating2.setRatee(seeker);
+        rating2.setPunctuality(4);
+        rating2.setFriendliness(5);
+        rating2.setCommunicative(4);
+        rating2.setPreparedness(5);
+        rating2.setComment("Excellent work!");
+        rating2.setCreatedAt(LocalDateTime.now().minusDays(2));
+
+        List<Rating> ratings = Arrays.asList(rating1, rating2);
+        when(ratingRepository.findByRateeId(1)).thenReturn(ratings);
+
+        // Act
+        List<ServiceRatingDTO> result = handshakeService.getUserRatings(1);
+
+        // Assert
+        assertNotNull(result);
+        assertEquals(2, result.size());
+        
+        ServiceRatingDTO dto1 = result.get(0);
+        assertEquals(1, dto1.getId());
+        assertNotNull(dto1.getRater());
+        assertEquals(provider.getId(), dto1.getRater().getId());
+        assertEquals(5, dto1.getPunctuality());
+        assertEquals(4, dto1.getFriendliness());
+        assertEquals(5, dto1.getCommunicative());
+        assertEquals(4, dto1.getPreparedness());
+        assertEquals("Great service!", dto1.getComment());
+        assertNotNull(dto1.getCreatedAt());
+        
+        ServiceRatingDTO dto2 = result.get(1);
+        assertEquals(2, dto2.getId());
+        assertEquals(4, dto2.getPunctuality());
+        assertEquals(5, dto2.getFriendliness());
+        assertEquals(4, dto2.getCommunicative());
+        assertEquals(5, dto2.getPreparedness());
+        assertEquals("Excellent work!", dto2.getComment());
+        
+        verify(ratingRepository).findByRateeId(1);
+    }
+
+    @Test
+    void getUserRatings_EmptyList_WhenUserHasNoRatings() {
+        // Arrange
+        when(ratingRepository.findByRateeId(1)).thenReturn(Collections.emptyList());
+
+        // Act
+        List<ServiceRatingDTO> result = handshakeService.getUserRatings(1);
+
+        // Assert
+        assertNotNull(result);
+        assertTrue(result.isEmpty());
+        verify(ratingRepository).findByRateeId(1);
+    }
+
+    @Test
+    void getUserRatings_ConvertsRatingToDTO_WithAllFields() {
+        // Arrange
+        User rater = new User();
+        rater.setId(3);
+        rater.setEmail("rater@test.com");
+        rater.setName("Rater User");
+        rater.setBalanceHours(20);
+        rater.setUserBadges(new HashSet<>());
+        rater.setBio("Test bio");
+        rater.setProvince("Test Province");
+        rater.setDistrict("Test District");
+        rater.setAvatarUrl("http://example.com/avatar.jpg");
+
+        Rating rating = new Rating();
+        rating.setId(10);
+        rating.setRater(rater);
+        rating.setRatee(seeker);
+        rating.setPunctuality(5);
+        rating.setFriendliness(5);
+        rating.setCommunicative(5);
+        rating.setPreparedness(5);
+        rating.setComment("Perfect in every way!");
+        LocalDateTime createdAt = LocalDateTime.now().minusDays(10);
+        rating.setCreatedAt(createdAt);
+
+        when(ratingRepository.findByRateeId(1)).thenReturn(Collections.singletonList(rating));
+
+        // Act
+        List<ServiceRatingDTO> result = handshakeService.getUserRatings(1);
+
+        // Assert
+        assertNotNull(result);
+        assertEquals(1, result.size());
+        
+        ServiceRatingDTO dto = result.get(0);
+        assertEquals(10, dto.getId());
+        assertNotNull(dto.getRater());
+        assertEquals(3, dto.getRater().getId());
+        assertEquals("Rater User", dto.getRater().getName());
+        assertEquals("http://example.com/avatar.jpg", dto.getRater().getAvatar());
+        assertEquals("Test bio", dto.getRater().getBio());
+        assertEquals("Test Province", dto.getRater().getProvince());
+        assertEquals("Test District", dto.getRater().getDistrict());
+        assertEquals(20, dto.getRater().getBalanceHours());
+        assertEquals(5, dto.getPunctuality());
+        assertEquals(5, dto.getFriendliness());
+        assertEquals(5, dto.getCommunicative());
+        assertEquals(5, dto.getPreparedness());
+        assertEquals("Perfect in every way!", dto.getComment());
+        assertEquals(createdAt, dto.getCreatedAt());
+    }
+
+    @Test
+    void getUserRatings_HandlesNullComment() {
+        // Arrange
+        Rating rating = new Rating();
+        rating.setId(1);
+        rating.setRater(provider);
+        rating.setRatee(seeker);
+        rating.setPunctuality(3);
+        rating.setFriendliness(3);
+        rating.setCommunicative(3);
+        rating.setPreparedness(3);
+        rating.setComment(null);
+        rating.setCreatedAt(LocalDateTime.now());
+
+        when(ratingRepository.findByRateeId(1)).thenReturn(Collections.singletonList(rating));
+
+        // Act
+        List<ServiceRatingDTO> result = handshakeService.getUserRatings(1);
+
+        // Assert
+        assertNotNull(result);
+        assertEquals(1, result.size());
+        ServiceRatingDTO dto = result.get(0);
+        assertNull(dto.getComment());
+        assertEquals(3, dto.getPunctuality());
     }
 }
 
