@@ -114,6 +114,7 @@
           :stream-chat-enabled="streamChatEnabled"
           :show-stream-chat-info="false"
           @open-confirm-modal="openConfirmModal"
+          @handshake-cancelled="onHandshakeCancelled"
         />
       </div>
 
@@ -244,6 +245,11 @@ function onHandshakeConfirmed(handshake: Handshake) {
 }
 
 function onRatingSubmitted(handshake: Handshake) {
+  selectedHandshake.value = handshake;
+  refreshHandshakes();
+}
+
+function onHandshakeCancelled(handshake: Handshake) {
   selectedHandshake.value = handshake;
   refreshHandshakes();
 }

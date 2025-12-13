@@ -58,6 +58,13 @@ export async function getConfirmedHandshakes(): Promise<Handshake[]> {
 }
 
 /**
+ * Cancel a handshake (only if pending and not both confirmed)
+ */
+export async function cancelHandshake(handshakeId: number): Promise<Handshake> {
+  return api.post<Handshake>(`/handshakes/${handshakeId}/cancel`);
+}
+
+/**
  * Get a specific handshake by ID
  */
 export async function getHandshakeById(handshakeId: number): Promise<Handshake> {

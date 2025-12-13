@@ -44,6 +44,16 @@
           >
             Change Date
           </Button>
+          <Button
+            v-if="isCancelable"
+            @click="handleCancel"
+            size="sm"
+            variant="outline"
+            :disabled="canceling"
+            class="text-red-600 border-red-300 hover:bg-red-50"
+          >
+            {{ canceling ? 'Canceling...' : 'Cancel Handshake' }}
+          </Button>
         </div>
       </div>
     </div>
@@ -147,6 +157,7 @@ import Button from './ui/Button.vue';
 import Input from './ui/Input.vue';
 import type { Handshake, AuthorSummary } from '../types';
 import { useAppStore } from '../stores/appStore';
+import { useHandshakeStore } from '../stores/handshakeStore';
 import { getAvatarUrl } from '../utils/avatarUtils';
 import {
   getStreamChatClient,
@@ -168,13 +179,16 @@ const props = defineProps<{
   showStreamChatInfo?: boolean;
 }>();
 
-defineEmits<{
+const emit = defineEmits<{
   'openConfirmModal': [];
+  'handshakeCancelled': [handshake: Handshake];
 }>();
 
 const appStore = useAppStore();
+const handshakeStore = useHandshakeStore();
 
 const messagesContainer = ref<HTMLElement | null>(null);
+const canceling = ref(false);
 const newMessage = ref('');
 const loading = ref(false);
 const sending = ref(false);
@@ -219,6 +233,32 @@ const isProvider = computed(() => {
   const currentUserId = appStore.currentUser.id.toString();
   return props.handshake.provider.id.toString() === currentUserId;
 });
+
+const isCancelable = computed(() => {
+  if (!props.handshake) return false;
+  // Can only cancel if PENDING and not both confirmed
+  return props.handshake.status === 'PENDING' && 
+         !(props.handshake.seekerConfirmed && props.handshake.providerConfirmed);
+});
+
+async function handleCancel() {
+  if (!props.handshake) return;
+  
+  if (!confirm('Are you sure you want to cancel this handshake? This action cannot be undone.')) {
+    return;
+  }
+
+  canceling.value = true;
+  try {
+    const cancelledHandshake = await handshakeStore.cancelHandshake(props.handshake.id);
+    emit('handshakeCancelled', cancelledHandshake);
+  } catch (error) {
+    console.error('Failed to cancel handshake:', error);
+    alert(error instanceof Error ? error.message : 'Failed to cancel handshake');
+  } finally {
+    canceling.value = false;
+  }
+}
 
 function formatDate(dateString: string | null): string {
   if (!dateString) return '';
