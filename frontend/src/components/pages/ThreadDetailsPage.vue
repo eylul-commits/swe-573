@@ -44,7 +44,7 @@
                     {{ thread.title }}
                   </h1>
                   <Button 
-                    v-if="thread.author.id !== appStore.currentUser?.id.toString()"
+                    v-if="thread.author.id !== appStore.currentUser?.id"
                     @click.stop="openReportTopicModal"
                     variant="outline"
                     size="sm"
@@ -91,7 +91,7 @@
                       <span class="text-sm text-gray-500">{{ formatDistanceToNow(post.createdAt) }}</span>
                     </div>
                     <Button 
-                      v-if="post.author.id !== appStore.currentUser?.id.toString()"
+                      v-if="post.author.id !== appStore.currentUser?.id"
                       @click.stop="openReportPostModal(post)"
                       variant="ghost"
                       size="sm"
@@ -142,7 +142,7 @@
     <ReportContentModal
       v-if="thread"
       v-model="reportTopicModalOpen"
-      :reported-user-id="parseInt(thread.author.id)"
+      :reported-user-id="thread.author.id"
       :reported-user-name="thread.author.name"
       :reported-forum-topic-id="thread.id"
       report-type="FORUM_TOPIC"
@@ -153,7 +153,7 @@
     <ReportContentModal
       v-if="selectedPost"
       v-model="reportPostModalOpen"
-      :reported-user-id="parseInt(selectedPost.author.id)"
+      :reported-user-id="selectedPost.author.id"
       :reported-user-name="selectedPost.author.name"
       :reported-forum-post-id="selectedPost.id"
       report-type="FORUM_POST"
