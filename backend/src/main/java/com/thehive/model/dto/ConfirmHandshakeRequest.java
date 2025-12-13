@@ -12,7 +12,7 @@ import java.time.LocalDateTime;
 @AllArgsConstructor
 public class ConfirmHandshakeRequest {
     
-    @NotNull(message = "Completion date is required")
-    private LocalDateTime completedAt;
+    @NotNull(message = "Agreed date is required")
+    private LocalDateTime agreedDate;
 }
 

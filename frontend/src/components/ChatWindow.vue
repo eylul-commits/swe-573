@@ -35,7 +35,7 @@
     </div>
 
     <div v-else-if="handshake && handshake.status === 'CONFIRMED'" class="bg-green-50 border-b border-green-200 px-4 py-2 text-sm">
-      <span class="text-green-700">✓ Service confirmed for {{ formatDate(handshake.completedAt) }}</span>
+      <span class="text-green-700">✓ Service confirmed for {{ formatDate(handshake.agreedDate) }}</span>
     </div>
 
     <!-- Chat Messages Container -->

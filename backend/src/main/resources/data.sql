@@ -56,7 +56,7 @@ INSERT INTO request_tags (request_id, tag_id) VALUES (7, 4) ON CONFLICT DO NOTHI
 INSERT INTO request_tags (request_id, tag_id) VALUES (8, 9) ON CONFLICT DO NOTHING;
 
 -- HANDSHAKES
-INSERT INTO handshakes (id, offer_id, seeker_id, provider_id, status, duration_hours, created_at, completed_at)
+INSERT INTO handshakes (id, offer_id, seeker_id, provider_id, status, duration_hours, created_at, agreed_at)
 VALUES
 (1, 1, 2, 1, 'COMPLETED', 2, NOW() - INTERVAL '2 days', NOW()),
 (2, 2, 3, 2, 'COMPLETED', 3, NOW() - INTERVAL '5 days', NOW() - INTERVAL '2 days'),

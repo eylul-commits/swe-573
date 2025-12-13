@@ -55,8 +55,8 @@ public class Handshake {
     @Column(name = "created_at", updatable = false)
     private LocalDateTime createdAt;
 
-    @Column(name = "completed_at")
-    private LocalDateTime completedAt;
+    @Column(name = "agreed_at")
+    private LocalDateTime agreedDate;
 
     // Relationships
     @OneToMany(mappedBy = "handshake", cascade = CascadeType.ALL)

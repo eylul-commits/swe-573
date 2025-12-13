@@ -134,7 +134,7 @@ async function onConfirm() {
 
   try {
     const updatedHandshake = await handshakeStore.confirmHandshake(props.handshake.id, {
-      completedAt: new Date(completionDate.value).toISOString(),
+      agreedDate: new Date(completionDate.value).toISOString(),
     });
 
     emit('confirmed', updatedHandshake);

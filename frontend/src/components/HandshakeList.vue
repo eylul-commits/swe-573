@@ -66,11 +66,11 @@
           </div>
         </div>
 
-        <!-- Completion Date -->
-        <div v-if="handshake.completedAt" class="bg-gray-50 rounded-lg p-3 mb-4">
+        <!-- Agreed Date -->
+        <div v-if="handshake.agreedDate" class="bg-gray-50 rounded-lg p-3 mb-4">
           <p class="text-sm text-gray-700">
-            <span class="font-medium">Completion Date:</span>
-            {{ formatDateTime(handshake.completedAt) }}
+            <span class="font-medium">Agreed Date:</span>
+            {{ formatDateTime(handshake.agreedDate) }}
           </p>
         </div>
 

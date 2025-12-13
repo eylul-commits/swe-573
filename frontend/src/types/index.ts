@@ -168,7 +168,7 @@ export interface Handshake {
   seekerConfirmed: boolean;
   providerConfirmed: boolean;
   createdAt: string;
-  completedAt: string | null;
+  agreedDate: string | null;
   canRate: boolean;
 }
 
@@ -179,7 +179,7 @@ export interface CreateHandshakeRequest {
 }
 
 export interface ConfirmHandshakeRequest {
-  completedAt: string;
+  agreedDate: string;
 }
 
 export interface CreateRatingRequest {
