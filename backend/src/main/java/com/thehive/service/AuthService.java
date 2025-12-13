@@ -9,7 +9,10 @@ import com.thehive.model.dto.UpdateProfileRequest;
 import com.thehive.model.dto.UserDTO;
 import com.thehive.model.entity.TimebankTransaction;
 import com.thehive.model.entity.User;
+import com.thehive.model.entity.UserAction;
+import com.thehive.model.enums.UserStatus;
 import com.thehive.repository.TimebankTransactionRepository;
+import com.thehive.repository.UserActionRepository;
 import com.thehive.repository.UserRepository;
 import com.thehive.security.JwtUtil;
 import lombok.RequiredArgsConstructor;
@@ -17,6 +20,7 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.LocalDateTime;
 import java.util.List;
 
 @Service
@@ -27,8 +31,11 @@ public class AuthService {
     private final PasswordEncoder passwordEncoder;
     private final JwtUtil jwtUtil;
     private final TimebankTransactionRepository timebankTransactionRepository;
+    private final UserActionRepository userActionRepository;
     private final StreamChatConfig streamChatConfig;
     private final StreamChatClient streamChatClient;
+    
+    private static final int WARNING_EXPIRATION_DAYS = 30;
 
     @Transactional
     public AuthResponse register(RegisterRequest request) {
@@ -61,7 +68,7 @@ public class AuthService {
         return new AuthResponse(token, userDTO, streamChatToken);
     }
 
-    @Transactional(readOnly = true)
+    @Transactional
     public AuthResponse login(LoginRequest request) {
         // Find user by email
         User user = userRepository.findByEmail(request.getEmail())
@@ -71,6 +78,9 @@ public class AuthService {
         if (!passwordEncoder.matches(request.getPassword(), user.getPasswordHash())) {
             throw new RuntimeException("Invalid email or password");
         }
+
+        // Check and update warning status if needed
+        checkAndUpdateWarningStatus(user);
 
         // Generate JWT token
         String token = jwtUtil.generateToken(user.getEmail(), user.getId());
@@ -104,10 +114,14 @@ public class AuthService {
         return null;
     }
 
-    @Transactional(readOnly = true)
+    @Transactional
     public UserDTO getCurrentUser(Integer userId) {
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> new RuntimeException("User not found"));
+        
+        // Check and update warning status if needed
+        checkAndUpdateWarningStatus(user);
+        
         return convertToDTO(user);
     }
 
@@ -146,6 +160,28 @@ public class AuthService {
         return convertToDTO(user);
     }
 
+    //Check if user has active warnings (within expiration period) and update status if needed
+    private void checkAndUpdateWarningStatus(User user) {
+        if (user.getAccountStatus() != UserStatus.WARNED) return;
+        
+        // get all warning actions for this user
+        List<UserAction> warningActions = userActionRepository.findByUserIdOrderByCreatedAtDesc(user.getId())
+                .stream()
+                .filter(action -> "WARN".equals(action.getActionType()))
+                .toList();
+        
+        // check if any warnings are still active (within expiration period)
+        LocalDateTime expirationThreshold = LocalDateTime.now().minusDays(WARNING_EXPIRATION_DAYS);
+        boolean hasActiveWarnings = warningActions.stream()
+                .anyMatch(action -> action.getCreatedAt().isAfter(expirationThreshold));
+        
+        // if no active warnings, reset status to ACTIVE
+        if (!hasActiveWarnings) {
+            user.setAccountStatus(UserStatus.ACTIVE);
+            userRepository.save(user);
+        }
+    }
+    
     private UserDTO convertToDTO(User user) {
         UserDTO dto = new UserDTO();
         dto.setId(user.getId());

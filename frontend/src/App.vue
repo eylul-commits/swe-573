@@ -3,18 +3,27 @@
   <LoginPage v-if="!appStore.isAuthenticated" />
   
   <!-- Show main app if authenticated -->
-  <div v-else class="flex h-screen bg-gray-50">
-    <!-- Icon Sidebar - Very narrow -->
-    <div class="w-16 bg-gray-900 flex-shrink-0">
-      <Sidebar 
-        :current-page="appStore.currentPage" 
-        @navigate="handleNavigate"
-        @logout="handleLogout"
-      />
+  <div v-else class="flex flex-col h-screen bg-gray-50">
+    <!-- Warning Banner -->
+    <div v-if="appStore.currentUser?.accountStatus === 'WARNED'" 
+         class="bg-yellow-500 text-gray-900 px-4 py-2 text-center text-sm font-medium">
+       You have {{ appStore.currentUser.warningCount || 0 }} warning(s) on your account. Please check our community guideline.
     </div>
 
-    <!-- Main Content -->
-    <component :is="currentPageComponent" />
+    <!-- Main Layout -->
+    <div class="flex flex-1 overflow-hidden">
+      <!-- Icon Sidebar - Very narrow -->
+      <div class="w-16 bg-gray-900 flex-shrink-0">
+        <Sidebar 
+          :current-page="appStore.currentPage" 
+          @navigate="handleNavigate"
+          @logout="handleLogout"
+        />
+      </div>
+
+      <!-- Main Content -->
+      <component :is="currentPageComponent" />
+    </div>
   </div>
 </template>
 

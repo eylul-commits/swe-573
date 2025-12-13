@@ -8,8 +8,11 @@ import com.thehive.model.dto.RegisterRequest;
 import com.thehive.model.dto.UpdateProfileRequest;
 import com.thehive.model.dto.UserDTO;
 import com.thehive.model.entity.User;
+import com.thehive.model.entity.UserAction;
 import com.thehive.model.enums.UserRole;
+import com.thehive.model.enums.UserStatus;
 import com.thehive.repository.TimebankTransactionRepository;
+import com.thehive.repository.UserActionRepository;
 import com.thehive.repository.UserRepository;
 import com.thehive.security.JwtUtil;
 import org.junit.jupiter.api.BeforeEach;
@@ -20,7 +23,9 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.security.crypto.password.PasswordEncoder;
 
+import java.time.LocalDateTime;
 import java.util.Collections;
+import java.util.List;
 import java.util.Optional;
 
 import static org.junit.jupiter.api.Assertions.*;
@@ -42,6 +47,9 @@ class AuthServiceTest {
 
     @Mock
     private TimebankTransactionRepository timebankTransactionRepository;
+
+    @Mock
+    private UserActionRepository userActionRepository;
 
     @Mock
     private StreamChatConfig streamChatConfig;
@@ -454,5 +462,100 @@ class AuthServiceTest {
         verify(userRepository).findById(userId);
         verify(userRepository).save(any(User.class));
         verify(streamChatClient, never()).upsertUser(any(Integer.class), anyString());
+    }
+
+    @Test
+    void getCurrentUser_WithActiveStatus_ShouldNotCheckWarnings() {
+        // Arrange
+        Integer userId = 1;
+        testUser.setAccountStatus(UserStatus.ACTIVE);
+        when(userRepository.findById(userId)).thenReturn(Optional.of(testUser));
+        when(timebankTransactionRepository.findBySenderId(userId)).thenReturn(Collections.emptyList());
+        when(timebankTransactionRepository.findByReceiverId(userId)).thenReturn(Collections.emptyList());
+
+        // Act
+        UserDTO result = authService.getCurrentUser(userId);
+
+        // Assert
+        assertEquals(UserStatus.ACTIVE, result.getAccountStatus());
+        verify(userActionRepository, never()).findByUserIdOrderByCreatedAtDesc(any());
+    }
+
+    @Test
+    void getCurrentUser_WithWarnedStatusAndActiveWarnings_ShouldStayWarned() {
+        // Arrange
+        Integer userId = 1;
+        testUser.setAccountStatus(UserStatus.WARNED);
+        
+        UserAction activeWarning = new UserAction();
+        activeWarning.setActionType("WARN");
+        activeWarning.setCreatedAt(LocalDateTime.now().minusDays(10)); // Within 30 days
+        
+        when(userRepository.findById(userId)).thenReturn(Optional.of(testUser));
+        when(userActionRepository.findByUserIdOrderByCreatedAtDesc(userId)).thenReturn(List.of(activeWarning));
+        when(timebankTransactionRepository.findBySenderId(userId)).thenReturn(Collections.emptyList());
+        when(timebankTransactionRepository.findByReceiverId(userId)).thenReturn(Collections.emptyList());
+
+        // Act
+        UserDTO result = authService.getCurrentUser(userId);
+
+        // Assert
+        assertEquals(UserStatus.WARNED, result.getAccountStatus());
+        verify(userRepository, never()).save(any(User.class));
+    }
+
+    @Test
+    void getCurrentUser_WithWarnedStatusAndExpiredWarnings_ShouldResetToActive() {
+        // Arrange
+        Integer userId = 1;
+        testUser.setAccountStatus(UserStatus.WARNED);
+        
+        UserAction expiredWarning = new UserAction();
+        expiredWarning.setActionType("WARN");
+        expiredWarning.setCreatedAt(LocalDateTime.now().minusDays(35)); // Older than 30 days
+        
+        when(userRepository.findById(userId)).thenReturn(Optional.of(testUser));
+        when(userActionRepository.findByUserIdOrderByCreatedAtDesc(userId)).thenReturn(List.of(expiredWarning));
+        when(userRepository.save(any(User.class))).thenAnswer(invocation -> {
+            User savedUser = invocation.getArgument(0);
+            assertEquals(UserStatus.ACTIVE, savedUser.getAccountStatus());
+            return savedUser;
+        });
+        when(timebankTransactionRepository.findBySenderId(userId)).thenReturn(Collections.emptyList());
+        when(timebankTransactionRepository.findByReceiverId(userId)).thenReturn(Collections.emptyList());
+
+        // Act
+        UserDTO result = authService.getCurrentUser(userId);
+
+        // Assert
+        assertEquals(UserStatus.ACTIVE, result.getAccountStatus());
+        verify(userRepository).save(any(User.class));
+    }
+
+    @Test
+    void getCurrentUser_WithWarnedStatusAndMixedWarnings_ShouldStayWarned() {
+        // Arrange
+        Integer userId = 1;
+        testUser.setAccountStatus(UserStatus.WARNED);
+        
+        UserAction expiredWarning = new UserAction();
+        expiredWarning.setActionType("WARN");
+        expiredWarning.setCreatedAt(LocalDateTime.now().minusDays(35)); // Older than 30 days
+        
+        UserAction activeWarning = new UserAction();
+        activeWarning.setActionType("WARN");
+        activeWarning.setCreatedAt(LocalDateTime.now().minusDays(10)); // Within 30 days
+        
+        when(userRepository.findById(userId)).thenReturn(Optional.of(testUser));
+        when(userActionRepository.findByUserIdOrderByCreatedAtDesc(userId)).thenReturn(List.of(activeWarning, expiredWarning));
+        when(timebankTransactionRepository.findBySenderId(userId)).thenReturn(Collections.emptyList());
+        when(timebankTransactionRepository.findByReceiverId(userId)).thenReturn(Collections.emptyList());
+
+        // Act
+        UserDTO result = authService.getCurrentUser(userId);
+
+        // Assert
+        assertEquals(UserStatus.WARNED, result.getAccountStatus());
+        verify(userRepository, never()).save(any(User.class));
     }
 }
