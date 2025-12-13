@@ -82,7 +82,7 @@ public class HandshakeService {
         handshake.setRequest(serviceRequest);
         handshake.setSeeker(seeker);
         handshake.setProvider(provider);
-        handshake.setDurationHours(request.getDurationHours() != null ? request.getDurationHours() : defaultHours);
+        handshake.setDurationHours(defaultHours);
         handshake.setStatus(HandshakeStatus.PENDING);
         handshake.setSeekerConfirmed(false);
         handshake.setProviderConfirmed(false);

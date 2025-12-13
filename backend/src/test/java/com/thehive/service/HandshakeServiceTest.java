@@ -103,7 +103,6 @@ class HandshakeServiceTest {
         CreateHandshakeRequest request = new CreateHandshakeRequest();
         request.setOfferId(1);
         request.setProviderId(2);
-        request.setDurationHours(5);
 
         when(offerRepository.findById(1)).thenReturn(Optional.of(offer));
         when(userRepository.findById(1)).thenReturn(Optional.of(seeker));

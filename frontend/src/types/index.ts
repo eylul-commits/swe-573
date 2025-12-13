@@ -176,7 +176,6 @@ export interface CreateHandshakeRequest {
   offerId?: number; // For offers
   requestId?: number; // For requests (either offerId or requestId must be provided)
   providerId: number;
-  durationHours: number;
 }
 
 export interface ConfirmHandshakeRequest {
