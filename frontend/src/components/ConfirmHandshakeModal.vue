@@ -146,6 +146,16 @@ watch(() => props.modelValue, (newValue) => {
   }
 });
 
+// Watch for handshake prop changes
+watch(() => props.handshake?.agreedDate, (newAgreedDate) => {
+  if (props.modelValue && newAgreedDate) {
+    const date = new Date(newAgreedDate);
+    formDate.value = date.toISOString().slice(0, 16);
+  } else if (props.modelValue && !newAgreedDate && !isServiceCreator.value) {
+    formDate.value = '';
+  }
+});
+
 async function onConfirm() {
   if (!props.handshake || !formDate.value) return;
 

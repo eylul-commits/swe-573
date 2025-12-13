@@ -179,6 +179,15 @@ async function refreshHandshakes() {
   loading.value = true;
   try {
     await handshakeStore.loadHandshakes();
+    // Sync selectedHandshake with updated store data
+    if (selectedHandshake.value) {
+      const updatedHandshake = handshakeStore.handshakes.find(
+        (h) => h.id === selectedHandshake.value?.id
+      );
+      if (updatedHandshake) {
+        selectedHandshake.value = updatedHandshake;
+      }
+    }
   } finally {
     loading.value = false;
   }
