@@ -491,13 +491,6 @@ watch(
   { immediate: true }
 )
 
-const formattedStartDate = computed(() => {
-  if (!service.value?.startDate) {
-    return 'Start date not specified'
-  }
-  return `Available from ${formatDate(service.value.startDate)}`
-})
-
 const scheduleText = computed(() => {
   const start = service.value?.startDate
   const end = service.value?.endDate
