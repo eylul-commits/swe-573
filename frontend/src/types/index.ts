@@ -121,6 +121,8 @@ export interface ServiceRating {
   friendliness: number;
   communicative: number;
   preparedness: number;
+  serviceId?: number;
+  serviceTitle?: string;
 }
 
 export interface ServiceRatingSummary {

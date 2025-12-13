@@ -82,8 +82,22 @@
                   @click="viewService(service.id)"
                   class="p-4 border border-gray-200 rounded-lg cursor-pointer transition-colors hover:bg-gray-50"
                 >
+                  <div class="flex gap-4">
+                    <!-- Service Image -->
+                    <div v-if="service.imageUrls && service.imageUrls.length > 0" class="flex-shrink-0">
+                      <div class="w-40 h-40 rounded-lg overflow-hidden border border-gray-200">
+                        <ImageWithFallback
+                          :src="service.imageUrls[0]"
+                          :alt="service.title"
+                          className="w-full h-full object-cover"
+                        />
+                      </div>
+                    </div>
+                    
+                    <!-- Service Content -->
+                    <div class="flex-1 min-w-0">
                   <div class="flex items-start justify-between mb-2">
-                    <div class="flex-1">
+                        <div class="flex-1 min-w-0">
                       <h3 class="font-medium text-gray-900 mb-1">{{ service.title }}</h3>
                       <p class="text-sm text-gray-600">{{ service.location }}</p>
                     </div>
@@ -125,6 +139,8 @@
                     >
                       {{ tag }}
                     </Badge>
+                      </div>
+                    </div>
                   </div>
                 </div>
               </div>
@@ -165,6 +181,13 @@
                         {{ rating.rater.name }}
                       </div>
                       <div class="text-xs text-gray-500">{{ formatDate(rating.createdAt) }}</div>
+                      <div v-if="rating.serviceTitle" class="text-sm text-gray-600 mt-1">
+                        <span class="font-medium">Service: </span>
+                        <span v-if="rating.serviceId" @click="viewService(rating.serviceId.toString())">
+                          {{ rating.serviceTitle }}
+                        </span>
+                        <span v-else>{{ rating.serviceTitle }}</span>
+                      </div>
                     </div>
                   </div>
                   
@@ -241,6 +264,7 @@ import TabsTrigger from '../ui/TabsTrigger.vue'
 import Avatar from '../ui/Avatar.vue'
 import AvatarImage from '../ui/AvatarImage.vue'
 import AvatarFallback from '../ui/AvatarFallback.vue'
+import ImageWithFallback from '../ui/ImageWithFallback.vue'
 import { useAppStore } from '../../stores/appStore'
 import { getUserById } from '../../services/authService'
 import { getUserServices } from '../../services/marketplaceService'
@@ -329,6 +353,8 @@ async function loadProfile() {
         friendliness: rating.friendliness || 0,
         communicative: rating.communicative || 0,
         preparedness: rating.preparedness || 0,
+        serviceId: rating.serviceId,
+        serviceTitle: rating.serviceTitle,
       }))
     } catch (err) {
       console.error('Failed to load user ratings:', err)
