@@ -39,7 +39,7 @@
           </label>
           <Input
             id="completion-date"
-            v-model="completionDate"
+            v-model="formDate"
             type="datetime-local"
             :min="minDate"
             :disabled="!isServiceCreator"
@@ -73,7 +73,7 @@
         </Button>
         <Button
           @click="onConfirm"
-          :disabled="loading || !completionDate"
+          :disabled="loading || !formDate"
           class="bg-amber-500 hover:bg-amber-600"
         >
           {{ loading ? 'Confirming...' : 'Confirm Handshake' }}
@@ -115,7 +115,7 @@ const isOpen = computed({
   set: (value) => emit('update:modelValue', value),
 });
 
-const completionDate = ref('');
+const formDate = ref('');
 const loading = ref(false);
 const error = ref<string | null>(null);
 
@@ -137,9 +137,9 @@ watch(() => props.modelValue, (newValue) => {
     // If there's already an agreed date, use it (for both creator and non-creator)
     if (props.handshake?.agreedDate) {
       const date = new Date(props.handshake.agreedDate);
-      completionDate.value = date.toISOString().slice(0, 16);
+      formDate.value = date.toISOString().slice(0, 16);
     } else {
-      completionDate.value = '';
+      formDate.value = '';
     }
     error.value = null;
     loading.value = false;
@@ -147,15 +147,15 @@ watch(() => props.modelValue, (newValue) => {
 });
 
 async function onConfirm() {
-  if (!props.handshake || !completionDate.value) return;
+  if (!props.handshake || !formDate.value) return;
 
   loading.value = true;
   error.value = null;
 
   try {
-    const dateString = completionDate.value.length === 16 
-      ? `${completionDate.value}:00` 
-      : completionDate.value;
+    const dateString = formDate.value.length === 16 
+      ? `${formDate.value}:00` 
+      : formDate.value;
     
     const updatedHandshake = await handshakeStore.confirmHandshake(props.handshake.id, {
       agreedDate: dateString,
