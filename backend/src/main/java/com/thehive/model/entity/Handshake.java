@@ -42,8 +42,8 @@ public class Handshake {
     @Column(length = 20)
     private HandshakeStatus status = HandshakeStatus.PENDING;
 
-    @Column(name = "agreed_hours")
-    private Integer agreedHours;
+    @Column(name = "duration_hours")
+    private Integer durationHours;
 
     @Column(name = "seeker_confirmed")
     private Boolean seekerConfirmed = false;

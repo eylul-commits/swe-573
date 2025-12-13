@@ -617,12 +617,12 @@ const handleAcceptService = async () => {
 
   try {
     // Parse the timebank hours
-    const agreedHours = parseInt(service.value.timebank.replace(/[^\d]/g, '')) || 1
+    const durationHours = parseInt(service.value.timebank.replace(/[^\d]/g, '')) || 1
 
     // Create the handshake (pass either offerId or requestId based on type)
     const handshakeRequest: any = {
       providerId: parseInt(service.value.poster.id),
-      agreedHours: agreedHours
+      durationHours: durationHours
     }
     
     if (service.value.type === 'OFFER') {

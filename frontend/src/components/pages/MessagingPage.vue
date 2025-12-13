@@ -76,7 +76,7 @@
                   
                   <div class="flex items-center gap-2 text-xs text-gray-500">
                     <HandshakeIcon class="w-3 h-3" />
-                    <span>{{ handshake.agreedHours }}h</span>
+                    <span>{{ handshake.durationHours }}h</span>
                     <span>•</span>
                     <span>{{ formatDate(handshake.createdAt) }}</span>
                   </div>

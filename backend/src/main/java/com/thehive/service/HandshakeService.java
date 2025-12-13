@@ -82,7 +82,7 @@ public class HandshakeService {
         handshake.setRequest(serviceRequest);
         handshake.setSeeker(seeker);
         handshake.setProvider(provider);
-        handshake.setAgreedHours(request.getAgreedHours() != null ? request.getAgreedHours() : defaultHours);
+        handshake.setDurationHours(request.getDurationHours() != null ? request.getDurationHours() : defaultHours);
         handshake.setStatus(HandshakeStatus.PENDING);
         handshake.setSeekerConfirmed(false);
         handshake.setProviderConfirmed(false);
@@ -239,7 +239,7 @@ public class HandshakeService {
         dto.setSeeker(convertToAuthorDTO(handshake.getSeeker()));
         dto.setProvider(convertToAuthorDTO(handshake.getProvider()));
         dto.setStatus(handshake.getStatus());
-        dto.setAgreedHours(handshake.getAgreedHours());
+        dto.setDurationHours(handshake.getDurationHours());
         dto.setSeekerConfirmed(handshake.getSeekerConfirmed());
         dto.setProviderConfirmed(handshake.getProviderConfirmed());
         dto.setCreatedAt(handshake.getCreatedAt());

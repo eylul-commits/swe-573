@@ -19,7 +19,7 @@ public class CreateHandshakeRequest {
     @NotNull(message = "Provider ID is required")
     private Integer providerId;
     
-    @Positive(message = "Agreed hours must be positive")
-    private Integer agreedHours;
+    @Positive(message = "Duration hours must be positive")
+    private Integer durationHours;
 }
 

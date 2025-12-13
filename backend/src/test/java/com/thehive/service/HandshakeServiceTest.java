@@ -91,7 +91,7 @@ class HandshakeServiceTest {
         handshake.setSeeker(seeker);
         handshake.setProvider(provider);
         handshake.setStatus(HandshakeStatus.PENDING);
-        handshake.setAgreedHours(5);
+        handshake.setDurationHours(5);
         handshake.setSeekerConfirmed(false);
         handshake.setProviderConfirmed(false);
         handshake.setCreatedAt(LocalDateTime.now());
@@ -103,7 +103,7 @@ class HandshakeServiceTest {
         CreateHandshakeRequest request = new CreateHandshakeRequest();
         request.setOfferId(1);
         request.setProviderId(2);
-        request.setAgreedHours(5);
+        request.setDurationHours(5);
 
         when(offerRepository.findById(1)).thenReturn(Optional.of(offer));
         when(userRepository.findById(1)).thenReturn(Optional.of(seeker));

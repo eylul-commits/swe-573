@@ -16,7 +16,7 @@
           <div class="text-sm text-gray-600 space-y-1">
             <p><span class="font-medium">Provider:</span> {{ handshake.provider.name }}</p>
             <p><span class="font-medium">Seeker:</span> {{ handshake.seeker.name }}</p>
-            <p><span class="font-medium">Agreed Hours:</span> {{ handshake.agreedHours }} hours</p>
+            <p><span class="font-medium">Duration Hours:</span> {{ handshake.durationHours }} hours</p>
           </div>
         </div>
 

@@ -164,7 +164,7 @@ export interface Handshake {
   seeker: AuthorSummary;
   provider: AuthorSummary;
   status: HandshakeStatus;
-  agreedHours: number;
+  durationHours: number;
   seekerConfirmed: boolean;
   providerConfirmed: boolean;
   createdAt: string;
@@ -176,7 +176,7 @@ export interface CreateHandshakeRequest {
   offerId?: number; // For offers
   requestId?: number; // For requests (either offerId or requestId must be provided)
   providerId: number;
-  agreedHours: number;
+  durationHours: number;
 }
 
 export interface ConfirmHandshakeRequest {

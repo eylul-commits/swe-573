@@ -21,7 +21,7 @@
               {{ handshake.offerTitle }}
             </h3>
             <div class="flex items-center gap-4 text-sm text-gray-600">
-              <span>{{ handshake.agreedHours }} hours</span>
+              <span>{{ handshake.durationHours }} hours</span>
               <span>•</span>
               <span>{{ formatDate(handshake.createdAt) }}</span>
             </div>

@@ -18,7 +18,7 @@ public class HandshakeDTO {
     private AuthorDTO seeker;
     private AuthorDTO provider;
     private HandshakeStatus status;
-    private Integer agreedHours;
+    private Integer durationHours;
     private Boolean seekerConfirmed;
     private Boolean providerConfirmed;
     private LocalDateTime createdAt;
