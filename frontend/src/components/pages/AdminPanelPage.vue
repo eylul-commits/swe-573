@@ -126,7 +126,7 @@
             <label class="text-sm font-medium">Admin Notes</label>
             <Textarea v-model="resolveForm.adminNotes" placeholder="Add notes about resolution..." />
           </div>
-          <div>
+          <div v-if="selectedReport?.reportedUserRole !== 'ADMIN'">
             <label class="text-sm font-medium">Action on User</label>
             <Select v-model="resolveForm.action">
               <SelectTrigger>
@@ -138,6 +138,9 @@
                 <SelectItem value="DEACTIVATE">Deactivate User</SelectItem>
               </SelectContent>
             </Select>
+          </div>
+          <div v-if="selectedReport?.reportedUserRole === 'ADMIN'" class="text-sm text-gray-500">
+            Admin users cannot be managed through this interface.
           </div>
         </div>
         <DialogFooter>
@@ -156,7 +159,7 @@
         </DialogHeader>
         <div class="px-6">
         <div class="space-y-4">
-          <div>
+          <div v-if="selectedUser?.role !== 'ADMIN'">
             <label class="text-sm font-medium">Action</label>
             <Select v-model="userManagementForm.action">
               <SelectTrigger>
@@ -168,6 +171,9 @@
                 <SelectItem value="ACTIVATE">Activate</SelectItem>
               </SelectContent>
             </Select>
+          </div>
+          <div v-if="selectedUser?.role === 'ADMIN'" class="text-sm text-gray-500">
+            Admin users cannot be managed through this interface.
           </div>
           <div>
             <label class="text-sm font-medium">Reason</label>
@@ -361,14 +367,23 @@ function openResolveDialog(report: Report) {
 
 async function handleResolveReport() {
   if (!selectedReport.value) return
+  
+  // Prevent action if trying to warn/deactivate admin user
+  if (selectedReport.value.reportedUserRole === 'ADMIN' && 
+      (resolveForm.value.action === 'WARN' || resolveForm.value.action === 'DEACTIVATE')) {
+    alert('Cannot warn or deactivate admin users')
+    return
+  }
+  
   try {
     await resolveReportApi(selectedReport.value.id, resolveForm.value)
     resolveDialogOpen.value = false
     await loadReports()
     await loadStatistics()
-  } catch (error) {
+  } catch (error: any) {
     console.error('Failed to resolve report:', error)
-    alert('Failed to resolve report')
+    const errorMessage = error?.response?.data?.message || error?.message || 'Failed to resolve report'
+    alert(errorMessage)
   }
 }
 
@@ -384,6 +399,14 @@ function openUserManagementDialog(user: User) {
 
 async function handleManageUser() {
   if (!selectedUser.value) return
+  
+  // Prevent action if trying to warn/deactivate admin user
+  if (selectedUser.value.role === 'ADMIN' && 
+      (userManagementForm.value.action === 'WARN' || userManagementForm.value.action === 'DEACTIVATE')) {
+    alert('Cannot warn or deactivate admin users')
+    return
+  }
+  
   try {
     await manageUser(userManagementForm.value)
     userManagementDialogOpen.value = false
@@ -393,9 +416,10 @@ async function handleManageUser() {
     if (userDetailsDialogOpen.value && selectedUser.value) {
       userActions.value = await getUserActions(selectedUser.value.id)
     }
-  } catch (error) {
+  } catch (error: any) {
     console.error('Failed to manage user:', error)
-    alert('Failed to manage user')
+    const errorMessage = error?.response?.data?.message || error?.message || 'Failed to manage user'
+    alert(errorMessage)
   }
 }
 

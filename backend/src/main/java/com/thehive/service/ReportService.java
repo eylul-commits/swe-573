@@ -148,6 +148,7 @@ public class ReportService {
         dto.setReportedUserId(report.getReportedUser().getId());
         dto.setReportedUserName(report.getReportedUser().getName());
         dto.setReportedUserEmail(report.getReportedUser().getEmail());
+        dto.setReportedUserRole(report.getReportedUser().getRole());
         dto.setReportType(report.getReportType());
         
         if (report.getReportedOffer() != null) {

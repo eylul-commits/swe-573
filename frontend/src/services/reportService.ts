@@ -11,6 +11,7 @@ export interface Report {
   reportedUserId: number;
   reportedUserName: string;
   reportedUserEmail: string;
+  reportedUserRole?: 'USER' | 'ADMIN';
   reportType: ReportType;
   reportedOfferId?: number;
   reportedOfferTitle?: string;

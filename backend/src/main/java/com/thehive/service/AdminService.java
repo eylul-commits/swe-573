@@ -98,7 +98,13 @@ public class AdminService {
             throw new RuntimeException("Only admins can manage users");
         }
 
-        switch (request.getAction().toUpperCase()) {
+        // Prevent warnings and deactivation of admin users
+        String action = request.getAction().toUpperCase();
+        if (user.getRole() == UserRole.ADMIN && (action.equals("WARN") || action.equals("DEACTIVATE"))) {
+            throw new IllegalArgumentException("Cannot warn or deactivate admin users");
+        }
+
+        switch (action) {
             case "WARN":
                 user.setWarningCount(user.getWarningCount() + 1);
                 user.setAccountStatus(UserStatus.WARNED);
@@ -116,13 +122,13 @@ public class AdminService {
         user = userRepository.save(user);
         
         // Record the action
-        UserAction action = new UserAction();
-        action.setUser(user);
-        action.setAdmin(admin);
-        action.setActionType(request.getAction().toUpperCase());
-        action.setReason(request.getReason());
-        action.setReport(null); // Direct user management, not from report
-        userActionRepository.save(action);
+        UserAction userAction = new UserAction();
+        userAction.setUser(user);
+        userAction.setAdmin(admin);
+        userAction.setActionType(request.getAction().toUpperCase());
+        userAction.setReason(request.getReason());
+        userAction.setReport(null); // Direct user management, not from report
+        userActionRepository.save(userAction);
         
         return convertToUserDTO(user);
     }
@@ -149,8 +155,14 @@ public class AdminService {
             User user = userRepository.findById(request.getUserId())
                     .orElseThrow(() -> new ResourceNotFoundException("User not found with id: " + request.getUserId()));
 
+            // Prevent warnings and deactivation of admin users
+            String action = request.getAction().toUpperCase();
+            if (user.getRole() == UserRole.ADMIN && (action.equals("WARN") || action.equals("DEACTIVATE"))) {
+                throw new IllegalArgumentException("Cannot warn or deactivate admin users");
+            }
+
             boolean userModified = false;
-            switch (request.getAction().toUpperCase()) {
+            switch (action) {
                 case "WARN":
                     user.setWarningCount(user.getWarningCount() + 1);
                     user.setAccountStatus(UserStatus.WARNED);
@@ -173,13 +185,13 @@ public class AdminService {
             }
             
             // Record the action (even for NO_ACTION for audit trail)
-            UserAction action = new UserAction();
-            action.setUser(user);
-            action.setAdmin(admin);
-            action.setActionType(request.getAction().toUpperCase());
-            action.setReason(request.getAdminNotes()); // Use admin notes as reason when resolving report
-            action.setReport(report);
-            userActionRepository.save(action);
+            UserAction userAction = new UserAction();
+            userAction.setUser(user);
+            userAction.setAdmin(admin);
+            userAction.setActionType(request.getAction().toUpperCase());
+            userAction.setReason(request.getAdminNotes()); // Use admin notes as reason when resolving report
+            userAction.setReport(report);
+            userActionRepository.save(userAction);
         }
 
         report = reportRepository.save(report);
@@ -245,6 +257,7 @@ public class AdminService {
         dto.setReportedUserId(report.getReportedUser().getId());
         dto.setReportedUserName(report.getReportedUser().getName());
         dto.setReportedUserEmail(report.getReportedUser().getEmail());
+        dto.setReportedUserRole(report.getReportedUser().getRole());
         dto.setReportType(report.getReportType());
         
         if (report.getReportedOffer() != null) {

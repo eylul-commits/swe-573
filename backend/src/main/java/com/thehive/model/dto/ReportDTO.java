@@ -2,6 +2,7 @@ package com.thehive.model.dto;
 
 import com.thehive.model.enums.ReportStatus;
 import com.thehive.model.enums.ReportType;
+import com.thehive.model.enums.UserRole;
 import lombok.Data;
 
 import java.time.LocalDateTime;
@@ -15,6 +16,7 @@ public class ReportDTO {
     private Integer reportedUserId;
     private String reportedUserName;
     private String reportedUserEmail;
+    private UserRole reportedUserRole;
     private ReportType reportType;
     private Integer reportedOfferId;
     private String reportedOfferTitle;
