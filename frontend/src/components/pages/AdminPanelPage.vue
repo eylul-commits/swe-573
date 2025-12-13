@@ -123,17 +123,6 @@
         <div class="px-6">
         <div class="space-y-4">
           <div>
-            <label class="text-sm font-medium">Status</label>
-            <Select v-model="resolveForm.status">
-              <SelectTrigger>
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="RESOLVED">Resolved</SelectItem>
-              </SelectContent>
-            </Select>
-          </div>
-          <div>
             <label class="text-sm font-medium">Admin Notes</label>
             <Textarea v-model="resolveForm.adminNotes" placeholder="Add notes about resolution..." />
           </div>
@@ -216,11 +205,11 @@
             <!-- Actions Taken -->
             <div>
               <h3 class="font-semibold mb-3">Actions Taken</h3>
-              <div v-if="userActions.length === 0" class="text-sm text-gray-500">
+              <div v-if="nonWarningActions.length === 0" class="text-sm text-gray-500">
                 No actions have been taken for this user.
               </div>
               <div v-else class="space-y-3">
-                <Card v-for="action in userActions" :key="action.id" class="p-3">
+                <Card v-for="action in nonWarningActions" :key="action.id" class="p-3">
                   <div class="flex justify-between items-start mb-2">
                     <div class="flex items-center gap-2">
                       <Badge :variant="getActionVariant(action.actionType)">
@@ -435,6 +424,10 @@ async function openUserDetailsDialog(user: User) {
 
 const warnings = computed(() => {
   return userActions.value.filter(action => action.actionType === 'WARN')
+})
+
+const nonWarningActions = computed(() => {
+  return userActions.value.filter(action => action.actionType !== 'WARN')
 })
 
 function getActionVariant(actionType: string) {
