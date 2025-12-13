@@ -242,7 +242,7 @@ const handleOpenRating = (handshake: Handshake) => {
   // TODO: Implement rating modal
 }
 
-const handleCancelled = async (handshake: Handshake) => {
+const handleCancelled = async () => {
   // Refresh handshakes after cancellation
   try {
     await handshakeStore.loadHandshakes()
