@@ -174,6 +174,17 @@ CREATE TABLE IF NOT EXISTS reports (
     resolved_by_id INT
 );
 
+-- User actions table
+CREATE TABLE IF NOT EXISTS user_actions (
+    id SERIAL PRIMARY KEY,
+    user_id INT NOT NULL,
+    admin_id INT NOT NULL,
+    action_type VARCHAR(20) NOT NULL,
+    reason TEXT,
+    report_id INT,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
 -- Messages table
 CREATE TABLE IF NOT EXISTS messages (
     id SERIAL PRIMARY KEY,
@@ -314,6 +325,17 @@ BEGIN
     END IF;
     IF NOT EXISTS (SELECT 1 FROM pg_constraint WHERE conname = 'fk_reports_resolved_by') THEN
         ALTER TABLE reports ADD CONSTRAINT fk_reports_resolved_by FOREIGN KEY (resolved_by_id) REFERENCES users(id);
+    END IF;
+    
+    -- User actions constraints
+    IF NOT EXISTS (SELECT 1 FROM pg_constraint WHERE conname = 'fk_user_actions_user') THEN
+        ALTER TABLE user_actions ADD CONSTRAINT fk_user_actions_user FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE;
+    END IF;
+    IF NOT EXISTS (SELECT 1 FROM pg_constraint WHERE conname = 'fk_user_actions_admin') THEN
+        ALTER TABLE user_actions ADD CONSTRAINT fk_user_actions_admin FOREIGN KEY (admin_id) REFERENCES users(id);
+    END IF;
+    IF NOT EXISTS (SELECT 1 FROM pg_constraint WHERE conname = 'fk_user_actions_report') THEN
+        ALTER TABLE user_actions ADD CONSTRAINT fk_user_actions_report FOREIGN KEY (report_id) REFERENCES reports(id) ON DELETE SET NULL;
     END IF;
     
     -- Messages constraints

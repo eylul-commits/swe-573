@@ -6,8 +6,10 @@ import com.thehive.model.dto.ReportDTO;
 import com.thehive.model.dto.ResolveReportRequest;
 import com.thehive.model.dto.UserDTO;
 import com.thehive.model.dto.UserManagementRequest;
+import com.thehive.model.dto.UserActionDTO;
 import com.thehive.model.entity.Report;
 import com.thehive.model.entity.User;
+import com.thehive.model.entity.UserAction;
 import com.thehive.model.enums.ReportStatus;
 import com.thehive.model.enums.UserRole;
 import com.thehive.model.enums.UserStatus;
@@ -17,6 +19,7 @@ import com.thehive.repository.OfferRepository;
 import com.thehive.repository.RequestRepository;
 import com.thehive.repository.HandshakeRepository;
 import com.thehive.repository.MessageRepository;
+import com.thehive.repository.UserActionRepository;
 import com.thehive.util.AdminUtil;
 import com.thehive.model.enums.ItemStatus;
 import lombok.RequiredArgsConstructor;
@@ -37,6 +40,7 @@ public class AdminService {
     private final ReportRepository reportRepository;
     private final HandshakeRepository handshakeRepository;
     private final MessageRepository messageRepository;
+    private final UserActionRepository userActionRepository;
 
     @Transactional(readOnly = true)
     public AdminStatisticsDTO getStatistics() {
@@ -110,6 +114,16 @@ public class AdminService {
         }
 
         user = userRepository.save(user);
+        
+        // Record the action
+        UserAction action = new UserAction();
+        action.setUser(user);
+        action.setAdmin(admin);
+        action.setActionType(request.getAction().toUpperCase());
+        action.setReason(request.getReason());
+        action.setReport(null); // Direct user management, not from report
+        userActionRepository.save(action);
+        
         return convertToUserDTO(user);
     }
 
@@ -135,21 +149,37 @@ public class AdminService {
             User user = userRepository.findById(request.getUserId())
                     .orElseThrow(() -> new ResourceNotFoundException("User not found with id: " + request.getUserId()));
 
+            boolean userModified = false;
             switch (request.getAction().toUpperCase()) {
                 case "WARN":
                     user.setWarningCount(user.getWarningCount() + 1);
                     user.setAccountStatus(UserStatus.WARNED);
+                    userModified = true;
                     break;
                 case "DEACTIVATE":
                     user.setAccountStatus(UserStatus.DEACTIVATED);
+                    userModified = true;
                     break;
                 case "NO_ACTION":
-                    // No action needed
+                    // No action needed - don't modify user but still record the action
                     break;
                 default:
                     throw new IllegalArgumentException("Invalid action: " + request.getAction());
             }
-            userRepository.save(user);
+            
+            // Only save user if it was modified
+            if (userModified) {
+                userRepository.save(user);
+            }
+            
+            // Record the action (even for NO_ACTION for audit trail)
+            UserAction action = new UserAction();
+            action.setUser(user);
+            action.setAdmin(admin);
+            action.setActionType(request.getAction().toUpperCase());
+            action.setReason(request.getAdminNotes()); // Use admin notes as reason when resolving report
+            action.setReport(report);
+            userActionRepository.save(action);
         }
 
         report = reportRepository.save(report);
@@ -178,6 +208,15 @@ public class AdminService {
         Report report = reportRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Report not found with id: " + id));
         return convertToReportDTO(report);
+    }
+
+    @Transactional(readOnly = true)
+    public List<UserActionDTO> getUserActions(Integer userId) {
+        AdminUtil.requireAdmin(userRepository);
+        List<UserAction> actions = userActionRepository.findByUserIdOrderByCreatedAtDesc(userId);
+        return actions.stream()
+                .map(this::convertToUserActionDTO)
+                .collect(Collectors.toList());
     }
 
     private UserDTO convertToUserDTO(User user) {
@@ -237,6 +276,22 @@ public class AdminService {
             dto.setResolvedByName(report.getResolvedBy().getName());
         }
         
+        return dto;
+    }
+
+    private UserActionDTO convertToUserActionDTO(UserAction action) {
+        UserActionDTO dto = new UserActionDTO();
+        dto.setId(action.getId());
+        dto.setUserId(action.getUser().getId());
+        dto.setAdminId(action.getAdmin().getId());
+        dto.setAdminName(action.getAdmin().getName());
+        dto.setAdminEmail(action.getAdmin().getEmail());
+        dto.setActionType(action.getActionType());
+        dto.setReason(action.getReason());
+        if (action.getReport() != null) {
+            dto.setReportId(action.getReport().getId());
+        }
+        dto.setCreatedAt(action.getCreatedAt());
         return dto;
     }
 }

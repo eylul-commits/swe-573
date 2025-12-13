@@ -6,8 +6,10 @@ import com.thehive.model.dto.ReportDTO;
 import com.thehive.model.dto.ResolveReportRequest;
 import com.thehive.model.dto.UserDTO;
 import com.thehive.model.dto.UserManagementRequest;
+import com.thehive.model.dto.UserActionDTO;
 import com.thehive.model.entity.Report;
 import com.thehive.model.entity.User;
+import com.thehive.model.entity.UserAction;
 import com.thehive.model.enums.ItemStatus;
 import com.thehive.model.enums.ReportStatus;
 import com.thehive.model.enums.ReportType;
@@ -19,6 +21,7 @@ import com.thehive.repository.OfferRepository;
 import com.thehive.repository.ReportRepository;
 import com.thehive.repository.RequestRepository;
 import com.thehive.repository.UserRepository;
+import com.thehive.repository.UserActionRepository;
 import com.thehive.util.AdminUtil;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -62,6 +65,9 @@ class AdminServiceTest {
 
     @Mock
     private MessageRepository messageRepository;
+
+    @Mock
+    private UserActionRepository userActionRepository;
 
     @InjectMocks
     private AdminService adminService;
@@ -460,7 +466,7 @@ class AdminServiceTest {
         // Assert
         assertNotNull(result);
         assertEquals(UserStatus.ACTIVE, regularUser.getAccountStatus());
-        verify(userRepository).save(regularUser);
+        verify(userRepository, never()).save(regularUser);
     }
 
     @Test
@@ -626,6 +632,82 @@ class AdminServiceTest {
 
         assertTrue(exception.getMessage().contains("Report not found"));
         verify(reportRepository).findById(999);
+    }
+
+    // ==================== GET USER ACTIONS TESTS ====================
+
+    @Test
+    void getUserActions_WithValidAdmin_ShouldReturnUserActions() {
+        // Arrange
+        setupSecurityContext();
+        UserAction action1 = new UserAction();
+        action1.setId(1);
+        action1.setUser(regularUser);
+        action1.setAdmin(adminUser);
+        action1.setActionType("WARN");
+        action1.setReason("Test warning");
+        action1.setCreatedAt(LocalDateTime.now().minusDays(1));
+
+        UserAction action2 = new UserAction();
+        action2.setId(2);
+        action2.setUser(regularUser);
+        action2.setAdmin(adminUser);
+        action2.setActionType("DEACTIVATE");
+        action2.setReason("Test deactivation");
+        action2.setCreatedAt(LocalDateTime.now());
+
+        List<UserAction> actions = Arrays.asList(action2, action1);
+        when(userActionRepository.findByUserIdOrderByCreatedAtDesc(regularUser.getId())).thenReturn(actions);
+
+        // Act
+        List<UserActionDTO> result = adminService.getUserActions(regularUser.getId());
+
+        // Assert
+        assertNotNull(result);
+        assertEquals(2, result.size());
+        assertEquals("DEACTIVATE", result.get(0).getActionType());
+        assertEquals("WARN", result.get(1).getActionType());
+        verify(userActionRepository).findByUserIdOrderByCreatedAtDesc(regularUser.getId());
+    }
+
+    @Test
+    void getUserActions_WithEmptyActions_ShouldReturnEmptyList() {
+        // Arrange
+        setupSecurityContext();
+        when(userActionRepository.findByUserIdOrderByCreatedAtDesc(regularUser.getId())).thenReturn(Collections.emptyList());
+
+        // Act
+        List<UserActionDTO> result = adminService.getUserActions(regularUser.getId());
+
+        // Assert
+        assertNotNull(result);
+        assertTrue(result.isEmpty());
+        verify(userActionRepository).findByUserIdOrderByCreatedAtDesc(regularUser.getId());
+    }
+
+    @Test
+    void getUserActions_WithReportAction_ShouldIncludeReportId() {
+        // Arrange
+        setupSecurityContext();
+        UserAction action = new UserAction();
+        action.setId(1);
+        action.setUser(regularUser);
+        action.setAdmin(adminUser);
+        action.setActionType("WARN");
+        action.setReason("Report resolved");
+        action.setReport(testReport);
+        action.setCreatedAt(LocalDateTime.now());
+
+        when(userActionRepository.findByUserIdOrderByCreatedAtDesc(regularUser.getId())).thenReturn(Arrays.asList(action));
+
+        // Act
+        List<UserActionDTO> result = adminService.getUserActions(regularUser.getId());
+
+        // Assert
+        assertNotNull(result);
+        assertEquals(1, result.size());
+        assertEquals(testReport.getId(), result.get(0).getReportId());
+        verify(userActionRepository).findByUserIdOrderByCreatedAtDesc(regularUser.getId());
     }
 }
 

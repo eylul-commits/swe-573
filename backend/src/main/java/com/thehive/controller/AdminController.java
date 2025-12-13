@@ -5,6 +5,7 @@ import com.thehive.model.dto.ReportDTO;
 import com.thehive.model.dto.ResolveReportRequest;
 import com.thehive.model.dto.UserDTO;
 import com.thehive.model.dto.UserManagementRequest;
+import com.thehive.model.dto.UserActionDTO;
 import com.thehive.model.enums.ReportStatus;
 import com.thehive.service.AdminService;
 import jakarta.validation.Valid;
@@ -70,6 +71,13 @@ public class AdminController {
         Integer adminId = (Integer) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
         ReportDTO report = adminService.resolveReport(id, request, adminId);
         return ResponseEntity.ok(report);
+    }
+
+    @GetMapping("/users/{userId}/actions")
+    public ResponseEntity<List<UserActionDTO>> getUserActions(@PathVariable Integer userId) {
+        Integer adminId = (Integer) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
+        List<UserActionDTO> actions = adminService.getUserActions(userId);
+        return ResponseEntity.ok(actions);
     }
 }
 
