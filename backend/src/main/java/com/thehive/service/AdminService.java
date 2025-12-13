@@ -63,7 +63,6 @@ public class AdminService {
         // Report statistics
         stats.setTotalReports(reportRepository.count());
         stats.setOpenReports((long) reportRepository.findByStatus(ReportStatus.OPEN).size());
-        stats.setInReviewReports((long) reportRepository.findByStatus(ReportStatus.IN_REVIEW).size());
         stats.setResolvedReports((long) reportRepository.findByStatus(ReportStatus.RESOLVED).size());
         
         // Handshake statistics

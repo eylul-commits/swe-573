@@ -13,7 +13,6 @@ public class AdminStatisticsDTO {
     private Long activeRequests;
     private Long totalReports;
     private Long openReports;
-    private Long inReviewReports;
     private Long resolvedReports;
     private Long totalHandshakes;
     private Long totalMessages;

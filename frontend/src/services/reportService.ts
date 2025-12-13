@@ -1,7 +1,7 @@
 import { api } from '../config/api';
 
 export type ReportType = 'USER' | 'OFFER' | 'REQUEST' | 'FORUM_POST' | 'FORUM_TOPIC';
-export type ReportStatus = 'OPEN' | 'IN_REVIEW' | 'RESOLVED';
+export type ReportStatus = 'OPEN' | 'RESOLVED';
 
 export interface Report {
   id: number;

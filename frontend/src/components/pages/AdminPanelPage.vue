@@ -26,7 +26,7 @@
           <div class="text-sm text-gray-600 mb-1">Open Reports</div>
           <div class="text-2xl font-bold text-red-600">{{ statistics?.openReports || 0 }}</div>
           <div class="text-xs text-gray-500 mt-1">
-            {{ statistics?.inReviewReports || 0 }} in review, {{ statistics?.resolvedReports || 0 }} resolved
+            {{ statistics?.resolvedReports || 0 }} resolved
           </div>
         </Card>
       </div>
@@ -43,7 +43,6 @@
           <div class="mb-4 flex gap-2">
             <Button @click="loadReports()" variant="outline">All</Button>
             <Button @click="loadReports('OPEN')" variant="outline">Open</Button>
-            <Button @click="loadReports('IN_REVIEW')" variant="outline">In Review</Button>
             <Button @click="loadReports('RESOLVED')" variant="outline">Resolved</Button>
           </div>
 
@@ -131,7 +130,6 @@
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value="RESOLVED">Resolved</SelectItem>
-                <SelectItem value="IN_REVIEW">In Review</SelectItem>
               </SelectContent>
             </Select>
           </div>
@@ -322,7 +320,6 @@ async function handleManageUser() {
 function getStatusVariant(status: string) {
   switch (status) {
     case 'OPEN': return 'destructive'
-    case 'IN_REVIEW': return 'default'
     case 'RESOLVED': return 'secondary'
     default: return 'default'
   }

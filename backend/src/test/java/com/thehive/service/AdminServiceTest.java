@@ -127,7 +127,6 @@ class AdminServiceTest {
         when(requestRepository.findByStatus(ItemStatus.ACTIVE)).thenReturn(Collections.emptyList());
         when(reportRepository.count()).thenReturn(3L);
         when(reportRepository.findByStatus(ReportStatus.OPEN)).thenReturn(Arrays.asList(testReport));
-        when(reportRepository.findByStatus(ReportStatus.IN_REVIEW)).thenReturn(Collections.emptyList());
         when(reportRepository.findByStatus(ReportStatus.RESOLVED)).thenReturn(Collections.emptyList());
         when(handshakeRepository.count()).thenReturn(7L);
         when(messageRepository.count()).thenReturn(15L);
@@ -146,7 +145,6 @@ class AdminServiceTest {
         assertEquals(0L, result.getActiveRequests());
         assertEquals(3L, result.getTotalReports());
         assertEquals(1L, result.getOpenReports());
-        assertEquals(0L, result.getInReviewReports());
         assertEquals(0L, result.getResolvedReports());
         assertEquals(7L, result.getTotalHandshakes());
         assertEquals(15L, result.getTotalMessages());

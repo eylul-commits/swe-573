@@ -11,7 +11,6 @@ export interface AdminStatistics {
   activeRequests: number;
   totalReports: number;
   openReports: number;
-  inReviewReports: number;
   resolvedReports: number;
   totalHandshakes: number;
   totalMessages: number;
