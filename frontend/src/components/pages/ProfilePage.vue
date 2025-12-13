@@ -131,7 +131,6 @@
               @openChat="handleOpenChat"
               @openConfirm="handleOpenConfirm"
               @openRating="handleOpenRating"
-              @cancelled="handleCancelled"
             />
           </TabsContent>
         </Tabs>
@@ -240,15 +239,6 @@ const handleOpenRating = (handshake: Handshake) => {
   // Open rating modal
   console.log('Open rating modal for handshake:', handshake)
   // TODO: Implement rating modal
-}
-
-const handleCancelled = async () => {
-  // Refresh handshakes after cancellation
-  try {
-    await handshakeStore.loadHandshakes()
-  } catch (error) {
-    console.error('Failed to refresh handshakes after cancellation:', error)
-  }
 }
 </script>
 
