@@ -39,6 +39,7 @@
 </template>
 
 <script setup lang="ts">
+import { computed } from 'vue'
 import {
   Bug,
   Home,
@@ -47,8 +48,12 @@ import {
   User,
   LogOut,
   Users,
+  Shield,
 } from 'lucide-vue-next'
 import Button from './ui/Button.vue'
+import { useAppStore } from '../stores/appStore'
+
+const appStore = useAppStore()
 
 defineProps<{
   currentPage: string
@@ -59,12 +64,24 @@ defineEmits<{
   logout: []
 }>()
 
-const navItems = [
-  { id: 'home', icon: Home, label: 'Home' },
-  { id: 'explore', icon: Compass, label: 'Explore' },
-  { id: 'messages', icon: MessageSquare, label: 'Messages' },
-  { id: 'commons', icon: Users, label: 'The Commons' },
-  { id: 'profile', icon: User, label: 'Profile' },
-]
+const isAdmin = computed(() => {
+  return appStore.currentUser?.role === 'ADMIN'
+})
+
+const navItems = computed(() => {
+  const items = [
+    { id: 'home', icon: Home, label: 'Home' },
+    { id: 'explore', icon: Compass, label: 'Explore' },
+    { id: 'messages', icon: MessageSquare, label: 'Messages' },
+    { id: 'commons', icon: Users, label: 'The Commons' },
+    { id: 'profile', icon: User, label: 'Profile' },
+  ]
+  
+  if (isAdmin.value) {
+    items.push({ id: 'admin', icon: Shield, label: 'Admin Panel' })
+  }
+  
+  return items
+})
 </script>
 

@@ -8,7 +8,8 @@
         </DialogDescription>
       </DialogHeader>
 
-      <div class="space-y-4 py-4">
+      <div class="px-6">
+        <div class="space-y-4 py-4">
         <!-- Handshake Info -->
         <div v-if="handshake" class="bg-gray-50 p-4 rounded-lg">
           <h3 class="font-semibold text-sm text-gray-900 mb-2">{{ handshake.offerTitle }}</h3>
@@ -51,6 +52,7 @@
         <!-- Error Message -->
         <div v-if="error" class="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded text-sm">
           {{ error }}
+        </div>
         </div>
       </div>
 

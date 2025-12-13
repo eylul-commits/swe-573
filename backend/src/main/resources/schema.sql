@@ -12,6 +12,8 @@ CREATE TABLE IF NOT EXISTS users (
     district VARCHAR(100),
     geohash VARCHAR(20),
     role VARCHAR(20) DEFAULT 'USER',
+    account_status VARCHAR(20) DEFAULT 'ACTIVE',
+    warning_count INT DEFAULT 0,
     balance_hours INT DEFAULT 3,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
@@ -159,10 +161,28 @@ CREATE TABLE IF NOT EXISTS reports (
     id SERIAL PRIMARY KEY,
     reporter_id INT NOT NULL,
     reported_user_id INT NOT NULL,
+    report_type VARCHAR(20) DEFAULT 'USER',
+    reported_offer_id INT,
+    reported_request_id INT,
+    reported_forum_post_id INT,
+    reported_forum_topic_id INT,
     message TEXT,
+    admin_notes TEXT,
     status VARCHAR(20) DEFAULT 'OPEN',
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    resolved_at TIMESTAMP
+    resolved_at TIMESTAMP,
+    resolved_by_id INT
+);
+
+-- User actions table
+CREATE TABLE IF NOT EXISTS user_actions (
+    id SERIAL PRIMARY KEY,
+    user_id INT NOT NULL,
+    admin_id INT NOT NULL,
+    action_type VARCHAR(20) NOT NULL,
+    reason TEXT,
+    report_id INT,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
 -- Messages table
@@ -290,6 +310,32 @@ BEGIN
     END IF;
     IF NOT EXISTS (SELECT 1 FROM pg_constraint WHERE conname = 'fk_reports_reported') THEN
         ALTER TABLE reports ADD CONSTRAINT fk_reports_reported FOREIGN KEY (reported_user_id) REFERENCES users(id);
+    END IF;
+    IF NOT EXISTS (SELECT 1 FROM pg_constraint WHERE conname = 'fk_reports_offer') THEN
+        ALTER TABLE reports ADD CONSTRAINT fk_reports_offer FOREIGN KEY (reported_offer_id) REFERENCES offers(id) ON DELETE CASCADE;
+    END IF;
+    IF NOT EXISTS (SELECT 1 FROM pg_constraint WHERE conname = 'fk_reports_request') THEN
+        ALTER TABLE reports ADD CONSTRAINT fk_reports_request FOREIGN KEY (reported_request_id) REFERENCES requests(id) ON DELETE CASCADE;
+    END IF;
+    IF NOT EXISTS (SELECT 1 FROM pg_constraint WHERE conname = 'fk_reports_forum_post') THEN
+        ALTER TABLE reports ADD CONSTRAINT fk_reports_forum_post FOREIGN KEY (reported_forum_post_id) REFERENCES forum_posts(id) ON DELETE CASCADE;
+    END IF;
+    IF NOT EXISTS (SELECT 1 FROM pg_constraint WHERE conname = 'fk_reports_forum_topic') THEN
+        ALTER TABLE reports ADD CONSTRAINT fk_reports_forum_topic FOREIGN KEY (reported_forum_topic_id) REFERENCES forum_topics(id) ON DELETE CASCADE;
+    END IF;
+    IF NOT EXISTS (SELECT 1 FROM pg_constraint WHERE conname = 'fk_reports_resolved_by') THEN
+        ALTER TABLE reports ADD CONSTRAINT fk_reports_resolved_by FOREIGN KEY (resolved_by_id) REFERENCES users(id);
+    END IF;
+    
+    -- User actions constraints
+    IF NOT EXISTS (SELECT 1 FROM pg_constraint WHERE conname = 'fk_user_actions_user') THEN
+        ALTER TABLE user_actions ADD CONSTRAINT fk_user_actions_user FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE;
+    END IF;
+    IF NOT EXISTS (SELECT 1 FROM pg_constraint WHERE conname = 'fk_user_actions_admin') THEN
+        ALTER TABLE user_actions ADD CONSTRAINT fk_user_actions_admin FOREIGN KEY (admin_id) REFERENCES users(id);
+    END IF;
+    IF NOT EXISTS (SELECT 1 FROM pg_constraint WHERE conname = 'fk_user_actions_report') THEN
+        ALTER TABLE user_actions ADD CONSTRAINT fk_user_actions_report FOREIGN KEY (report_id) REFERENCES reports(id) ON DELETE SET NULL;
     END IF;
     
     -- Messages constraints

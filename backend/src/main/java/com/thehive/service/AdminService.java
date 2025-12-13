@@ -1,0 +1,311 @@
+package com.thehive.service;
+
+import com.thehive.exception.ResourceNotFoundException;
+import com.thehive.model.dto.AdminStatisticsDTO;
+import com.thehive.model.dto.ReportDTO;
+import com.thehive.model.dto.ResolveReportRequest;
+import com.thehive.model.dto.UserDTO;
+import com.thehive.model.dto.UserManagementRequest;
+import com.thehive.model.dto.UserActionDTO;
+import com.thehive.model.entity.Report;
+import com.thehive.model.entity.User;
+import com.thehive.model.entity.UserAction;
+import com.thehive.model.enums.ReportStatus;
+import com.thehive.model.enums.UserRole;
+import com.thehive.model.enums.UserStatus;
+import com.thehive.repository.ReportRepository;
+import com.thehive.repository.UserRepository;
+import com.thehive.repository.OfferRepository;
+import com.thehive.repository.RequestRepository;
+import com.thehive.repository.HandshakeRepository;
+import com.thehive.repository.MessageRepository;
+import com.thehive.repository.UserActionRepository;
+import com.thehive.util.AdminUtil;
+import com.thehive.model.enums.ItemStatus;
+import lombok.RequiredArgsConstructor;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+
+import java.time.LocalDateTime;
+import java.util.List;
+import java.util.stream.Collectors;
+
+@Service
+@RequiredArgsConstructor
+public class AdminService {
+
+    private final UserRepository userRepository;
+    private final OfferRepository offerRepository;
+    private final RequestRepository requestRepository;
+    private final ReportRepository reportRepository;
+    private final HandshakeRepository handshakeRepository;
+    private final MessageRepository messageRepository;
+    private final UserActionRepository userActionRepository;
+
+    @Transactional(readOnly = true)
+    public AdminStatisticsDTO getStatistics() {
+        AdminUtil.requireAdmin(userRepository);
+        AdminStatisticsDTO stats = new AdminStatisticsDTO();
+        
+        // User statistics
+        stats.setTotalUsers(userRepository.count());
+        stats.setActiveUsers(userRepository.findAll().stream()
+                .filter(u -> u.getAccountStatus() == UserStatus.ACTIVE)
+                .count());
+        stats.setDeactivatedUsers(userRepository.findAll().stream()
+                .filter(u -> u.getAccountStatus() == UserStatus.DEACTIVATED)
+                .count());
+        
+        // Offer statistics
+        stats.setTotalOffers(offerRepository.count());
+        stats.setActiveOffers((long) offerRepository.findByStatus(ItemStatus.ACTIVE).size());
+        
+        // Request statistics
+        stats.setTotalRequests(requestRepository.count());
+        stats.setActiveRequests((long) requestRepository.findByStatus(ItemStatus.ACTIVE).size());
+        
+        // Report statistics
+        stats.setTotalReports(reportRepository.count());
+        stats.setOpenReports((long) reportRepository.findByStatus(ReportStatus.OPEN).size());
+        stats.setResolvedReports((long) reportRepository.findByStatus(ReportStatus.RESOLVED).size());
+        
+        // Handshake statistics
+        stats.setTotalHandshakes(handshakeRepository.count());
+        
+        // Message statistics
+        stats.setTotalMessages(messageRepository.count());
+        
+        return stats;
+    }
+
+    @Transactional(readOnly = true)
+    public List<UserDTO> getAllUsers() {
+        AdminUtil.requireAdmin(userRepository);
+        return userRepository.findAll().stream()
+                .map(this::convertToUserDTO)
+                .collect(Collectors.toList());
+    }
+
+    @Transactional
+    public UserDTO manageUser(UserManagementRequest request, Integer adminId) {
+        User user = userRepository.findById(request.getUserId())
+                .orElseThrow(() -> new ResourceNotFoundException("User not found with id: " + request.getUserId()));
+
+        User admin = userRepository.findById(adminId)
+                .orElseThrow(() -> new ResourceNotFoundException("Admin not found with id: " + adminId));
+
+        if (admin.getRole() != UserRole.ADMIN) {
+            throw new RuntimeException("Only admins can manage users");
+        }
+
+        // Prevent warnings and deactivation of admin users
+        String action = request.getAction().toUpperCase();
+        if (user.getRole() == UserRole.ADMIN && (action.equals("WARN") || action.equals("DEACTIVATE"))) {
+            throw new IllegalArgumentException("Cannot warn or deactivate admin users");
+        }
+
+        switch (action) {
+            case "WARN":
+                user.setWarningCount(user.getWarningCount() + 1);
+                user.setAccountStatus(UserStatus.WARNED);
+                break;
+            case "DEACTIVATE":
+                user.setAccountStatus(UserStatus.DEACTIVATED);
+                break;
+            case "ACTIVATE":
+                user.setAccountStatus(UserStatus.ACTIVE);
+                break;
+            default:
+                throw new IllegalArgumentException("Invalid action: " + request.getAction());
+        }
+
+        user = userRepository.save(user);
+        
+        // Record the action
+        UserAction userAction = new UserAction();
+        userAction.setUser(user);
+        userAction.setAdmin(admin);
+        userAction.setActionType(request.getAction().toUpperCase());
+        userAction.setReason(request.getReason());
+        userAction.setReport(null); // Direct user management, not from report
+        userActionRepository.save(userAction);
+        
+        return convertToUserDTO(user);
+    }
+
+    @Transactional
+    public ReportDTO resolveReport(Integer reportId, ResolveReportRequest request, Integer adminId) {
+        Report report = reportRepository.findById(reportId)
+                .orElseThrow(() -> new ResourceNotFoundException("Report not found with id: " + reportId));
+
+        User admin = userRepository.findById(adminId)
+                .orElseThrow(() -> new ResourceNotFoundException("Admin not found with id: " + adminId));
+
+        if (admin.getRole() != UserRole.ADMIN) {
+            throw new RuntimeException("Only admins can resolve reports");
+        }
+
+        report.setStatus(request.getStatus());
+        report.setAdminNotes(request.getAdminNotes());
+        report.setResolvedBy(admin);
+        report.setResolvedAt(LocalDateTime.now());
+
+        // Handle user actions if specified
+        if (request.getUserId() != null && request.getAction() != null) {
+            User user = userRepository.findById(request.getUserId())
+                    .orElseThrow(() -> new ResourceNotFoundException("User not found with id: " + request.getUserId()));
+
+            // Prevent warnings and deactivation of admin users
+            String action = request.getAction().toUpperCase();
+            if (user.getRole() == UserRole.ADMIN && (action.equals("WARN") || action.equals("DEACTIVATE"))) {
+                throw new IllegalArgumentException("Cannot warn or deactivate admin users");
+            }
+
+            boolean userModified = false;
+            switch (action) {
+                case "WARN":
+                    user.setWarningCount(user.getWarningCount() + 1);
+                    user.setAccountStatus(UserStatus.WARNED);
+                    userModified = true;
+                    break;
+                case "DEACTIVATE":
+                    user.setAccountStatus(UserStatus.DEACTIVATED);
+                    userModified = true;
+                    break;
+                case "NO_ACTION":
+                    // No action needed - don't modify user but still record the action
+                    break;
+                default:
+                    throw new IllegalArgumentException("Invalid action: " + request.getAction());
+            }
+            
+            // Only save user if it was modified
+            if (userModified) {
+                userRepository.save(user);
+            }
+            
+            // Record the action (even for NO_ACTION for audit trail)
+            UserAction userAction = new UserAction();
+            userAction.setUser(user);
+            userAction.setAdmin(admin);
+            userAction.setActionType(request.getAction().toUpperCase());
+            userAction.setReason(request.getAdminNotes()); // Use admin notes as reason when resolving report
+            userAction.setReport(report);
+            userActionRepository.save(userAction);
+        }
+
+        report = reportRepository.save(report);
+        return convertToReportDTO(report);
+    }
+
+    @Transactional(readOnly = true)
+    public List<ReportDTO> getAllReports() {
+        AdminUtil.requireAdmin(userRepository);
+        return reportRepository.findAll().stream()
+                .map(this::convertToReportDTO)
+                .collect(Collectors.toList());
+    }
+
+    @Transactional(readOnly = true)
+    public List<ReportDTO> getReportsByStatus(ReportStatus status) {
+        AdminUtil.requireAdmin(userRepository);
+        return reportRepository.findByStatus(status).stream()
+                .map(this::convertToReportDTO)
+                .collect(Collectors.toList());
+    }
+
+    @Transactional(readOnly = true)
+    public ReportDTO getReportById(Integer id) {
+        AdminUtil.requireAdmin(userRepository);
+        Report report = reportRepository.findById(id)
+                .orElseThrow(() -> new ResourceNotFoundException("Report not found with id: " + id));
+        return convertToReportDTO(report);
+    }
+
+    @Transactional(readOnly = true)
+    public List<UserActionDTO> getUserActions(Integer userId) {
+        AdminUtil.requireAdmin(userRepository);
+        List<UserAction> actions = userActionRepository.findByUserIdOrderByCreatedAtDesc(userId);
+        return actions.stream()
+                .map(this::convertToUserActionDTO)
+                .collect(Collectors.toList());
+    }
+
+    private UserDTO convertToUserDTO(User user) {
+        UserDTO dto = new UserDTO();
+        dto.setId(user.getId());
+        dto.setEmail(user.getEmail());
+        dto.setName(user.getName());
+        dto.setBio(user.getBio());
+        dto.setAvatarUrl(user.getAvatarUrl());
+        dto.setProvince(user.getProvince());
+        dto.setDistrict(user.getDistrict());
+        dto.setGeohash(user.getGeohash());
+        dto.setRole(user.getRole());
+        dto.setAccountStatus(user.getAccountStatus());
+        dto.setWarningCount(user.getWarningCount());
+        dto.setBalanceHours(user.getBalanceHours());
+        return dto;
+    }
+
+    private ReportDTO convertToReportDTO(Report report) {
+        ReportDTO dto = new ReportDTO();
+        dto.setId(report.getId());
+        dto.setReporterId(report.getReporter().getId());
+        dto.setReporterName(report.getReporter().getName());
+        dto.setReporterEmail(report.getReporter().getEmail());
+        dto.setReportedUserId(report.getReportedUser().getId());
+        dto.setReportedUserName(report.getReportedUser().getName());
+        dto.setReportedUserEmail(report.getReportedUser().getEmail());
+        dto.setReportedUserRole(report.getReportedUser().getRole());
+        dto.setReportType(report.getReportType());
+        
+        if (report.getReportedOffer() != null) {
+            dto.setReportedOfferId(report.getReportedOffer().getId());
+            dto.setReportedOfferTitle(report.getReportedOffer().getTitle());
+        }
+        
+        if (report.getReportedRequest() != null) {
+            dto.setReportedRequestId(report.getReportedRequest().getId());
+            dto.setReportedRequestTitle(report.getReportedRequest().getTitle());
+        }
+        
+        if (report.getReportedForumPost() != null) {
+            dto.setReportedForumPostId(report.getReportedForumPost().getId());
+        }
+        
+        if (report.getReportedForumTopic() != null) {
+            dto.setReportedForumTopicId(report.getReportedForumTopic().getId());
+        }
+        
+        dto.setMessage(report.getMessage());
+        dto.setAdminNotes(report.getAdminNotes());
+        dto.setStatus(report.getStatus());
+        dto.setCreatedAt(report.getCreatedAt());
+        dto.setResolvedAt(report.getResolvedAt());
+        
+        if (report.getResolvedBy() != null) {
+            dto.setResolvedById(report.getResolvedBy().getId());
+            dto.setResolvedByName(report.getResolvedBy().getName());
+        }
+        
+        return dto;
+    }
+
+    private UserActionDTO convertToUserActionDTO(UserAction action) {
+        UserActionDTO dto = new UserActionDTO();
+        dto.setId(action.getId());
+        dto.setUserId(action.getUser().getId());
+        dto.setAdminId(action.getAdmin().getId());
+        dto.setAdminName(action.getAdmin().getName());
+        dto.setAdminEmail(action.getAdmin().getEmail());
+        dto.setActionType(action.getActionType());
+        dto.setReason(action.getReason());
+        if (action.getReport() != null) {
+            dto.setReportId(action.getReport().getId());
+        }
+        dto.setCreatedAt(action.getCreatedAt());
+        return dto;
+    }
+}
+

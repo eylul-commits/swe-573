@@ -21,6 +21,8 @@ export interface User {
   district?: string
   geohash?: string
   role: string
+  accountStatus?: 'ACTIVE' | 'DEACTIVATED' | 'WARNED'
+  warningCount?: number
   balanceHours: number
   timebankBalance?: number
   hoursGiven?: number

@@ -1,6 +1,7 @@
 package com.thehive.model.entity;
 
 import com.thehive.model.enums.UserRole;
+import com.thehive.model.enums.UserStatus;
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
@@ -52,6 +53,13 @@ public class User {
     @Enumerated(EnumType.STRING)
     @Column(length = 20)
     private UserRole role = UserRole.USER;
+
+    @Enumerated(EnumType.STRING)
+    @Column(name = "account_status", length = 20)
+    private UserStatus accountStatus = UserStatus.ACTIVE;
+
+    @Column(name = "warning_count")
+    private Integer warningCount = 0;
 
     @Column(name = "balance_hours")
     private Integer balanceHours = 3;

@@ -39,9 +39,21 @@
                 <AvatarImage :src="getAvatarUrl(thread.author.avatar, thread.author.name)" />
               </Avatar>
               <div class="flex-1">
-                <h1 class="text-2xl font-semibold text-gray-900 mb-2">
-                  {{ thread.title }}
-                </h1>
+                <div class="flex items-start justify-between mb-2">
+                  <h1 class="text-2xl font-semibold text-gray-900">
+                    {{ thread.title }}
+                  </h1>
+                  <Button 
+                    v-if="thread.author.id !== appStore.currentUser?.id.toString()"
+                    @click.stop="openReportTopicModal"
+                    variant="outline"
+                    size="sm"
+                    class="text-red-600 hover:text-red-700 hover:bg-red-50"
+                  >
+                    <Flag class="w-4 h-4 mr-1" />
+                    Report
+                  </Button>
+                </div>
                 <div class="flex items-center gap-4 text-sm text-gray-500">
                   <div class="flex items-center gap-2">
                     <span class="font-medium text-gray-700">{{ thread.author.name }}</span>
@@ -72,10 +84,22 @@
                   <AvatarImage :src="getAvatarUrl(post.author.avatar, post.author.name)" />
                 </Avatar>
                 <div class="flex-1">
-                  <div class="flex items-center gap-2 mb-2">
-                    <span class="font-medium text-gray-900">{{ post.author.name }}</span>
-                    <Badge variant="secondary" class="text-xs">{{ post.author.badge }}</Badge>
-                    <span class="text-sm text-gray-500">{{ formatDistanceToNow(post.createdAt) }}</span>
+                  <div class="flex items-center justify-between mb-2">
+                    <div class="flex items-center gap-2">
+                      <span class="font-medium text-gray-900">{{ post.author.name }}</span>
+                      <Badge variant="secondary" class="text-xs">{{ post.author.badge }}</Badge>
+                      <span class="text-sm text-gray-500">{{ formatDistanceToNow(post.createdAt) }}</span>
+                    </div>
+                    <Button 
+                      v-if="post.author.id !== appStore.currentUser?.id.toString()"
+                      @click.stop="openReportPostModal(post)"
+                      variant="ghost"
+                      size="sm"
+                      class="text-red-600 hover:text-red-700 hover:bg-red-50"
+                    >
+                      <Flag class="w-3 h-3 mr-1" />
+                      Report
+                    </Button>
                   </div>
                   <div class="text-gray-700 whitespace-pre-wrap">{{ post.content }}</div>
                 </div>
@@ -113,12 +137,34 @@
         </div>
       </div>
     </div>
+
+    <!-- Report Topic Modal -->
+    <ReportContentModal
+      v-if="thread"
+      v-model="reportTopicModalOpen"
+      :reported-user-id="parseInt(thread.author.id)"
+      :reported-user-name="thread.author.name"
+      :reported-forum-topic-id="thread.id"
+      report-type="FORUM_TOPIC"
+      @submitted="onReportSubmitted"
+    />
+
+    <!-- Report Post Modal -->
+    <ReportContentModal
+      v-if="selectedPost"
+      v-model="reportPostModalOpen"
+      :reported-user-id="parseInt(selectedPost.author.id)"
+      :reported-user-name="selectedPost.author.name"
+      :reported-forum-post-id="selectedPost.id"
+      report-type="FORUM_POST"
+      @submitted="onReportSubmitted"
+    />
   </div>
 </template>
 
 <script setup lang="ts">
 import { ref, onMounted, watch } from 'vue'
-import { ArrowLeft, Clock, Eye, MessageCircle } from 'lucide-vue-next'
+import { ArrowLeft, Clock, Eye, MessageCircle, Flag } from 'lucide-vue-next'
 import Button from '../ui/Button.vue'
 import Card from '../ui/Card.vue'
 import Avatar from '../ui/Avatar.vue'
@@ -126,6 +172,7 @@ import AvatarImage from '../ui/AvatarImage.vue'
 import Badge from '../ui/Badge.vue'
 import Textarea from '../ui/Textarea.vue'
 import { useAppStore } from '../../stores/appStore'
+import ReportContentModal from '../ReportContentModal.vue'
 import { formatDistanceToNow } from '../../utils/dateUtils'
 import { getAvatarUrl } from '../../utils/avatarUtils'
 import {
@@ -143,6 +190,11 @@ const loading = ref(true)
 const error = ref<string | null>(null)
 const replyContent = ref('')
 const isSubmitting = ref(false)
+
+// Report modal state
+const reportTopicModalOpen = ref(false)
+const reportPostModalOpen = ref(false)
+const selectedPost = ref<ForumPost | null>(null)
 
 const loadThread = async () => {
   if (!appStore.selectedThreadId) return
@@ -164,6 +216,21 @@ const loadThread = async () => {
   } finally {
     loading.value = false
   }
+}
+
+const openReportTopicModal = () => {
+  reportTopicModalOpen.value = true
+}
+
+const openReportPostModal = (post: ForumPost) => {
+  selectedPost.value = post
+  reportPostModalOpen.value = true
+}
+
+const onReportSubmitted = () => {
+  reportTopicModalOpen.value = false
+  reportPostModalOpen.value = false
+  selectedPost.value = null
 }
 
 const handleSubmitReply = async () => {

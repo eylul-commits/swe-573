@@ -1,5 +1,10 @@
 package com.thehive.security;
 
+import com.thehive.model.entity.User;
+import com.thehive.model.enums.UserRole;
+import com.thehive.model.enums.UserStatus;
+import com.thehive.repository.UserRepository;
+import com.thehive.security.JwtUtil;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
@@ -21,6 +26,7 @@ import java.util.Arrays;
 public class JwtAuthenticationFilter extends OncePerRequestFilter {
 
     private final JwtUtil jwtUtil;
+    private final UserRepository userRepository;
 
     private static final String AUTHORIZATION_HEADER = "Authorization";
     private static final String BEARER_PREFIX = "Bearer ";
@@ -49,11 +55,27 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
                 Integer userId = jwtUtil.extractUserId(jwt);
                 
                 if (email != null && userId != null && SecurityContextHolder.getContext().getAuthentication() == null) {
+                    // Get user to check role and account status
+                    User user = userRepository.findById(userId).orElse(null);
+                    
+                    // Check if account is deactivated
+                    if (user != null && user.getAccountStatus() == UserStatus.DEACTIVATED) {
+                        response.setStatus(HttpServletResponse.SC_FORBIDDEN);
+                        response.getWriter().write("{\"error\":\"Account is deactivated\"}");
+                        response.setContentType("application/json");
+                        return;
+                    }
+                    
+                    String role = "ROLE_USER";
+                    if (user != null && user.getRole() == UserRole.ADMIN) {
+                        role = "ROLE_ADMIN";
+                    }
+                    
                     // create authentication token
                     UsernamePasswordAuthenticationToken authToken = new UsernamePasswordAuthenticationToken(
                             userId, // used to identify the user
                             null, //credentials, i do not need after validation
-                            Arrays.asList(new SimpleGrantedAuthority("ROLE_USER")) //user has the ROLE_USER authority
+                            Arrays.asList(new SimpleGrantedAuthority(role)) //user has the appropriate role authority
                     );
                     
                     // set details in authentication token (ip address, session id vs)
