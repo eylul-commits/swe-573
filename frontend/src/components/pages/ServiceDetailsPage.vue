@@ -108,7 +108,7 @@
             <div class="space-y-1">
               <div class="text-sm text-gray-500">Posted</div>
               <div class="text-gray-900">
-                {{ serviceId === '9' ? '3 hours ago' : '2 days ago' }}
+                {{ service?.createdAt ? formatDistanceToNow(service.createdAt) : 'Unknown' }}
               </div>
             </div>
           </div>
@@ -119,9 +119,9 @@
             :disabled="isAccepting || service.poster.id === appStore.currentUser?.id.toString()"
             class="w-full bg-gray-900 hover:bg-gray-800 text-white h-12 disabled:opacity-50 disabled:cursor-not-allowed"
           >
-            <span v-if="isAccepting">{{ service.type === 'OFFER' ? 'Accepting...' : 'Sending Request...' }}</span>
+            <span v-if="isAccepting">{{ service.type === 'OFFER' ? 'Showing Interest...' : 'Sending Request...' }}</span>
             <span v-else-if="service.poster.id === appStore.currentUser?.id.toString()">Your Own Service</span>
-            <span v-else>{{ service.type === 'OFFER' ? 'Accept This Offer' : 'Offer Your Help' }}</span>
+            <span v-else>{{ service.type === 'OFFER' ? 'Show Interest' : 'Offer Your Help' }}</span>
           </Button>
           <p v-if="acceptError" class="text-sm text-red-600 mt-2">{{ acceptError }}</p>
           <p v-if="acceptSuccess" class="text-sm text-emerald-600 mt-2">{{ acceptSuccess }}</p>
@@ -430,6 +430,7 @@ import { getServiceById, getServiceRatings, getServiceQuestions, askServiceQuest
 import { createHandshake } from '../../services/handshakeService'
 import { createHandshakeChannel, isStreamChatInitialized } from '../../clients/streamChatClient'
 import { useAppStore } from '../../stores/appStore'
+import { formatDistanceToNow } from '../../utils/dateUtils'
 import type { Service, ServiceQuestion, ServiceRatingsResponse } from '../../types'
 
 const appStore = useAppStore()
