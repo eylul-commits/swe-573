@@ -28,7 +28,7 @@
 </template>
 
 <script setup lang="ts">
-import { computed, onMounted } from 'vue'
+import { computed, onMounted, h } from 'vue'
 import { useAppStore } from './stores/appStore'
 import Sidebar from './components/Sidebar.vue'
 import LoginPage from './components/pages/LoginPage.vue'
@@ -41,6 +41,7 @@ import ServiceDetailsPage from './components/pages/ServiceDetailsPage.vue'
 import ThreadDetailsPage from './components/pages/ThreadDetailsPage.vue'
 import CreateServicePage from './components/pages/CreateServicePage.vue'
 import ProfilePage from './components/pages/ProfilePage.vue'
+import UserProfilePage from './components/pages/UserProfilePage.vue'
 import SettingsPage from './components/pages/SettingsPage.vue'
 import AdminPanelPage from './components/pages/AdminPanelPage.vue'
 
@@ -55,6 +56,7 @@ const handleNavigate = (page: string) => {
   appStore.setCurrentPage(page)
   appStore.setSelectedServiceId(null)
   appStore.setSelectedThreadId(null)
+  appStore.setSelectedUserId(null)
 }
 
 const handleLogout = () => {
@@ -62,6 +64,11 @@ const handleLogout = () => {
 }
 
 const currentPageComponent = computed(() => {
+  // If a user is selected, show the user profile page
+  if (appStore.selectedUserId) {
+    return () => h(UserProfilePage, { userId: appStore.selectedUserId! })
+  }
+
   // If a service is selected, show the service details page
   if (appStore.selectedServiceId) {
     return ServiceDetailsPage

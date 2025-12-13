@@ -37,12 +37,18 @@
         <div class="grid grid-cols-2 gap-4 mb-4">
           <!-- Provider -->
           <div class="flex items-center gap-3">
-            <Avatar class="w-10 h-10">
+            <Avatar 
+              class="w-10 h-10 cursor-pointer hover:opacity-80 transition-opacity"
+              @click="viewUserProfile(handshake.provider.id)"
+            >
               <AvatarImage :src="getAvatarUrl(handshake.provider.avatar, handshake.provider.name)" :alt="handshake.provider.name" />
               <AvatarFallback>{{ handshake.provider.name.charAt(0) }}</AvatarFallback>
             </Avatar>
             <div class="flex-1 min-w-0">
-              <p class="text-sm font-medium text-gray-900 truncate">
+              <p 
+                class="text-sm font-medium text-gray-900 truncate cursor-pointer hover:text-gray-700 transition-colors"
+                @click="viewUserProfile(handshake.provider.id)"
+              >
                 {{ handshake.provider.name }}
               </p>
               <p class="text-xs text-gray-500">Provider</p>
@@ -52,12 +58,18 @@
 
           <!-- Seeker -->
           <div class="flex items-center gap-3">
-            <Avatar class="w-10 h-10">
+            <Avatar 
+              class="w-10 h-10 cursor-pointer hover:opacity-80 transition-opacity"
+              @click="viewUserProfile(handshake.seeker.id)"
+            >
               <AvatarImage :src="getAvatarUrl(handshake.seeker.avatar, handshake.seeker.name)" :alt="handshake.seeker.name" />
               <AvatarFallback>{{ handshake.seeker.name.charAt(0) }}</AvatarFallback>
             </Avatar>
             <div class="flex-1 min-w-0">
-              <p class="text-sm font-medium text-gray-900 truncate">
+              <p 
+                class="text-sm font-medium text-gray-900 truncate cursor-pointer hover:text-gray-700 transition-colors"
+                @click="viewUserProfile(handshake.seeker.id)"
+              >
                 {{ handshake.seeker.name }}
               </p>
               <p class="text-xs text-gray-500">Seeker</p>
@@ -101,6 +113,9 @@ import AvatarImage from './ui/AvatarImage.vue';
 import AvatarFallback from './ui/AvatarFallback.vue';
 import type { Handshake } from '../types';
 import { getAvatarUrl } from '../utils/avatarUtils';
+import { useAppStore } from '../stores/appStore';
+
+const appStore = useAppStore();
 
 defineProps<{
   handshakes: Handshake[];
@@ -139,6 +154,10 @@ function formatDateTime(dateString: string): string {
     hour: '2-digit',
     minute: '2-digit',
   });
+}
+
+function viewUserProfile(userId: string) {
+  appStore.setSelectedUserId(userId);
 }
 </script>
 

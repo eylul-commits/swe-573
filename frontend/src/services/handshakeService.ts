@@ -10,6 +10,7 @@ import type {
   CreateHandshakeRequest,
   ConfirmHandshakeRequest,
   CreateRatingRequest,
+  ServiceRating,
 } from '../types';
 
 /**
@@ -69,5 +70,12 @@ export async function cancelHandshake(handshakeId: number): Promise<Handshake> {
  */
 export async function getHandshakeById(handshakeId: number): Promise<Handshake> {
   return api.get<Handshake>(`/handshakes/${handshakeId}`);
+}
+
+/**
+ * Get all ratings for a user
+ */
+export async function getUserRatings(userId: number): Promise<ServiceRating[]> {
+  return api.get<ServiceRating[]>(`/handshakes/users/${userId}/ratings`);
 }
 

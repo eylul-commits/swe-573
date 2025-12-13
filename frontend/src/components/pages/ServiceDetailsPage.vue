@@ -196,12 +196,20 @@
             </Button>
           </div>
           <div class="flex items-start gap-4">
-            <Avatar class="w-16 h-16">
+            <Avatar 
+              class="w-16 h-16 cursor-pointer hover:opacity-80 transition-opacity"
+              @click="viewUserProfile(service.poster.id)"
+            >
               <AvatarImage :src="service.poster.avatar" :alt="service.poster.name" />
             </Avatar>
             <div class="flex-1">
               <div class="flex items-center gap-2 mb-2">
-                <div class="text-gray-900">{{ service.poster.name }}</div>
+                <div 
+                  class="text-gray-900 cursor-pointer hover:text-gray-700 transition-colors"
+                  @click="viewUserProfile(service.poster.id)"
+                >
+                  {{ service.poster.name }}
+                </div>
                 <div class="flex items-center gap-1 text-sm">
                   <span>{{ badge.emoji }}</span>
                   <span class="text-gray-600">{{ badge.label }}</span>
@@ -267,12 +275,20 @@
               <div v-if="questions.length > 0">
                 <div v-for="q in questions" :key="q.id" class="space-y-3 bg-white border border-gray-200 rounded-lg p-4">
                   <div class="flex items-start gap-3">
-                    <Avatar class="w-8 h-8">
+                    <Avatar 
+                      class="w-8 h-8 cursor-pointer hover:opacity-80 transition-opacity"
+                      @click="viewUserProfile(q.author.id)"
+                    >
                       <AvatarImage :src="q.author.avatar" :alt="q.author.name" />
                     </Avatar>
                     <div class="flex-1">
                       <div class="flex items-center gap-2 mb-1">
-                        <div class="text-sm text-gray-900">{{ q.author.name }}</div>
+                        <div 
+                          class="text-sm text-gray-900 cursor-pointer hover:text-gray-700 transition-colors"
+                          @click="viewUserProfile(q.author.id)"
+                        >
+                          {{ q.author.name }}
+                        </div>
                         <span class="text-xs text-gray-400">•</span>
                         <div class="text-xs text-gray-500">{{ q.createdAt }}</div>
                       </div>
@@ -322,12 +338,20 @@
               <div v-if="serviceRatings.length > 0">
                 <div v-for="rating in serviceRatings" :key="rating.id" class="space-y-3 pb-4 border-b border-gray-200 last:border-0 last:pb-0">
                   <div class="flex items-start gap-3">
-                    <Avatar class="w-10 h-10">
+                    <Avatar 
+                      class="w-10 h-10 cursor-pointer hover:opacity-80 transition-opacity"
+                      @click="viewUserProfile(rating.rater.id)"
+                    >
                       <AvatarImage :src="rating.rater.avatar" :alt="rating.rater.name" />
                     </Avatar>
                     <div class="flex-1">
                       <div class="flex items-center gap-2 mb-2">
-                        <div class="text-gray-900 text-sm">{{ rating.rater.name }}</div>
+                        <div 
+                          class="text-gray-900 text-sm cursor-pointer hover:text-gray-700 transition-colors"
+                          @click="viewUserProfile(rating.rater.id)"
+                        >
+                          {{ rating.rater.name }}
+                        </div>
                         <span class="text-xs text-gray-400">•</span>
                         <div class="text-xs text-gray-500">{{ rating.createdAt }}</div>
                       </div>
@@ -676,6 +700,10 @@ const handleAcceptService = async () => {
   } finally {
     isAccepting.value = false
   }
+}
+
+const viewUserProfile = (userId: string) => {
+  appStore.setSelectedUserId(userId)
 }
 </script>
 
