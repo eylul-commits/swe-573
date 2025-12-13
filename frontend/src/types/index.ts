@@ -139,9 +139,6 @@ export interface ServiceRatingsResponse {
 export interface UserProfile extends User {
   email?: string;
   phone?: string;
-  preferences?: {
-    showLocation: boolean;
-  };
   servicesOffered: Service[];
   servicesRequested: Service[];
 }
