@@ -655,12 +655,6 @@ const handleAcceptService = async () => {
       try {
         const channel = await createHandshakeChannel(handshake)
         console.log('Stream Chat channel created:', channel.id)
-        
-        // Send initial system message
-        await channel.sendMessage({
-          text: `🤝 ${service.value.type === 'OFFER' ? 'Offer accepted' : 'Help offered'}! You can now coordinate the details for "${handshake.offerTitle}". Duration: ${handshake.agreedHours} hours.`,
-          type: 'system',
-        })
       } catch (chatError) {
         console.error('Failed to create Stream Chat channel:', chatError)
         // Don't fail the handshake if chat fails
