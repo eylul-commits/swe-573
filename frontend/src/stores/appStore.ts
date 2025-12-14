@@ -110,6 +110,28 @@ export const useAppStore = defineStore('app', () => {
     selectedUserId.value = id
   }
 
+  const refreshCurrentUser = async () => {
+    if (!authToken.value) return
+    
+    try {
+      const { getCurrentUser } = await import('../services/authService')
+      const user = await getCurrentUser()
+      
+      // Update current user with fresh data (including updated balance)
+      const mappedUser: AuthUser = {
+        ...user,
+        timebankBalance: user.balanceHours,
+        hoursGiven: user.hoursGiven || 0,
+        hoursReceived: user.hoursReceived || 0,
+        location: user.district && user.province ? `${user.district}, ${user.province}` : undefined,
+      }
+      currentUser.value = mappedUser
+      localStorage.setItem('currentUser', JSON.stringify(mappedUser))
+    } catch (error) {
+      console.error('Failed to refresh user:', error)
+    }
+  }
+
   // Initialize app state from localStorage
   const initializeFromStorage = async () => {
     // if we have user and token try to restore Stream Chat connection
@@ -161,6 +183,7 @@ export const useAppStore = defineStore('app', () => {
     setSelectedServiceId,
     setSelectedThreadId,
     setSelectedUserId,
+    refreshCurrentUser,
     initializeFromStorage,
   }
 })

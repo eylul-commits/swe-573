@@ -45,6 +45,58 @@
 
     <!-- Content Below Hero -->
     <div class="max-w-5xl mx-auto p-8">
+      <!-- Pending Ratings Alert -->
+      <Card 
+        v-if="pendingRatings.length > 0" 
+        class="mb-6 p-5 bg-gradient-to-r from-amber-50 to-yellow-50 border-2 border-amber-300"
+      >
+        <div class="flex items-start gap-4">
+          <div class="flex-shrink-0 w-10 h-10 bg-amber-500 rounded-full flex items-center justify-center">
+            <Star class="w-5 h-5 text-white fill-white" />
+          </div>
+          <div class="flex-1">
+            <h3 class="text-lg font-semibold text-gray-900 mb-1">
+              {{ pendingRatings.length }} Service{{ pendingRatings.length > 1 ? 's' : '' }} Awaiting Your Rating
+            </h3>
+            <p class="text-sm text-gray-700 mb-3">
+              Please rate your recent service exchanges to help build trust in the community
+            </p>
+            <div class="space-y-2">
+              <div 
+                v-for="handshake in pendingRatings.slice(0, 3)" 
+                :key="handshake.id"
+                class="flex items-center justify-between p-3 bg-white rounded-lg border border-amber-200"
+              >
+                <div class="flex-1">
+                  <div class="font-medium text-gray-900">{{ handshake.offerTitle }}</div>
+                  <div class="text-sm text-gray-600">
+                    with {{ getOtherUser(handshake).name }} • 
+                    Completed {{ formatRelativeDate(handshake.agreedDate!) }}
+                  </div>
+                </div>
+                <Button
+                  size="sm"
+                  @click="openRatingModal(handshake)"
+                  class="bg-amber-500 hover:bg-amber-600 text-white"
+                >
+                  <Star class="w-4 h-4 mr-1" />
+                  Rate Now
+                </Button>
+              </div>
+              <Button 
+                v-if="pendingRatings.length > 3"
+                variant="outline"
+                size="sm"
+                @click="appStore.setCurrentPage('messages')"
+                class="w-full border-amber-300 text-amber-700 hover:bg-amber-50"
+              >
+                View All {{ pendingRatings.length }} Pending Ratings
+              </Button>
+            </div>
+          </div>
+        </div>
+      </Card>
+
       <!-- TimeBank Summary Card -->
       <Card class="mb-8 p-6 bg-gradient-to-r from-amber-50 to-orange-50 border-amber-200">
         <div class="flex items-center justify-between">
@@ -313,12 +365,19 @@
         </div>
       </Card>
     </div>
+
+    <!-- Rating Modal -->
+    <RatingModal
+      v-model="ratingModalOpen"
+      :handshake="selectedHandshakeForRating"
+      @rated="onRatingSubmitted"
+    />
   </div>
 </template>
 
 <script setup lang="ts">
 import { computed, reactive, ref, onMounted } from 'vue'
-import { Search, MapPin, Clock, Tag, Award } from 'lucide-vue-next'
+import { Search, MapPin, Clock, Tag, Award, Star } from 'lucide-vue-next'
 import Input from '../ui/Input.vue'
 import Button from '../ui/Button.vue'
 import Badge from '../ui/Badge.vue'
@@ -329,11 +388,14 @@ import SelectTrigger from '../ui/SelectTrigger.vue'
 import SelectValue from '../ui/SelectValue.vue'
 import SelectContent from '../ui/SelectContent.vue'
 import SelectItem from '../ui/SelectItem.vue'
+import RatingModal from '../RatingModal.vue'
 import { getActiveServices, getAllTags, getCommunityStats, filterServices, getNearbyServices, getRecommendedServices } from '../../services/marketplaceService'
 import { useAppStore } from '../../stores/appStore'
-import type { BadgeType, Service, CommunityStats } from '../../types'
+import { useHandshakeStore } from '../../stores/handshakeStore'
+import type { BadgeType, Service, CommunityStats, Handshake } from '../../types'
 
 const appStore = useAppStore()
+const handshakeStore = useHandshakeStore()
 const allServices = ref<Service[]>([])
 const allTags = ref<string[]>([])
 const nearbyServicesData = ref<Service[]>([])
@@ -344,6 +406,10 @@ const communityStats = ref<CommunityStats>({
   activeServices: 0,
   completedThisMonth: 0
 })
+
+// Rating modal state
+const ratingModalOpen = ref(false)
+const selectedHandshakeForRating = ref<Handshake | null>(null)
 
 // Hero search state
 const heroSearch = ref('')
@@ -378,12 +444,90 @@ onMounted(async () => {
     communityStats.value = stats
     nearbyServicesData.value = nearby
     recommendedServicesData.value = recommended
+    
+    // Load handshakes to check for pending ratings
+    if (appStore.currentUser) {
+      await handshakeStore.loadHandshakes()
+    }
   } catch (error) {
     console.error('Failed to load data:', error)
   } finally {
     loading.value = false
   }
 })
+
+// Get handshakes that need rating
+const pendingRatings = computed(() => {
+  if (!handshakeStore.handshakes || !appStore.currentUser) {
+    return []
+  }
+  
+  return handshakeStore.handshakes.filter(h => {
+    // Must be confirmed and have an agreed date
+    if (h.status !== 'CONFIRMED' || !h.agreedDate) {
+      return false
+    }
+    
+    // Agreed date must have passed
+    const agreedDate = new Date(h.agreedDate)
+    const now = new Date()
+    if (agreedDate > now) {
+      return false
+    }
+    
+    // User must be able to rate
+    return h.canRate === true
+  }).sort((a, b) => {
+    // Sort by agreed date, oldest first
+    return new Date(a.agreedDate!).getTime() - new Date(b.agreedDate!).getTime()
+  })
+})
+
+// Get the other user in a handshake
+const getOtherUser = (handshake: Handshake) => {
+  const currentUserId = appStore.currentUser?.id.toString()
+  return handshake.seeker.id === currentUserId 
+    ? handshake.provider 
+    : handshake.seeker
+}
+
+// Format relative date
+const formatRelativeDate = (dateString: string) => {
+  const date = new Date(dateString)
+  const now = new Date()
+  const diffMs = now.getTime() - date.getTime()
+  const diffDays = Math.floor(diffMs / (1000 * 60 * 60 * 24))
+  
+  if (diffDays === 0) return 'today'
+  if (diffDays === 1) return 'yesterday'
+  if (diffDays < 7) return `${diffDays} days ago`
+  if (diffDays < 30) return `${Math.floor(diffDays / 7)} weeks ago`
+  return `${Math.floor(diffDays / 30)} months ago`
+}
+
+// Open rating modal
+const openRatingModal = (handshake: Handshake) => {
+  selectedHandshakeForRating.value = handshake
+  ratingModalOpen.value = true
+}
+
+// Handle rating submitted
+const onRatingSubmitted = async (updatedHandshake: Handshake) => {
+  ratingModalOpen.value = false
+  selectedHandshakeForRating.value = null
+  
+  // Reload handshakes to update the list
+  try {
+    await handshakeStore.loadHandshakes()
+    
+    // Also refresh user data to update balance if both rated
+    if (updatedHandshake.status === 'COMPLETED') {
+      await appStore.refreshCurrentUser()
+    }
+  } catch (error) {
+    console.error('Failed to reload handshakes:', error)
+  }
+}
 
 // Get popular tags (top 10 most used)
 const popularTags = computed(() => allTags.value.slice(0, 10))
