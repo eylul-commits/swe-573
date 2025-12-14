@@ -4,6 +4,8 @@ import com.thehive.model.enums.UserRole;
 import com.thehive.model.enums.UserStatus;
 import lombok.Data;
 
+import java.util.List;
+
 @Data
 public class UserDTO {
     private Integer id;
@@ -20,5 +22,6 @@ public class UserDTO {
     private Integer balanceHours;
     private Integer hoursGiven;
     private Integer hoursReceived;
+    private List<BadgeDTO> badges;
 }
 
