@@ -112,5 +112,25 @@ public class HandshakeController {
         List<ServiceRatingDTO> ratings = handshakeService.getUserRatings(userId);
         return ResponseEntity.ok(ratings);
     }
+
+    /**
+     * Get handshakes for a specific offer
+     */
+    @GetMapping("/offers/{offerId}")
+    public ResponseEntity<List<HandshakeDTO>> getHandshakesByOfferId(@PathVariable Integer offerId) {
+        Integer userId = (Integer) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
+        List<HandshakeDTO> handshakes = handshakeService.getHandshakesByOfferId(offerId, userId);
+        return ResponseEntity.ok(handshakes);
+    }
+
+    /**
+     * Get handshakes for a specific request
+     */
+    @GetMapping("/requests/{requestId}")
+    public ResponseEntity<List<HandshakeDTO>> getHandshakesByRequestId(@PathVariable Integer requestId) {
+        Integer userId = (Integer) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
+        List<HandshakeDTO> handshakes = handshakeService.getHandshakesByRequestId(requestId, userId);
+        return ResponseEntity.ok(handshakes);
+    }
 }
 

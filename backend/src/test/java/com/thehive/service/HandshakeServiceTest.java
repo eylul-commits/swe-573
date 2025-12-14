@@ -1250,5 +1250,89 @@ class HandshakeServiceTest {
         assertEquals(request.getId(), dto.getServiceId());
         assertEquals("Need Help with Math", dto.getServiceTitle());
     }
+
+    @Test
+    void getHandshakesByOfferId_EmptyList_WhenNoHandshakesExist() {
+        // Arrange
+        when(handshakeRepository.findByOfferId(1)).thenReturn(Collections.emptyList());
+
+        // Act
+        List<HandshakeDTO> result = handshakeService.getHandshakesByOfferId(1, seeker.getId());
+
+        // Assert
+        assertNotNull(result);
+        assertTrue(result.isEmpty());
+        verify(handshakeRepository).findByOfferId(1);
+    }
+
+    @Test
+    void getHandshakesByOfferId_ConvertsToDTO_WithCorrectUserContext() {
+        // Arrange
+        List<Handshake> handshakes = Collections.singletonList(handshake);
+        when(handshakeRepository.findByOfferId(1)).thenReturn(handshakes);
+
+        // Act - Request from seeker's perspective
+        List<HandshakeDTO> result = handshakeService.getHandshakesByOfferId(1, seeker.getId());
+
+        // Assert
+        assertNotNull(result);
+        assertEquals(1, result.size());
+        HandshakeDTO dto = result.get(0);
+        assertEquals(seeker.getId(), dto.getSeeker().getId());
+        assertEquals(provider.getId(), dto.getProvider().getId());
+        
+        verify(handshakeRepository).findByOfferId(1);
+    }
+
+    @Test
+    void getHandshakesByRequestId_EmptyList_WhenNoHandshakesExist() {
+        // Arrange
+        when(handshakeRepository.findByRequestId(1)).thenReturn(Collections.emptyList());
+
+        // Act
+        List<HandshakeDTO> result = handshakeService.getHandshakesByRequestId(1, seeker.getId());
+
+        // Assert
+        assertNotNull(result);
+        assertTrue(result.isEmpty());
+        verify(handshakeRepository).findByRequestId(1);
+    }
+
+    @Test
+    void getHandshakesByRequestId_ConvertsToDTO_WithCorrectUserContext() {
+        // Arrange
+        Request serviceRequest = new Request();
+        serviceRequest.setId(1);
+        serviceRequest.setTitle("Need Help with Math");
+        serviceRequest.setDescription("Looking for math tutor");
+        serviceRequest.setDurationHours(5);
+        serviceRequest.setSeeker(seeker);
+        serviceRequest.setStatus(ItemStatus.ACTIVE);
+        serviceRequest.setTags(new HashSet<>());
+
+        Handshake requestHandshake = new Handshake();
+        requestHandshake.setId(1);
+        requestHandshake.setRequest(serviceRequest);
+        requestHandshake.setSeeker(seeker);
+        requestHandshake.setProvider(provider);
+        requestHandshake.setStatus(HandshakeStatus.PENDING);
+        requestHandshake.setDurationHours(5);
+        requestHandshake.setCreatedAt(LocalDateTime.now());
+
+        List<Handshake> handshakes = Collections.singletonList(requestHandshake);
+        when(handshakeRepository.findByRequestId(1)).thenReturn(handshakes);
+
+        // Act - Request from provider's perspective
+        List<HandshakeDTO> result = handshakeService.getHandshakesByRequestId(1, provider.getId());
+
+        // Assert
+        assertNotNull(result);
+        assertEquals(1, result.size());
+        HandshakeDTO dto = result.get(0);
+        assertEquals(seeker.getId(), dto.getSeeker().getId());
+        assertEquals(provider.getId(), dto.getProvider().getId());
+        
+        verify(handshakeRepository).findByRequestId(1);
+    }
 }
 

@@ -288,6 +288,22 @@ public class HandshakeService {
         return convertToDTO(handshake, userId);
     }
 
+    @Transactional(readOnly = true)
+    public List<HandshakeDTO> getHandshakesByOfferId(Integer offerId, Integer userId) {
+        List<Handshake> handshakes = handshakeRepository.findByOfferId(offerId);
+        return handshakes.stream()
+                .map(h -> convertToDTO(h, userId))
+                .collect(Collectors.toList());
+    }
+
+    @Transactional(readOnly = true)
+    public List<HandshakeDTO> getHandshakesByRequestId(Integer requestId, Integer userId) {
+        List<Handshake> handshakes = handshakeRepository.findByRequestId(requestId);
+        return handshakes.stream()
+                .map(h -> convertToDTO(h, userId))
+                .collect(Collectors.toList());
+    }
+
     private HandshakeDTO convertToDTO(Handshake handshake, Integer currentUserId) {
         HandshakeDTO dto = new HandshakeDTO();
         dto.setId(handshake.getId());

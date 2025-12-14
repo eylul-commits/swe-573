@@ -64,66 +64,172 @@
               <div
                 v-for="service in userServices"
                 :key="service.id"
-                @click="viewService(service.id)"
-                class="p-4 border border-gray-200 rounded-lg cursor-pointer transition-colors hover:bg-gray-50"
+                class="border border-gray-200 rounded-lg"
               >
-                <div class="flex gap-4">
-                  <!-- Service Image -->
-                  <div v-if="service.imageUrls && service.imageUrls.length > 0" class="flex-shrink-0">
-                    <div class="w-40 h-40 rounded-lg overflow-hidden border border-gray-200">
-                      <ImageWithFallback
-                        :src="service.imageUrls[0]"
-                        :alt="service.title"
-                        className="w-full h-full object-cover"
-                      />
+                <div
+                  @click="viewService(service.id)"
+                  class="p-4 cursor-pointer transition-colors hover:bg-gray-50"
+                >
+                  <div class="flex gap-4">
+                    <!-- Service Image -->
+                    <div v-if="service.imageUrls && service.imageUrls.length > 0" class="flex-shrink-0">
+                      <div class="w-40 h-40 rounded-lg overflow-hidden border border-gray-200">
+                        <ImageWithFallback
+                          :src="service.imageUrls[0]"
+                          :alt="service.title"
+                          className="w-full h-full object-cover"
+                        />
+                      </div>
+                    </div>
+                    
+                    <!-- Service Content -->
+                    <div class="flex-1 min-w-0">
+                      <div class="flex items-start justify-between mb-2">
+                        <div class="flex-1 min-w-0">
+                          <h3 class="font-medium text-gray-900 mb-1">{{ service.title }}</h3>
+                          <p class="text-sm text-gray-600">{{ service.location }}</p>
+                        </div>
+                        <Badge 
+                          :class="service.type === 'OFFER' 
+                            ? 'bg-emerald-100 text-emerald-700 hover:bg-emerald-100' 
+                            : 'bg-blue-100 text-blue-700 hover:bg-blue-100'"
+                        >
+                          {{ service.type }}
+                        </Badge>
+                      </div>
+                      
+                      <p class="text-sm text-gray-600 mb-2 line-clamp-2">
+                        {{ service.description }}
+                      </p>
+                      
+                      <div class="flex items-center gap-4 text-xs text-gray-500">
+                        <div class="flex items-center gap-1">
+                          <MapPin class="w-3 h-3" />
+                          <span>{{ service.location }}</span>
+                        </div>
+                        <div class="flex items-center gap-1">
+                          <Clock class="w-3 h-3" />
+                          <span>{{ service.timebank }}</span>
+                        </div>
+                        <div class="flex items-center gap-1">
+                          <span :class="service.status === 'active' ? 'text-green-600' : 'text-gray-500'">
+                            {{ service.status }}
+                          </span>
+                        </div>
+                      </div>
+                      
+                      <div v-if="service.tags && service.tags.length > 0" class="flex flex-wrap gap-1 mt-2">
+                        <Badge
+                          v-for="tag in service.tags.slice(0, 3)"
+                          :key="tag"
+                          variant="outline"
+                          class="text-xs"
+                        >
+                          {{ tag }}
+                        </Badge>
+                      </div>
                     </div>
                   </div>
+                </div>
+                
+                <!-- Handshakes Section -->
+                <div 
+                  v-if="getHandshakesForService(service.id).length > 0"
+                  class="border-t border-gray-200"
+                >
+                  <button
+                    @click.stop="toggleServiceExpanded(service.id)"
+                    class="w-full px-4 py-2 flex items-center justify-between text-sm text-gray-700 hover:bg-gray-50 transition-colors"
+                  >
+                    <span class="font-medium">
+                      Handshakes ({{ getHandshakesForService(service.id).length }})
+                    </span>
+                    <ChevronDown 
+                      v-if="!expandedServices.has(service.id)" 
+                      class="w-4 h-4"
+                    />
+                    <ChevronUp 
+                      v-else
+                      class="w-4 h-4"
+                    />
+                  </button>
                   
-                  <!-- Service Content -->
-                  <div class="flex-1 min-w-0">
-                    <div class="flex items-start justify-between mb-2">
-                      <div class="flex-1 min-w-0">
-                        <h3 class="font-medium text-gray-900 mb-1">{{ service.title }}</h3>
-                        <p class="text-sm text-gray-600">{{ service.location }}</p>
+                  <div 
+                    v-if="expandedServices.has(service.id)"
+                    class="px-4 pb-4 space-y-2"
+                  >
+                    <div
+                      v-for="handshake in getHandshakesForService(service.id)"
+                      :key="handshake.id"
+                      class="p-3 bg-gray-50 rounded-lg border border-gray-200"
+                    >
+                      <div class="flex items-start justify-between mb-2">
+                        <div class="flex items-center gap-2">
+                          <img
+                            :src="getAvatarUrl(handshake.seeker.avatar, handshake.seeker.name)"
+                            :alt="handshake.seeker.name"
+                            class="w-8 h-8 rounded-full object-cover"
+                          />
+                          <div>
+                            <div class="text-sm font-medium text-gray-900">
+                              {{ handshake.seeker.name }}
+                            </div>
+                            <div class="text-xs text-gray-500">
+                              Seeker
+                            </div>
+                          </div>
+                          <span class="text-gray-400">↔</span>
+                          <img
+                            :src="getAvatarUrl(handshake.provider.avatar, handshake.provider.name)"
+                            :alt="handshake.provider.name"
+                            class="w-8 h-8 rounded-full object-cover"
+                          />
+                          <div>
+                            <div class="text-sm font-medium text-gray-900">
+                              {{ handshake.provider.name }}
+                            </div>
+                            <div class="text-xs text-gray-500">
+                              Provider
+                            </div>
+                          </div>
+                        </div>
+                        <Badge 
+                          :class="getHandshakeStatusColor(handshake.status)"
+                        >
+                          {{ handshake.status }}
+                        </Badge>
                       </div>
-                      <Badge 
-                        :class="service.type === 'OFFER' 
-                          ? 'bg-emerald-100 text-emerald-700 hover:bg-emerald-100' 
-                          : 'bg-blue-100 text-blue-700 hover:bg-blue-100'"
-                      >
-                        {{ service.type }}
-                      </Badge>
-                    </div>
-                    
-                    <p class="text-sm text-gray-600 mb-2 line-clamp-2">
-                      {{ service.description }}
-                    </p>
-                    
-                    <div class="flex items-center gap-4 text-xs text-gray-500">
-                      <div class="flex items-center gap-1">
-                        <MapPin class="w-3 h-3" />
-                        <span>{{ service.location }}</span>
+                      
+                      <div class="flex items-center gap-4 text-xs text-gray-600">
+                        <div>
+                          <span class="font-medium">Duration:</span> {{ handshake.durationHours }}h
+                        </div>
+                        <div v-if="handshake.agreedDate">
+                          <span class="font-medium">Agreed Date:</span> 
+                          {{ new Date(handshake.agreedDate).toLocaleDateString() }}
+                        </div>
+                        <div>
+                          <span class="font-medium">Created:</span> 
+                          {{ new Date(handshake.createdAt).toLocaleDateString() }}
+                        </div>
                       </div>
-                      <div class="flex items-center gap-1">
-                        <Clock class="w-3 h-3" />
-                        <span>{{ service.timebank }}</span>
+                      
+                      <div class="flex items-center gap-2 mt-2 text-xs">
+                        <div 
+                          :class="handshake.seekerConfirmed ? 'text-green-600' : 'text-gray-400'"
+                          class="flex items-center gap-1"
+                        >
+                          <span>{{ handshake.seekerConfirmed ? '✓' : '○' }}</span>
+                          <span>Seeker confirmed</span>
+                        </div>
+                        <div 
+                          :class="handshake.providerConfirmed ? 'text-green-600' : 'text-gray-400'"
+                          class="flex items-center gap-1"
+                        >
+                          <span>{{ handshake.providerConfirmed ? '✓' : '○' }}</span>
+                          <span>Provider confirmed</span>
+                        </div>
                       </div>
-                      <div class="flex items-center gap-1">
-                        <span :class="service.status === 'active' ? 'text-green-600' : 'text-gray-500'">
-                          {{ service.status }}
-                        </span>
-                      </div>
-                    </div>
-                    
-                    <div v-if="service.tags && service.tags.length > 0" class="flex flex-wrap gap-1 mt-2">
-                      <Badge
-                        v-for="tag in service.tags.slice(0, 3)"
-                        :key="tag"
-                        variant="outline"
-                        class="text-xs"
-                      >
-                        {{ tag }}
-                      </Badge>
                     </div>
                   </div>
                 </div>
@@ -144,9 +250,6 @@
             <HandshakeList
               v-else
               :handshakes="userHandshakes"
-              @openChat="handleOpenChat"
-              @openConfirm="handleOpenConfirm"
-              @openRating="handleOpenRating"
             />
           </TabsContent>
         </Tabs>
@@ -157,7 +260,7 @@
 
 <script setup lang="ts">
 import { ref, onMounted, computed, watch } from 'vue'
-import { Clock, MapPin } from 'lucide-vue-next'
+import { Clock, MapPin, ChevronDown, ChevronUp } from 'lucide-vue-next'
 import Card from '../ui/Card.vue'
 import Badge from '../ui/Badge.vue'
 import Tabs from '../ui/Tabs.vue'
@@ -171,6 +274,8 @@ import { useAppStore } from '../../stores/appStore'
 import { useHandshakeStore } from '../../stores/handshakeStore'
 import { getUserServices } from '../../services/marketplaceService'
 import { updateProfile } from '../../services/authService'
+import { getHandshakesByOfferId, getHandshakesByRequestId } from '../../services/handshakeService'
+import { getAvatarUrl } from '../../utils/avatarUtils'
 import type { Service, Handshake } from '../../types'
 
 const appStore = useAppStore()
@@ -180,6 +285,8 @@ const userServices = ref<Service[]>([])
 const loadingServices = ref(false)
 const loadingHandshakes = ref(false)
 const profilePictureUrl = ref<string | undefined>(appStore.currentUser?.avatarUrl)
+const serviceHandshakes = ref<Map<string, Handshake[]>>(new Map())
+const expandedServices = ref<Set<string>>(new Set())
 
 const userHandshakes = computed(() => handshakeStore.handshakes)
 
@@ -218,6 +325,11 @@ onMounted(async () => {
     loadingServices.value = true
     try {
       userServices.value = await getUserServices(String(appStore.currentUser.id))
+      
+      // Load handshakes for each service
+      for (const service of userServices.value) {
+        await loadHandshakesForService(service.id, service.type)
+      }
     } catch (error) {
       console.error('Failed to load user services:', error)
     } finally {
@@ -236,26 +348,50 @@ onMounted(async () => {
   }
 })
 
+const loadHandshakesForService = async (serviceId: string, serviceType: 'OFFER' | 'REQUEST') => {
+  try {
+    let handshakes: Handshake[]
+    if (serviceType === 'OFFER') {
+      handshakes = await getHandshakesByOfferId(Number(serviceId))
+    } else {
+      handshakes = await getHandshakesByRequestId(Number(serviceId))
+    }
+    serviceHandshakes.value.set(serviceId, handshakes)
+  } catch (error) {
+    console.error(`Failed to load handshakes for service ${serviceId}:`, error)
+    serviceHandshakes.value.set(serviceId, [])
+  }
+}
+
+const toggleServiceExpanded = (serviceId: string) => {
+  if (expandedServices.value.has(serviceId)) {
+    expandedServices.value.delete(serviceId)
+  } else {
+    expandedServices.value.add(serviceId)
+  }
+}
+
+const getHandshakesForService = (serviceId: string): Handshake[] => {
+  return serviceHandshakes.value.get(serviceId) || []
+}
+
+const getHandshakeStatusColor = (status: string): string => {
+  switch (status) {
+    case 'PENDING':
+      return 'bg-yellow-100 text-yellow-700'
+    case 'CONFIRMED':
+      return 'bg-blue-100 text-blue-700'
+    case 'COMPLETED':
+      return 'bg-green-100 text-green-700'
+    case 'CANCELLED':
+      return 'bg-gray-100 text-gray-700'
+    default:
+      return 'bg-gray-100 text-gray-700'
+  }
+}
+
 const viewService = (serviceId: string) => {
   appStore.setSelectedServiceId(serviceId)
-}
-
-const handleOpenChat = (handshake: Handshake) => {
-  // Navigate to messaging page with this handshake
-  console.log('Open chat for handshake:', handshake)
-  // TODO: Implement chat navigation
-}
-
-const handleOpenConfirm = (handshake: Handshake) => {
-  // Open confirm modal
-  console.log('Open confirm modal for handshake:', handshake)
-  // TODO: Implement confirm modal
-}
-
-const handleOpenRating = (handshake: Handshake) => {
-  // Open rating modal
-  console.log('Open rating modal for handshake:', handshake)
-  // TODO: Implement rating modal
 }
 </script>
 

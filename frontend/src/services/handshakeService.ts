@@ -79,3 +79,17 @@ export async function getUserRatings(userId: number): Promise<ServiceRating[]> {
   return api.get<ServiceRating[]>(`/handshakes/users/${userId}/ratings`);
 }
 
+/**
+ * Get handshakes for a specific offer
+ */
+export async function getHandshakesByOfferId(offerId: number): Promise<Handshake[]> {
+  return api.get<Handshake[]>(`/handshakes/offers/${offerId}`);
+}
+
+/**
+ * Get handshakes for a specific request
+ */
+export async function getHandshakesByRequestId(requestId: number): Promise<Handshake[]> {
+  return api.get<Handshake[]>(`/handshakes/requests/${requestId}`);
+}
+
