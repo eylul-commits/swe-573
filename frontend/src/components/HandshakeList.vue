@@ -121,7 +121,7 @@ defineProps<{
   handshakes: Handshake[];
 }>();
 
-const emit = defineEmits<{
+defineEmits<{
   'openRating': [handshake: Handshake];
 }>();
 
