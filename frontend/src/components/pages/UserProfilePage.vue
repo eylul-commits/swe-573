@@ -26,6 +26,9 @@
             <div class="flex-1">
               <div class="text-gray-900 text-xl mb-1">{{ userProfile.name }}</div>
               <div class="text-gray-600 mb-2">{{ userProfile.location || 'Location not set' }}</div>
+              <div v-if="userProfileBadge" class="mt-2">
+                <BadgeDisplay :badge="userProfileBadge" />
+              </div>
               <div v-if="userProfile.bio" class="text-gray-700 text-sm mt-3">
                 {{ userProfile.bio }}
               </div>
@@ -263,7 +266,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted } from 'vue'
+import { ref, onMounted, computed } from 'vue'
 import { Clock, MapPin } from 'lucide-vue-next'
 import Card from '../ui/Card.vue'
 import Badge from '../ui/Badge.vue'
@@ -276,6 +279,7 @@ import Avatar from '../ui/Avatar.vue'
 import AvatarImage from '../ui/AvatarImage.vue'
 import AvatarFallback from '../ui/AvatarFallback.vue'
 import ImageWithFallback from '../ui/ImageWithFallback.vue'
+import BadgeDisplay from '../BadgeDisplay.vue'
 import { useAppStore } from '../../stores/appStore'
 import { getUserById } from '../../services/authService'
 import { getUserServices } from '../../services/marketplaceService'
@@ -296,6 +300,14 @@ const loading = ref(false)
 const loadingServices = ref(false)
 const loadingReviews = ref(false)
 const error = ref<string | null>(null)
+
+// Get the user's current badge (only one badge now)
+const userProfileBadge = computed(() => {
+  if (userProfile.value?.currentBadge) {
+    return userProfile.value.currentBadge
+  }
+  return null
+})
 
 function formatDate(dateString: string): string {
   const date = new Date(dateString)
@@ -328,6 +340,7 @@ async function loadProfile() {
       hoursGiven: user.hoursGiven || 0,
       hoursReceived: user.hoursReceived || 0,
       timebankBalance: user.timebankBalance || user.balanceHours || 0,
+      currentBadge: user.badges && user.badges.length > 0 ? user.badges[0] : undefined,
       bio: user.bio,
       location: user.location || (user.district ? `${user.district}${user.province ? `, ${user.province}` : ''}` : undefined),
       province: user.province,

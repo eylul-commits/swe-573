@@ -11,9 +11,12 @@
             :alt-text="appStore.currentUser?.name || 'User'"
             @error="handleUploadError"
           />
-          <div>
+          <div class="flex-1">
             <div class="text-gray-900 text-xl">{{ appStore.currentUser?.name || 'User' }}</div>
             <div class="text-gray-600">{{ appStore.currentUser?.location || 'Location not set' }}</div>
+            <div v-if="currentUserBadge" class="mt-2">
+              <BadgeDisplay :badge="currentUserBadge" />
+            </div>
           </div>
         </div>
         <div class="grid grid-cols-3 gap-4">
@@ -270,6 +273,7 @@ import TabsTrigger from '../ui/TabsTrigger.vue'
 import HandshakeList from '../HandshakeList.vue'
 import ProfilePictureUpload from '../ui/ProfilePictureUpload.vue'
 import ImageWithFallback from '../ui/ImageWithFallback.vue'
+import BadgeDisplay from '../BadgeDisplay.vue'
 import { useAppStore } from '../../stores/appStore'
 import { useHandshakeStore } from '../../stores/handshakeStore'
 import { getUserServices } from '../../services/marketplaceService'
@@ -289,6 +293,14 @@ const serviceHandshakes = ref<Map<string, Handshake[]>>(new Map())
 const expandedServices = ref<Set<string>>(new Set())
 
 const userHandshakes = computed(() => handshakeStore.handshakes)
+
+// Get the user's current badge (only one badge now)
+const currentUserBadge = computed(() => {
+  if (appStore.currentUser?.badges && appStore.currentUser.badges.length > 0) {
+    return appStore.currentUser.badges[0]
+  }
+  return null
+})
 
 // Watch for changes in currentUser avatarUrl and update profilePictureUrl
 watch(() => appStore.currentUser?.avatarUrl, (newAvatar) => {
