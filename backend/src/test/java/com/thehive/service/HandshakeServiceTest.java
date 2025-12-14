@@ -50,6 +50,9 @@ class HandshakeServiceTest {
     @Mock
     private RatingRepository ratingRepository;
 
+    @Mock
+    private TimebankTransactionService timebankTransactionService;
+
     @InjectMocks
     private HandshakeService handshakeService;
 
@@ -154,6 +157,29 @@ class HandshakeServiceTest {
         // Act & Assert
         assertThrows(IllegalStateException.class, 
             () -> handshakeService.createHandshake(request, 1));
+    }
+
+    @Test
+    void createHandshake_InsufficientBalance_ThrowsException() {
+        // Arrange
+        seeker.setBalanceHours(2); // Not enough for 5-hour service
+        
+        CreateHandshakeRequest request = new CreateHandshakeRequest();
+        request.setOfferId(1);
+        request.setProviderId(2);
+
+        when(offerRepository.findById(1)).thenReturn(Optional.of(offer));
+        when(userRepository.findById(1)).thenReturn(Optional.of(seeker));
+        when(handshakeRepository.findByOfferIdAndSeekerId(1, 1)).thenReturn(Optional.empty());
+
+        // Act & Assert
+        IllegalStateException exception = assertThrows(
+            IllegalStateException.class, 
+            () -> handshakeService.createHandshake(request, 1)
+        );
+
+        assertTrue(exception.getMessage().contains("Insufficient balance"));
+        verify(handshakeRepository, never()).save(any(Handshake.class));
     }
 
     @Test
@@ -424,6 +450,12 @@ class HandshakeServiceTest {
         // Assert
         verify(ratingRepository).save(any(Rating.class));
         verify(handshakeRepository).save(any(Handshake.class));
+        verify(timebankTransactionService).createTransaction(
+            seeker.getId(), 
+            provider.getId(), 
+            handshake.getId(), 
+            handshake.getDurationHours()
+        );
     }
 
     @Test

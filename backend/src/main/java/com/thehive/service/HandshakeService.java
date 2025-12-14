@@ -35,6 +35,7 @@ public class HandshakeService {
     private final RequestRepository requestRepository;
     private final UserRepository userRepository;
     private final RatingRepository ratingRepository;
+    private final TimebankTransactionService timebankTransactionService;
 
     @Transactional
     public HandshakeDTO createHandshake(CreateHandshakeRequest request, Integer seekerId) {
@@ -72,6 +73,14 @@ public class HandshakeService {
         // Validate seeker
         User seeker = userRepository.findById(seekerId)
                 .orElseThrow(() -> new ResourceNotFoundException("Seeker not found with id: " + seekerId));
+
+        // Check if seeker has enough balance for the service
+        if (seeker.getBalanceHours() < defaultHours) {
+            throw new IllegalStateException(
+                "Insufficient balance to accept this service. Required: " + 
+                defaultHours + " hours, Available: " + seeker.getBalanceHours() + " hours"
+            );
+        }
 
         // Validate provider
         User provider = userRepository.findById(request.getProviderId())
@@ -189,6 +198,14 @@ public class HandshakeService {
         if (allRatings.size() == 2) {
             handshake.setStatus(HandshakeStatus.COMPLETED);
             handshakeRepository.save(handshake);
+            
+            // Create TimeBank transaction: seeker pays provider for the service
+            timebankTransactionService.createTransaction(
+                handshake.getSeeker().getId(),      // sender (pays for service)
+                handshake.getProvider().getId(),    // receiver (gets paid for service)
+                handshake.getId(),
+                handshake.getDurationHours()
+            );
         }
 
         return convertToDTO(handshake, raterId);
