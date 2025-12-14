@@ -208,3 +208,302 @@ export interface ServiceRequest {
   message?: string;
 }
 
+// =============================================================================
+// AUTH SERVICE TYPES
+// =============================================================================
+
+export interface AuthUser {
+  id: number;
+  email: string;
+  name: string;
+  bio?: string;
+  avatarUrl?: string;
+  province?: string;
+  district?: string;
+  geohash?: string;
+  role: string;
+  accountStatus?: 'ACTIVE' | 'DEACTIVATED' | 'WARNED';
+  warningCount?: number;
+  balanceHours: number;
+  timebankBalance?: number;
+  hoursGiven?: number;
+  hoursReceived?: number;
+  location?: string;
+}
+
+export interface LoginRequest {
+  email: string;
+  password: string;
+}
+
+export interface RegisterRequest {
+  name: string;
+  email: string;
+  password: string;
+}
+
+export interface AuthResponse {
+  token: string;
+  user: AuthUser;
+  streamChatToken?: string;
+}
+
+export interface UpdateProfileRequest {
+  name?: string;
+  bio?: string;
+  avatarUrl?: string;
+  province?: string;
+  district?: string;
+  geohash?: string;
+}
+
+// =============================================================================
+// ADMIN SERVICE TYPES
+// =============================================================================
+
+export interface AdminStatistics {
+  totalUsers: number;
+  activeUsers: number;
+  deactivatedUsers: number;
+  totalOffers: number;
+  activeOffers: number;
+  totalRequests: number;
+  activeRequests: number;
+  totalReports: number;
+  openReports: number;
+  resolvedReports: number;
+  totalHandshakes: number;
+  totalMessages: number;
+}
+
+export interface AdminUser {
+  id: number;
+  email: string;
+  name: string;
+  bio?: string;
+  avatarUrl?: string;
+  province?: string;
+  district?: string;
+  geohash?: string;
+  role: 'USER' | 'ADMIN';
+  accountStatus: 'ACTIVE' | 'DEACTIVATED' | 'WARNED';
+  warningCount: number;
+  balanceHours: number;
+  hoursGiven?: number;
+  hoursReceived?: number;
+}
+
+export interface UserManagementRequest {
+  userId: number;
+  action: 'WARN' | 'DEACTIVATE' | 'ACTIVATE';
+  reason?: string;
+}
+
+export interface ResolveReportRequest {
+  status: ReportStatus;
+  adminNotes?: string;
+  userId?: number;
+  action?: 'WARN' | 'DEACTIVATE' | 'NO_ACTION';
+}
+
+export interface UserAction {
+  id: number;
+  userId: number;
+  adminId: number;
+  adminName: string;
+  adminEmail: string;
+  actionType: 'WARN' | 'DEACTIVATE' | 'ACTIVATE';
+  reason?: string;
+  reportId?: number;
+  createdAt: string;
+}
+
+// =============================================================================
+// REPORT SERVICE TYPES
+// =============================================================================
+
+export type ReportType = 'USER' | 'OFFER' | 'REQUEST' | 'FORUM_POST' | 'FORUM_TOPIC';
+export type ReportStatus = 'OPEN' | 'RESOLVED';
+
+export interface Report {
+  id: number;
+  reporterId: number;
+  reporterName: string;
+  reporterEmail: string;
+  reportedUserId: number;
+  reportedUserName: string;
+  reportedUserEmail: string;
+  reportedUserRole?: 'USER' | 'ADMIN';
+  reportType: ReportType;
+  reportedOfferId?: number;
+  reportedOfferTitle?: string;
+  reportedRequestId?: number;
+  reportedRequestTitle?: string;
+  reportedForumPostId?: number;
+  reportedForumTopicId?: number;
+  message: string;
+  adminNotes?: string;
+  status: ReportStatus;
+  createdAt: string;
+  resolvedAt?: string;
+  resolvedById?: number;
+  resolvedByName?: string;
+}
+
+export interface CreateReportRequest {
+  reportType: ReportType;
+  reportedUserId: number;
+  reportedOfferId?: number;
+  reportedRequestId?: number;
+  reportedForumPostId?: number;
+  reportedForumTopicId?: number;
+  message: string;
+}
+
+// =============================================================================
+// MARKETPLACE SERVICE TYPES
+// =============================================================================
+
+export interface CreateOfferPayload {
+  title: string;
+  description: string;
+  durationHours: number;
+  startDate: string;
+  endDate: string;
+  province: string;
+  district: string;
+  geohash: string;
+  tags: string[];
+  imageUrls?: string[];
+}
+
+export interface CreateRequestPayload {
+  title: string;
+  description: string;
+  durationHours: number;
+  startDate: string;
+  endDate: string;
+  province: string;
+  district: string;
+  geohash: string;
+  tags: string[];
+  imageUrls?: string[];
+}
+
+// =============================================================================
+// FORUM SERVICE TYPES
+// =============================================================================
+
+export interface ForumAuthor {
+  id: number;
+  name: string;
+  avatar: string | null;
+  badge: string;
+}
+
+export interface ForumTopic {
+  id: number;
+  title: string;
+  author: ForumAuthor;
+  postCount: number;
+  views: number;
+  likes: number;
+  createdAt: string;
+  updatedAt: string;
+  lastActivity: string;
+  excerpt: string | null;
+  isPinned: boolean;
+}
+
+export interface ForumPost {
+  id: number;
+  topicId: number;
+  author: ForumAuthor;
+  content: string;
+  createdAt: string;
+}
+
+export interface CreateForumTopicRequest {
+  title: string;
+  initialPostContent: string;
+}
+
+export interface CreateForumPostRequest {
+  content: string;
+}
+
+// =============================================================================
+// BACKEND DTO TYPES (for API Service)
+// =============================================================================
+
+export interface BackendAuthorDTO {
+  id: number;
+  name: string;
+  avatar: string | null;
+  badge: string | null;
+  bio?: string | null;
+  province?: string | null;
+  district?: string | null;
+  balanceHours?: number | null;
+}
+
+export interface BackendServiceDTO {
+  id: number;
+  type: 'OFFER' | 'REQUEST';
+  title: string;
+  description: string;
+  timebank: number;
+  startDate: string | null;
+  endDate: string | null;
+  location: string;
+  province: string | null;
+  district: string | null;
+  geohash: string | null;
+  status: string;
+  createdAt: string;
+  updatedAt: string;
+  poster: BackendAuthorDTO;
+  tags: string[];
+  distance?: string;
+  imageUrls?: string[];
+}
+
+export interface BackendServiceRatingDTO {
+  id: number;
+  comment: string | null;
+  createdAt: string;
+  rater: BackendAuthorDTO;
+  punctuality: number | null;
+  friendliness: number | null;
+  communicative: number | null;
+  preparedness: number | null;
+}
+
+export interface BackendServiceRatingSummaryDTO {
+  punctuality: number;
+  friendliness: number;
+  communicative: number;
+  preparedness: number;
+  totalReviews: number;
+}
+
+export interface BackendServiceRatingsResponseDTO {
+  ratings: BackendServiceRatingDTO[];
+  summary: BackendServiceRatingSummaryDTO;
+}
+
+export interface BackendServiceAnswerDTO {
+  id: number;
+  content: string;
+  createdAt: string;
+  responder: BackendAuthorDTO;
+}
+
+export interface BackendServiceQuestionDTO {
+  id: number;
+  content: string;
+  createdAt: string;
+  author: BackendAuthorDTO;
+  answer?: BackendServiceAnswerDTO | null;
+}
+

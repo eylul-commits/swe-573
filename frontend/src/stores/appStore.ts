@@ -1,14 +1,14 @@
 import { defineStore } from 'pinia'
 import { ref, computed } from 'vue'
-import type { User } from '../services/authService'
+import type { AuthUser } from '../types'
 
 export const useAppStore = defineStore('app', () => {
   // Restore currentUser from localStorage on initialization
-  const restoreUserFromStorage = (): User | null => {
+  const restoreUserFromStorage = (): AuthUser | null => {
     try {
       const userStr = localStorage.getItem('currentUser')
       if (userStr) {
-        return JSON.parse(userStr) as User
+        return JSON.parse(userStr) as AuthUser
       }
     } catch (error) {
       console.error('Failed to restore user from localStorage:', error)
@@ -16,7 +16,7 @@ export const useAppStore = defineStore('app', () => {
     return null
   }
 
-  const currentUser = ref<User | null>(restoreUserFromStorage())
+  const currentUser = ref<AuthUser | null>(restoreUserFromStorage())
   const authToken = ref<string | null>(localStorage.getItem('authToken'))
   const streamChatReady = ref(false)
   const currentPage = ref('home')
@@ -28,9 +28,9 @@ export const useAppStore = defineStore('app', () => {
   const isAuthenticated = computed(() => !!authToken.value && !!currentUser.value)
 
   // Actions
-  const setCurrentUser = async (user: User, token: string, streamChatToken?: string) => {
+  const setCurrentUser = async (user: AuthUser, token: string, streamChatToken?: string) => {
     // map backend properties to frontend expected properties
-    const mappedUser: User = {
+    const mappedUser: AuthUser = {
       ...user,
       timebankBalance: user.balanceHours,
       hoursGiven: user.hoursGiven || 0,

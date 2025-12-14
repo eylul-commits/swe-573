@@ -4,7 +4,7 @@ import type {
   ForumPost,
   CreateForumTopicRequest,
   CreateForumPostRequest,
-} from '../types/forum';
+} from '../types';
 
 
  //Get all forum topics
@@ -61,5 +61,4 @@ export function filterTopics(
     return matchesSearch;
   });
 }
-
 

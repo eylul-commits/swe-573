@@ -1,40 +1,11 @@
 import { api, ApiError } from '../config/api'
-
-export interface LoginRequest {
-  email: string
-  password: string
-}
-
-export interface RegisterRequest {
-  name: string
-  email: string
-  password: string
-}
-
-export interface User {
-  id: number
-  email: string
-  name: string
-  bio?: string
-  avatarUrl?: string
-  province?: string
-  district?: string
-  geohash?: string
-  role: string
-  accountStatus?: 'ACTIVE' | 'DEACTIVATED' | 'WARNED'
-  warningCount?: number
-  balanceHours: number
-  timebankBalance?: number
-  hoursGiven?: number
-  hoursReceived?: number
-  location?: string
-}
-
-export interface AuthResponse {
-  token: string
-  user: User
-  streamChatToken?: string
-}
+import type {
+  LoginRequest,
+  RegisterRequest,
+  AuthResponse,
+  UpdateProfileRequest,
+  AuthUser,
+} from '../types'
 
 export async function login(credentials: LoginRequest): Promise<AuthResponse> {
   try {
@@ -66,9 +37,9 @@ export async function register(data: RegisterRequest): Promise<AuthResponse> {
   }
 }
 
-export async function getCurrentUser(): Promise<User> {
+export async function getCurrentUser(): Promise<AuthUser> {
   try {
-    const response = await api.get<User>('/auth/me')
+    const response = await api.get<AuthUser>('/auth/me')
     return response
   } catch (error: any) {
     if (error instanceof ApiError && error.status === 401) {
@@ -78,18 +49,9 @@ export async function getCurrentUser(): Promise<User> {
   }
 }
 
-export interface UpdateProfileRequest {
-  name?: string
-  bio?: string
-  avatarUrl?: string
-  province?: string
-  district?: string
-  geohash?: string
-}
-
-export async function updateProfile(data: UpdateProfileRequest): Promise<User> {
+export async function updateProfile(data: UpdateProfileRequest): Promise<AuthUser> {
   try {
-    const response = await api.put<User>('/auth/me', data)
+    const response = await api.put<AuthUser>('/auth/me', data)
     return response
   } catch (error: any) {
     if (error instanceof ApiError) {
@@ -99,9 +61,9 @@ export async function updateProfile(data: UpdateProfileRequest): Promise<User> {
   }
 }
 
-export async function getUserById(userId: number): Promise<User> {
+export async function getUserById(userId: number): Promise<AuthUser> {
   try {
-    const response = await api.get<User>(`/auth/users/${userId}`)
+    const response = await api.get<AuthUser>(`/auth/users/${userId}`)
     return response
   } catch (error: any) {
     if (error instanceof ApiError) {

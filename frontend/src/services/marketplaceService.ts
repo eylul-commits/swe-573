@@ -1,5 +1,10 @@
 import { api } from '../config/api';
-import type { Service, User } from '../types';
+import type {
+  Service,
+  User,
+  CreateOfferPayload,
+  CreateRequestPayload,
+} from '../types';
 
 interface AuthorDTO {
   id: number;
@@ -322,32 +327,6 @@ export async function getRecommendedServices(limit: number = 3): Promise<Service
   }
 }
 
-export interface CreateOfferPayload {
-  title: string;
-  description: string;
-  durationHours: number;
-  startDate: string;
-  endDate: string;
-  province: string;
-  district: string;
-  geohash: string;
-  tags: string[];
-  imageUrls?: string[];
-}
-
-export interface CreateRequestPayload {
-  title: string;
-  description: string;
-  durationHours: number;
-  startDate: string;
-  endDate: string;
-  province: string;
-  district: string;
-  geohash: string;
-  tags: string[];
-  imageUrls?: string[];
-}
-
 export async function createOffer(payload: CreateOfferPayload): Promise<Service | null> {
   try {
     const offer = await api.post<OfferDTO>('/marketplace/offers', payload);
@@ -453,4 +432,3 @@ export async function getUserServices(userId: string): Promise<Service[]> {
     return [];
   }
 }
-
