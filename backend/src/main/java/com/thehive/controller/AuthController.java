@@ -43,5 +43,11 @@ public class AuthController {
         UserDTO user = authService.updateProfile(userId, request);
         return ResponseEntity.ok(user);
     }
+
+    @GetMapping("/users/{userId}")
+    public ResponseEntity<UserDTO> getUserById(@PathVariable Integer userId) {
+        UserDTO user = authService.getUserById(userId);
+        return ResponseEntity.ok(user);
+    }
 }
 

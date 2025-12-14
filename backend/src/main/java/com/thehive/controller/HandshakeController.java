@@ -4,6 +4,7 @@ import com.thehive.model.dto.ConfirmHandshakeRequest;
 import com.thehive.model.dto.CreateHandshakeRequest;
 import com.thehive.model.dto.CreateRatingRequest;
 import com.thehive.model.dto.HandshakeDTO;
+import com.thehive.model.dto.ServiceRatingDTO;
 import com.thehive.service.HandshakeService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -101,6 +102,15 @@ public class HandshakeController {
         Integer userId = (Integer) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
         HandshakeDTO handshake = handshakeService.getHandshakeById(handshakeId, userId);
         return ResponseEntity.ok(handshake);
+    }
+
+    /**
+     * Get all ratings for a user
+     */
+    @GetMapping("/users/{userId}/ratings")
+    public ResponseEntity<List<ServiceRatingDTO>> getUserRatings(@PathVariable Integer userId) {
+        List<ServiceRatingDTO> ratings = handshakeService.getUserRatings(userId);
+        return ResponseEntity.ok(ratings);
     }
 }
 

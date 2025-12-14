@@ -99,3 +99,15 @@ export async function updateProfile(data: UpdateProfileRequest): Promise<User> {
   }
 }
 
+export async function getUserById(userId: number): Promise<User> {
+  try {
+    const response = await api.get<User>(`/auth/users/${userId}`)
+    return response
+  } catch (error: any) {
+    if (error instanceof ApiError) {
+      throw new Error(error.message || 'Failed to fetch user')
+    }
+    throw new Error('Failed to fetch user')
+  }
+}
+

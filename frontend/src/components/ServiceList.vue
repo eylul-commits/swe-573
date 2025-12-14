@@ -138,7 +138,12 @@
               <div class="flex items-start justify-between mb-2">
                 <div class="flex-1">
                   <h3 class="font-medium text-gray-900 mb-1">{{ service.title }}</h3>
-                  <p class="text-sm text-gray-600">{{ service.poster.name }}</p>
+                  <p 
+                    class="text-sm text-gray-600 cursor-pointer hover:text-gray-800 transition-colors"
+                    @click.stop="viewUserProfile(service.poster.id)"
+                  >
+                    {{ service.poster.name }}
+                  </p>
                 </div>
                 <Badge 
                   :class="service.type === 'OFFER' 
@@ -197,7 +202,12 @@
               <div class="flex items-start justify-between mb-2">
                 <div class="flex-1">
                   <h3 class="font-medium text-gray-900 mb-1">{{ service.title }}</h3>
-                  <p class="text-sm text-gray-600">{{ service.poster.name }}</p>
+                  <p 
+                    class="text-sm text-gray-600 cursor-pointer hover:text-gray-800 transition-colors"
+                    @click.stop="viewUserProfile(service.poster.id)"
+                  >
+                    {{ service.poster.name }}
+                  </p>
                 </div>
                 <Badge class="bg-emerald-100 text-emerald-700 hover:bg-emerald-100">
                   {{ service.type }}
@@ -252,7 +262,12 @@
               <div class="flex items-start justify-between mb-2">
                 <div class="flex-1">
                   <h3 class="font-medium text-gray-900 mb-1">{{ service.title }}</h3>
-                  <p class="text-sm text-gray-600">{{ service.poster.name }}</p>
+                  <p 
+                    class="text-sm text-gray-600 cursor-pointer hover:text-gray-800 transition-colors"
+                    @click.stop="viewUserProfile(service.poster.id)"
+                  >
+                    {{ service.poster.name }}
+                  </p>
                 </div>
                 <Badge class="bg-blue-100 text-blue-700 hover:bg-blue-100">
                   {{ service.type }}
@@ -386,6 +401,10 @@ const clearFilters = () => {
   searchQuery.value = ''
   selectedTags.value = []
   selectedBadge.value = 'all'
+}
+
+const viewUserProfile = (userId: string) => {
+  appStore.setSelectedUserId(userId)
 }
 </script>
 

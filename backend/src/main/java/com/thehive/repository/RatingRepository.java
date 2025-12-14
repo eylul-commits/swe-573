@@ -18,6 +18,8 @@ public interface RatingRepository extends JpaRepository<Rating, Integer> {
 
     List<Rating> findByHandshakeOfferId(Integer offerId);
     
+    List<Rating> findByHandshakeRequestId(Integer requestId);
+    
     Optional<Rating> findByHandshakeIdAndRaterId(Integer handshakeId, Integer raterId);
     
     boolean existsByHandshakeIdAndRaterId(Integer handshakeId, Integer raterId);

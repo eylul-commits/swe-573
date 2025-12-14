@@ -103,11 +103,19 @@
         <h3 class="text-gray-900 mb-3">{{ service.type === 'OFFER' ? 'Offered by' : 'Requested by' }}</h3>
         <div class="flex items-start justify-between">
           <div class="flex items-start gap-3">
-            <Avatar class="w-12 h-12">
+            <Avatar 
+              class="w-12 h-12 cursor-pointer hover:opacity-80 transition-opacity"
+              @click="viewUserProfile(service.poster.id)"
+            >
               <AvatarImage :src="service.poster.avatar" :alt="service.poster.name" />
             </Avatar>
             <div>
-              <div class="text-gray-900">{{ service.poster.name }}</div>
+              <div 
+                class="text-gray-900 cursor-pointer hover:text-gray-700 transition-colors"
+                @click="viewUserProfile(service.poster.id)"
+              >
+                {{ service.poster.name }}
+              </div>
               <div class="flex items-center gap-3 text-sm text-gray-500 mt-1">
                 <span class="text-emerald-600">{{ posterBalance }}h balance</span>
                 <span>•</span>
@@ -653,6 +661,10 @@ const handleAcceptService = async () => {
   } finally {
     isAccepting.value = false
   }
+}
+
+const viewUserProfile = (userId: string) => {
+  appStore.setSelectedUserId(userId)
 }
 </script>
 

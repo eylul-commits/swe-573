@@ -18,6 +18,8 @@ public class ServiceRatingDTO {
     private Integer preparedness;
     private String comment;
     private LocalDateTime createdAt;
+    private Integer serviceId;
+    private String serviceTitle;
 }
 
 

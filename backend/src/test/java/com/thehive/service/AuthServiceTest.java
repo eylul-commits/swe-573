@@ -576,4 +576,66 @@ class AuthServiceTest {
         assertEquals(UserStatus.WARNED, result.getAccountStatus());
         verify(userRepository, never()).save(any(User.class));
     }
+
+    //Get User By ID Tests
+    @Test
+    void getUserById_WithValidUserId_ShouldSucceed() {
+        // Arrange
+        Integer userId = 1;
+        testUser.setBio("Test bio");
+        testUser.setAvatarUrl("https://example.com/avatar.jpg");
+        testUser.setProvince("Ankara");
+        testUser.setDistrict("Çankaya");
+        testUser.setGeohash("sx1y2z3");
+        testUser.setAccountStatus(UserStatus.ACTIVE);
+        testUser.setWarningCount(0);
+        
+        when(userRepository.findById(userId)).thenReturn(Optional.of(testUser));
+        when(timebankTransactionRepository.findBySenderId(userId)).thenReturn(Collections.emptyList());
+        when(timebankTransactionRepository.findByReceiverId(userId)).thenReturn(Collections.emptyList());
+
+        // Act
+        UserDTO result = authService.getUserById(userId);
+
+        // Assert
+        assertNotNull(result);
+        assertEquals(testUser.getId(), result.getId());
+        assertEquals(testUser.getEmail(), result.getEmail());
+        assertEquals(testUser.getName(), result.getName());
+        assertEquals(testUser.getBio(), result.getBio());
+        assertEquals(testUser.getAvatarUrl(), result.getAvatarUrl());
+        assertEquals(testUser.getProvince(), result.getProvince());
+        assertEquals(testUser.getDistrict(), result.getDistrict());
+        assertEquals(testUser.getGeohash(), result.getGeohash());
+        assertEquals(testUser.getRole(), result.getRole());
+        assertEquals(testUser.getAccountStatus(), result.getAccountStatus());
+        assertEquals(testUser.getWarningCount(), result.getWarningCount());
+        assertEquals(testUser.getBalanceHours(), result.getBalanceHours());
+        assertEquals(0, result.getHoursGiven());
+        assertEquals(0, result.getHoursReceived());
+
+        // Verify
+        verify(userRepository).findById(userId);
+        verify(timebankTransactionRepository).findBySenderId(userId);
+        verify(timebankTransactionRepository).findByReceiverId(userId);
+    }
+
+    @Test
+    void getUserById_WithInvalidUserId_ShouldThrowException() {
+        // Arrange
+        Integer userId = 999;
+        when(userRepository.findById(userId)).thenReturn(Optional.empty());
+
+        // Act & Assert
+        RuntimeException exception = assertThrows(RuntimeException.class, () -> {
+            authService.getUserById(userId);
+        });
+
+        assertEquals("User not found", exception.getMessage());
+
+        // Verify
+        verify(userRepository).findById(userId);
+        verify(timebankTransactionRepository, never()).findBySenderId(any());
+        verify(timebankTransactionRepository, never()).findByReceiverId(any());
+    }
 }

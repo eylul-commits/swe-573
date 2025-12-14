@@ -22,6 +22,7 @@ export const useAppStore = defineStore('app', () => {
   const currentPage = ref('home')
   const selectedServiceId = ref<string | null>(null)
   const selectedThreadId = ref<number | null>(null)
+  const selectedUserId = ref<string | null>(null)
 
   // Computed
   const isAuthenticated = computed(() => !!authToken.value && !!currentUser.value)
@@ -105,6 +106,10 @@ export const useAppStore = defineStore('app', () => {
     selectedThreadId.value = id
   }
 
+  const setSelectedUserId = (id: string | null) => {
+    selectedUserId.value = id
+  }
+
   // Initialize app state from localStorage
   const initializeFromStorage = async () => {
     // if we have user and token try to restore Stream Chat connection
@@ -143,6 +148,7 @@ export const useAppStore = defineStore('app', () => {
     currentPage,
     selectedServiceId,
     selectedThreadId,
+    selectedUserId,
     
     // Computed
     isAuthenticated,
@@ -154,6 +160,7 @@ export const useAppStore = defineStore('app', () => {
     setCurrentPage,
     setSelectedServiceId,
     setSelectedThreadId,
+    setSelectedUserId,
     initializeFromStorage,
   }
 })

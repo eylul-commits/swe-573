@@ -6,6 +6,7 @@ import com.thehive.model.dto.ConfirmHandshakeRequest;
 import com.thehive.model.dto.CreateHandshakeRequest;
 import com.thehive.model.dto.CreateRatingRequest;
 import com.thehive.model.dto.HandshakeDTO;
+import com.thehive.model.dto.ServiceRatingDTO;
 import com.thehive.model.entity.Handshake;
 import com.thehive.model.entity.Offer;
 import com.thehive.model.entity.Rating;
@@ -313,6 +314,40 @@ public class HandshakeService {
             dto.setBadge("Newcomer");
         }
 
+        return dto;
+    }
+
+    @Transactional(readOnly = true)
+    public List<ServiceRatingDTO> getUserRatings(Integer userId) {
+        List<Rating> ratings = ratingRepository.findByRateeId(userId);
+        return ratings.stream()
+                .map(this::convertToServiceRatingDTO)
+                .collect(Collectors.toList());
+    }
+
+    private ServiceRatingDTO convertToServiceRatingDTO(Rating rating) {
+        ServiceRatingDTO dto = new ServiceRatingDTO();
+        dto.setId(rating.getId());
+        dto.setRater(convertToAuthorDTO(rating.getRater()));
+        dto.setPunctuality(rating.getPunctuality());
+        dto.setFriendliness(rating.getFriendliness());
+        dto.setCommunicative(rating.getCommunicative());
+        dto.setPreparedness(rating.getPreparedness());
+        dto.setComment(rating.getComment());
+        dto.setCreatedAt(rating.getCreatedAt());
+        
+        // Get service information from handshake
+        Handshake handshake = rating.getHandshake();
+        if (handshake != null) {
+            if (handshake.getOffer() != null) {
+                dto.setServiceId(handshake.getOffer().getId());
+                dto.setServiceTitle(handshake.getOffer().getTitle());
+            } else if (handshake.getRequest() != null) {
+                dto.setServiceId(handshake.getRequest().getId());
+                dto.setServiceTitle(handshake.getRequest().getTitle());
+            }
+        }
+        
         return dto;
     }
 }

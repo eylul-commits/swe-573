@@ -130,6 +130,14 @@ public class AuthService {
         return convertToDTO(user);
     }
 
+    @Transactional(readOnly = true)
+    public UserDTO getUserById(Integer userId) {
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new RuntimeException("User not found"));
+        
+        return convertToDTO(user);
+    }
+
     @Transactional
     public UserDTO updateProfile(Integer userId, UpdateProfileRequest request) {
         User user = userRepository.findById(userId)
