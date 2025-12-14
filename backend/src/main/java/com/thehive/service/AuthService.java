@@ -214,11 +214,13 @@ public class AuthService {
         List<TimebankTransaction> sentTransactions = timebankTransactionRepository.findBySenderId(user.getId());
         List<TimebankTransaction> receivedTransactions = timebankTransactionRepository.findByReceiverId(user.getId());
         
-        int hoursGiven = sentTransactions.stream()
+        // When you send hours (pay), you received a service
+        int hoursReceived = sentTransactions.stream()
                 .mapToInt(t -> t.getAmount() != null ? t.getAmount() : 0)
                 .sum();
         
-        int hoursReceived = receivedTransactions.stream()
+        // When you receive hours (get paid), you gave a service
+        int hoursGiven = receivedTransactions.stream()
                 .mapToInt(t -> t.getAmount() != null ? t.getAmount() : 0)
                 .sum();
         
