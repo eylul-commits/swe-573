@@ -67,49 +67,65 @@
                 @click="viewService(service.id)"
                 class="p-4 border border-gray-200 rounded-lg cursor-pointer transition-colors hover:bg-gray-50"
               >
-                <div class="flex items-start justify-between mb-2">
-                  <div class="flex-1">
-                    <h3 class="font-medium text-gray-900 mb-1">{{ service.title }}</h3>
-                    <p class="text-sm text-gray-600">{{ service.location }}</p>
+                <div class="flex gap-4">
+                  <!-- Service Image -->
+                  <div v-if="service.imageUrls && service.imageUrls.length > 0" class="flex-shrink-0">
+                    <div class="w-40 h-40 rounded-lg overflow-hidden border border-gray-200">
+                      <ImageWithFallback
+                        :src="service.imageUrls[0]"
+                        :alt="service.title"
+                        className="w-full h-full object-cover"
+                      />
+                    </div>
                   </div>
-                  <Badge 
-                    :class="service.type === 'OFFER' 
-                      ? 'bg-emerald-100 text-emerald-700 hover:bg-emerald-100' 
-                      : 'bg-blue-100 text-blue-700 hover:bg-blue-100'"
-                  >
-                    {{ service.type }}
-                  </Badge>
-                </div>
-                
-                <p class="text-sm text-gray-600 mb-2 line-clamp-2">
-                  {{ service.description }}
-                </p>
-                
-                <div class="flex items-center gap-4 text-xs text-gray-500">
-                  <div class="flex items-center gap-1">
-                    <MapPin class="w-3 h-3" />
-                    <span>{{ service.location }}</span>
+                  
+                  <!-- Service Content -->
+                  <div class="flex-1 min-w-0">
+                    <div class="flex items-start justify-between mb-2">
+                      <div class="flex-1 min-w-0">
+                        <h3 class="font-medium text-gray-900 mb-1">{{ service.title }}</h3>
+                        <p class="text-sm text-gray-600">{{ service.location }}</p>
+                      </div>
+                      <Badge 
+                        :class="service.type === 'OFFER' 
+                          ? 'bg-emerald-100 text-emerald-700 hover:bg-emerald-100' 
+                          : 'bg-blue-100 text-blue-700 hover:bg-blue-100'"
+                      >
+                        {{ service.type }}
+                      </Badge>
+                    </div>
+                    
+                    <p class="text-sm text-gray-600 mb-2 line-clamp-2">
+                      {{ service.description }}
+                    </p>
+                    
+                    <div class="flex items-center gap-4 text-xs text-gray-500">
+                      <div class="flex items-center gap-1">
+                        <MapPin class="w-3 h-3" />
+                        <span>{{ service.location }}</span>
+                      </div>
+                      <div class="flex items-center gap-1">
+                        <Clock class="w-3 h-3" />
+                        <span>{{ service.timebank }}</span>
+                      </div>
+                      <div class="flex items-center gap-1">
+                        <span :class="service.status === 'active' ? 'text-green-600' : 'text-gray-500'">
+                          {{ service.status }}
+                        </span>
+                      </div>
+                    </div>
+                    
+                    <div v-if="service.tags && service.tags.length > 0" class="flex flex-wrap gap-1 mt-2">
+                      <Badge
+                        v-for="tag in service.tags.slice(0, 3)"
+                        :key="tag"
+                        variant="outline"
+                        class="text-xs"
+                      >
+                        {{ tag }}
+                      </Badge>
+                    </div>
                   </div>
-                  <div class="flex items-center gap-1">
-                    <Clock class="w-3 h-3" />
-                    <span>{{ service.timebank }}</span>
-                  </div>
-                  <div class="flex items-center gap-1">
-                    <span :class="service.status === 'active' ? 'text-green-600' : 'text-gray-500'">
-                      {{ service.status }}
-                    </span>
-                  </div>
-                </div>
-                
-                <div v-if="service.tags && service.tags.length > 0" class="flex flex-wrap gap-1 mt-2">
-                  <Badge
-                    v-for="tag in service.tags.slice(0, 3)"
-                    :key="tag"
-                    variant="outline"
-                    class="text-xs"
-                  >
-                    {{ tag }}
-                  </Badge>
                 </div>
               </div>
             </div>
@@ -150,6 +166,7 @@ import TabsList from '../ui/TabsList.vue'
 import TabsTrigger from '../ui/TabsTrigger.vue'
 import HandshakeList from '../HandshakeList.vue'
 import ProfilePictureUpload from '../ui/ProfilePictureUpload.vue'
+import ImageWithFallback from '../ui/ImageWithFallback.vue'
 import { useAppStore } from '../../stores/appStore'
 import { useHandshakeStore } from '../../stores/handshakeStore'
 import { getUserServices } from '../../services/marketplaceService'
