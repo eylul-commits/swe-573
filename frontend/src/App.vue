@@ -36,13 +36,11 @@ import HomePage from './components/pages/HomePage.vue'
 import ExplorePage from './components/pages/ExplorePage.vue'
 import CommonsPage from './components/pages/CommonsPage.vue'
 import MessagingPage from './components/pages/MessagingPage.vue'
-import RequestsPage from './components/pages/RequestsPage.vue'
 import ServiceDetailsPage from './components/pages/ServiceDetailsPage.vue'
 import ThreadDetailsPage from './components/pages/ThreadDetailsPage.vue'
 import CreateServicePage from './components/pages/CreateServicePage.vue'
 import ProfilePage from './components/pages/ProfilePage.vue'
 import UserProfilePage from './components/pages/UserProfilePage.vue'
-import SettingsPage from './components/pages/SettingsPage.vue'
 import AdminPanelPage from './components/pages/AdminPanelPage.vue'
 
 const appStore = useAppStore()
@@ -86,16 +84,12 @@ const currentPageComponent = computed(() => {
       return ExplorePage
     case 'create-offer':
       return CreateServicePage
-    case 'requests':
-      return RequestsPage
     case 'messages':
       return MessagingPage
     case 'commons':
       return CommonsPage
     case 'profile':
       return ProfilePage
-    case 'settings':
-      return SettingsPage
     case 'admin':
       return AdminPanelPage
     default:
