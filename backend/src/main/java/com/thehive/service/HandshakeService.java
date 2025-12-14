@@ -38,7 +38,7 @@ public class HandshakeService {
     private final TimebankTransactionService timebankTransactionService;
 
     @Transactional
-    public HandshakeDTO createHandshake(CreateHandshakeRequest request, Integer seekerId) {
+    public HandshakeDTO createHandshake(CreateHandshakeRequest request, Integer acceptingUserId) {
         // Validate that either offerId or requestId is provided (but not both)
         if ((request.getOfferId() == null && request.getRequestId() == null) ||
             (request.getOfferId() != null && request.getRequestId() != null)) {
@@ -48,6 +48,7 @@ public class HandshakeService {
         Offer offer = null;
         Request serviceRequest = null;
         Integer defaultHours;
+        Integer serviceOwnerId = request.getServiceCreatorId(); // The service creator/owner ID
 
         // Validate offer or request exists
         if (request.getOfferId() != null) {
@@ -56,7 +57,7 @@ public class HandshakeService {
             defaultHours = offer.getDurationHours();
             
             // Check if handshake already exists for this offer
-            if (handshakeRepository.findByOfferIdAndSeekerId(request.getOfferId(), seekerId).isPresent()) {
+            if (handshakeRepository.findByOfferIdAndSeekerId(request.getOfferId(), acceptingUserId).isPresent()) {
                 throw new IllegalStateException("Handshake already exists for this offer and seeker");
             }
         } else {
@@ -65,27 +66,38 @@ public class HandshakeService {
             defaultHours = serviceRequest.getDurationHours();
             
             // Check if handshake already exists for this request
-            if (handshakeRepository.findByRequestIdAndSeekerId(request.getRequestId(), seekerId).isPresent()) {
+            if (handshakeRepository.findByRequestIdAndSeekerId(request.getRequestId(), serviceOwnerId).isPresent()) {
                 throw new IllegalStateException("Handshake already exists for this request and seeker");
             }
         }
 
-        // Validate seeker
-        User seeker = userRepository.findById(seekerId)
-                .orElseThrow(() -> new ResourceNotFoundException("Seeker not found with id: " + seekerId));
+        // Validate accepting user
+        User acceptingUser = userRepository.findById(acceptingUserId)
+                .orElseThrow(() -> new ResourceNotFoundException("Accepting user not found with id: " + acceptingUserId));
 
-        // Check if seeker has enough balance ONLY for offers (seeker pays for receiving service)
-        // For requests, seeker provides service and earns hours, so no balance check needed
-        if (request.getOfferId() != null && seeker.getBalanceHours() < defaultHours) {
-            throw new IllegalStateException(
-                "Insufficient balance to accept this service. Required: " + 
-                defaultHours + " hours, Available: " + seeker.getBalanceHours() + " hours"
-            );
+        // Validate service owner
+        User serviceOwner = userRepository.findById(serviceOwnerId)
+                .orElseThrow(() -> new ResourceNotFoundException("Service owner not found with id: " + serviceOwnerId));
+
+        User seeker, provider;
+        if (request.getOfferId() != null) {
+            // OFFER: accepting user is seeker, owner is provider
+            seeker = acceptingUser;
+            provider = serviceOwner;
+            
+            // Check if seeker has enough balance
+            if (seeker.getBalanceHours() < defaultHours) {
+                throw new IllegalStateException(
+                    "Insufficient balance to accept this service. Required: " + 
+                    defaultHours + " hours, Available: " + seeker.getBalanceHours() + " hours"
+                );
+            }
+        } else {
+            // REQUEST: owner is seeker, accepting user is provider
+            seeker = serviceOwner;
+            provider = acceptingUser;
+            // No balance check needed - provider will earn hours
         }
-
-        // Validate provider
-        User provider = userRepository.findById(request.getProviderId())
-                .orElseThrow(() -> new ResourceNotFoundException("Provider not found with id: " + request.getProviderId()));
 
         // Create handshake
         Handshake handshake = new Handshake();
@@ -99,7 +111,7 @@ public class HandshakeService {
         handshake.setProviderConfirmed(false);
 
         Handshake savedHandshake = handshakeRepository.save(handshake);
-        return convertToDTO(savedHandshake, seekerId);
+        return convertToDTO(savedHandshake, acceptingUserId);
     }
 
     @Transactional
@@ -200,23 +212,13 @@ public class HandshakeService {
             handshake.setStatus(HandshakeStatus.COMPLETED);
             handshakeRepository.save(handshake);
             
-            // Create TimeBank transaction based on service type:
-            // - For OFFERS: seeker receives service, so seeker pays provider
-            // - For REQUESTS: seeker provides service, so provider pays seeker
-            Integer senderId, receiverId;
-            if (handshake.getOffer() != null) {
-                // Offer: seeker pays provider
-                senderId = handshake.getSeeker().getId();
-                receiverId = handshake.getProvider().getId();
-            } else {
-                // Request: provider pays seeker
-                senderId = handshake.getProvider().getId();
-                receiverId = handshake.getSeeker().getId();
-            }
-            
+            // Create TimeBank transaction: seeker always pays provider
+            // - For OFFERS: offer owner provides service (provider), acceptor receives service (seeker)
+            // - For REQUESTS: request owner receives service (seeker), acceptor provides service (provider)
+            // In both cases: seeker pays provider
             timebankTransactionService.createTransaction(
-                senderId,
-                receiverId,
+                handshake.getSeeker().getId(),   // seeker pays
+                handshake.getProvider().getId(), // provider receives
                 handshake.getId(),
                 handshake.getDurationHours()
             );

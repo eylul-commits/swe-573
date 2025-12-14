@@ -107,7 +107,7 @@ class HandshakeServiceTest {
         // Arrange
         CreateHandshakeRequest request = new CreateHandshakeRequest();
         request.setOfferId(1);
-        request.setProviderId(2);
+        request.setServiceCreatorId(2);
 
         when(offerRepository.findById(1)).thenReturn(Optional.of(offer));
         when(userRepository.findById(1)).thenReturn(Optional.of(seeker));
@@ -126,7 +126,12 @@ class HandshakeServiceTest {
         assertFalse(result.getProviderConfirmed());
         assertEquals("Math Tutoring", result.getOfferTitle());
         
+        // Verify the handshake is saved with correct role assignment
         verify(handshakeRepository).save(any(Handshake.class));
+        
+        // Verify seeker and provider are correctly assigned
+        assertEquals(seeker.getId(), result.getSeeker().getId());
+        assertEquals(provider.getId(), result.getProvider().getId());
     }
 
     @Test
@@ -134,7 +139,7 @@ class HandshakeServiceTest {
         // Arrange
         CreateHandshakeRequest request = new CreateHandshakeRequest();
         request.setOfferId(999);
-        request.setProviderId(2);
+        request.setServiceCreatorId(2);
 
         when(offerRepository.findById(999)).thenReturn(Optional.empty());
 
@@ -148,7 +153,7 @@ class HandshakeServiceTest {
         // Arrange
         CreateHandshakeRequest request = new CreateHandshakeRequest();
         request.setOfferId(1);
-        request.setProviderId(2);
+        request.setServiceCreatorId(2);
 
         when(offerRepository.findById(1)).thenReturn(Optional.of(offer));
         when(handshakeRepository.findByOfferIdAndSeekerId(1, 1))
@@ -166,10 +171,11 @@ class HandshakeServiceTest {
         
         CreateHandshakeRequest request = new CreateHandshakeRequest();
         request.setOfferId(1);
-        request.setProviderId(2);
+        request.setServiceCreatorId(2);
 
         when(offerRepository.findById(1)).thenReturn(Optional.of(offer));
-        when(userRepository.findById(1)).thenReturn(Optional.of(seeker));
+        when(userRepository.findById(1)).thenReturn(Optional.of(seeker)); // Accepting user
+        when(userRepository.findById(2)).thenReturn(Optional.of(provider)); // Service owner
         when(handshakeRepository.findByOfferIdAndSeekerId(1, 1)).thenReturn(Optional.empty());
 
         // Act & Assert - Should fail because seeker needs balance to accept an offer
@@ -185,36 +191,36 @@ class HandshakeServiceTest {
     @Test
     void createHandshake_Request_NoBalanceCheckRequired() {
         // Arrange
-        seeker.setBalanceHours(0); // Zero balance is OK for accepting requests
+        seeker.setBalanceHours(0); // Zero balance is OK for being the provider
         
         Request serviceRequest = new Request();
         serviceRequest.setId(1);
         serviceRequest.setTitle("Need Help with Math");
         serviceRequest.setDescription("Looking for math tutor");
         serviceRequest.setDurationHours(5);
-        serviceRequest.setSeeker(seeker);
+        serviceRequest.setSeeker(provider); // Request owner is the seeker
         serviceRequest.setStatus(ItemStatus.ACTIVE);
         serviceRequest.setTags(new HashSet<>());
         
         Handshake requestHandshake = new Handshake();
         requestHandshake.setId(2);
         requestHandshake.setRequest(serviceRequest);
-        requestHandshake.setSeeker(seeker);
-        requestHandshake.setProvider(provider);
+        requestHandshake.setSeeker(provider); // Request owner becomes seeker
+        requestHandshake.setProvider(seeker); // Accepting user becomes provider
         requestHandshake.setStatus(HandshakeStatus.PENDING);
         requestHandshake.setDurationHours(5);
         
         CreateHandshakeRequest request = new CreateHandshakeRequest();
         request.setRequestId(1);
-        request.setProviderId(2);
+        request.setServiceCreatorId(2); // Request owner (seeker in the handshake)
 
         when(requestRepository.findById(1)).thenReturn(Optional.of(serviceRequest));
-        when(userRepository.findById(1)).thenReturn(Optional.of(seeker));
-        when(userRepository.findById(2)).thenReturn(Optional.of(provider));
-        when(handshakeRepository.findByRequestIdAndSeekerId(1, 1)).thenReturn(Optional.empty());
+        when(userRepository.findById(1)).thenReturn(Optional.of(seeker)); // Accepting user (provider)
+        when(userRepository.findById(2)).thenReturn(Optional.of(provider)); // Request owner (seeker)
+        when(handshakeRepository.findByRequestIdAndSeekerId(1, 2)).thenReturn(Optional.empty()); // Check with request owner as seeker
         when(handshakeRepository.save(any(Handshake.class))).thenReturn(requestHandshake);
 
-        // Act - Should succeed even with zero balance because seeker will earn hours
+        // Act - Should succeed even with zero balance because the accepting user is the provider (earns hours)
         HandshakeDTO result = handshakeService.createHandshake(request, 1);
 
         // Assert
@@ -222,6 +228,67 @@ class HandshakeServiceTest {
         assertEquals(2, result.getId());
         assertEquals(HandshakeStatus.PENDING, result.getStatus());
         verify(handshakeRepository).save(any(Handshake.class));
+    }
+
+    @Test
+    void createHandshake_Offer_CorrectRoleAssignment() {
+        // Arrange - User 1 accepts an offer created by User 2
+        CreateHandshakeRequest request = new CreateHandshakeRequest();
+        request.setOfferId(1);
+        request.setServiceCreatorId(2); // Offer creator
+
+        when(offerRepository.findById(1)).thenReturn(Optional.of(offer));
+        when(userRepository.findById(1)).thenReturn(Optional.of(seeker)); // Accepting user
+        when(userRepository.findById(2)).thenReturn(Optional.of(provider)); // Offer creator
+        when(handshakeRepository.findByOfferIdAndSeekerId(1, 1)).thenReturn(Optional.empty());
+        when(handshakeRepository.save(any(Handshake.class))).thenAnswer(invocation -> {
+            Handshake h = invocation.getArgument(0);
+            h.setId(1);
+            return h;
+        });
+
+        // Act - User 1 accepts the offer
+        HandshakeDTO result = handshakeService.createHandshake(request, 1);
+
+        // Assert - For OFFER: accepting user is seeker, offer creator is provider
+        assertEquals(seeker.getId(), result.getSeeker().getId(), 
+            "For OFFER: accepting user should be the seeker (wants the service)");
+        assertEquals(provider.getId(), result.getProvider().getId(), 
+            "For OFFER: offer creator should be the provider (provides the service)");
+    }
+
+    @Test
+    void createHandshake_Request_CorrectRoleAssignment() {
+        // Arrange - User 1 accepts a request created by User 2
+        Request serviceRequest = new Request();
+        serviceRequest.setId(1);
+        serviceRequest.setTitle("Need Help with Math");
+        serviceRequest.setDescription("Looking for math tutor");
+        serviceRequest.setDurationHours(5);
+        serviceRequest.setSeeker(provider); // Request creator
+        serviceRequest.setStatus(ItemStatus.ACTIVE);
+        serviceRequest.setTags(new HashSet<>());
+        
+        CreateHandshakeRequest request = new CreateHandshakeRequest();
+        request.setRequestId(1);
+        request.setServiceCreatorId(2); // Request creator
+
+        when(requestRepository.findById(1)).thenReturn(Optional.of(serviceRequest));
+        when(userRepository.findById(1)).thenReturn(Optional.of(seeker)); // Accepting user
+        when(userRepository.findById(2)).thenReturn(Optional.of(provider)); // Request creator
+        when(handshakeRepository.findByRequestIdAndSeekerId(1, 2)).thenReturn(Optional.empty());
+        when(handshakeRepository.save(any(Handshake.class))).thenAnswer(invocation -> {
+            Handshake h = invocation.getArgument(0);
+            h.setId(2);
+            return h;
+        });
+
+        // Act - User 1 accepts the request
+        HandshakeDTO result = handshakeService.createHandshake(request, 1);
+
+        // Assert - For REQUEST: request creator is seeker, accepting user is provider
+        assertEquals(provider.getId(), result.getSeeker().getId()); //  request creator should be the seeker
+        assertEquals(seeker.getId(), result.getProvider().getId()); //  accepting user should be the provider
     }
 
     @Test
@@ -546,12 +613,13 @@ class HandshakeServiceTest {
         // Act
         HandshakeDTO result = handshakeService.createRating(request, 1);
 
-        // Assert - For requests, provider pays seeker (seeker provides service)
+        // Assert - For both offers and requests, seeker always pays provider
+        // In a request: seeker (request owner) pays provider (person who accepted and provided service)
         verify(ratingRepository).save(any(Rating.class));
         verify(handshakeRepository).save(any(Handshake.class));
         verify(timebankTransactionService).createTransaction(
-            provider.getId(), // provider pays (requested the service)
-            seeker.getId(),   // seeker receives payment (provided the service)
+            seeker.getId(),   // seeker pays (requested the service)
+            provider.getId(), // provider receives payment (provided the service)
             requestHandshake.getId(), 
             requestHandshake.getDurationHours()
         );
