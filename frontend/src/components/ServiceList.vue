@@ -137,7 +137,6 @@
                   <h3 class="font-medium text-gray-900 mb-1">{{ service.title }}</h3>
                   <p 
                     class="text-sm text-gray-600 cursor-pointer hover:text-gray-800 transition-colors"
-                    @click.stop="viewUserProfile(service.poster.id)"
                   >
                     {{ service.poster.name }}
                   </p>
@@ -201,7 +200,6 @@
                   <h3 class="font-medium text-gray-900 mb-1">{{ service.title }}</h3>
                   <p 
                     class="text-sm text-gray-600 cursor-pointer hover:text-gray-800 transition-colors"
-                    @click.stop="viewUserProfile(service.poster.id)"
                   >
                     {{ service.poster.name }}
                   </p>
@@ -261,7 +259,6 @@
                   <h3 class="font-medium text-gray-900 mb-1">{{ service.title }}</h3>
                   <p 
                     class="text-sm text-gray-600 cursor-pointer hover:text-gray-800 transition-colors"
-                    @click.stop="viewUserProfile(service.poster.id)"
                   >
                     {{ service.poster.name }}
                   </p>
