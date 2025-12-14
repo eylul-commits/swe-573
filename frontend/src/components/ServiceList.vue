@@ -4,9 +4,6 @@
     <div class="p-6 border-b border-gray-200">
       <div class="flex items-center justify-between mb-4">
         <h1 class="text-gray-900">The Hive</h1>
-        <Button variant="ghost" size="icon">
-          <Settings class="w-5 h-5 text-gray-600" />
-        </Button>
       </div>
       
       <!-- TimeBank Balance -->
