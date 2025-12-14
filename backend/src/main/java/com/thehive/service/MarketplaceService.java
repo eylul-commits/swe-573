@@ -123,6 +123,14 @@ public class MarketplaceService {
         User seeker = userRepository.findById(seekerId)
                 .orElseThrow(() -> new ResourceNotFoundException("User not found with id: " + seekerId));
 
+        // Check if seeker has enough balance to create the request
+        if (seeker.getBalanceHours() < request.getDurationHours()) {
+            throw new IllegalStateException(
+                "Insufficient timebank balance. You have " + seeker.getBalanceHours() + 
+                " hours but this request requires " + request.getDurationHours() + " hours."
+            );
+        }
+
         // Create new request
         Request newRequest = new Request();
         newRequest.setSeeker(seeker);

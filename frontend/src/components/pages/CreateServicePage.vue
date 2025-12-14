@@ -124,6 +124,13 @@
               placeholder="e.g., 2"
               required
             />
+            <!-- Show balance warning for requests -->
+            <p v-if="serviceType === 'REQUEST' && appStore.currentUser" class="text-sm mt-1" :class="formData.durationHours > appStore.currentUser.balanceHours ? 'text-red-600' : 'text-gray-500'">
+              Your current balance: {{ appStore.currentUser.balanceHours }} hours
+              <span v-if="formData.durationHours > appStore.currentUser.balanceHours" class="font-semibold">
+                (Insufficient balance)
+              </span>
+            </p>
           </div>
           
           <!-- Dates -->
@@ -565,6 +572,14 @@ async function handleSubmit() {
   if (!formData.value.geohash) {
     errorMessage.value = 'Please select a location on the map'
     return
+  }
+  
+  // Validate timebank balance for requests
+  if (serviceType.value === 'REQUEST' && appStore.currentUser) {
+    if (formData.value.durationHours > appStore.currentUser.balanceHours) {
+      errorMessage.value = `Insufficient timebank balance. You have ${appStore.currentUser.balanceHours} hours but this request requires ${formData.value.durationHours} hours.`
+      return
+    }
   }
   
   // Ensure province and district have valid values (not empty strings)
