@@ -111,7 +111,8 @@ import SelectContent from './ui/SelectContent.vue'
 import SelectItem from './ui/SelectItem.vue'
 import SelectTrigger from './ui/SelectTrigger.vue'
 import SelectValue from './ui/SelectValue.vue'
-import { createReport, type CreateReportRequest, type ReportType } from '../services/reportService'
+import { createReport } from '../services/reportService'
+import type { CreateReportRequest, ReportType } from '../types'
 
 const props = withDefaults(defineProps<{
   modelValue?: boolean

@@ -32,6 +32,3 @@ export async function getReportById(id: number): Promise<Report> {
     throw error;
   }
 }
-
-// Re-export types for backward compatibility
-export type { ReportType, ReportStatus };

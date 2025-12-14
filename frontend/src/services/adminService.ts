@@ -72,4 +72,3 @@ export async function getUserActions(userId: number): Promise<UserAction[]> {
     throw error;
   }
 }
-

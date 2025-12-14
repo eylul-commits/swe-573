@@ -297,9 +297,8 @@ import SelectItem from '../ui/SelectItem.vue'
 import SelectTrigger from '../ui/SelectTrigger.vue'
 import SelectValue from '../ui/SelectValue.vue'
 import Textarea from '../ui/Textarea.vue'
-import { getAdminStatistics, getAllUsers, getAllReports, resolveReport as resolveReportApi, manageUser, getUserActions, type ResolveReportRequest, type UserManagementRequest, type UserAction } from '../../services/adminService'
-import type { AdminStatistics, User } from '../../services/adminService'
-import type { Report } from '../../services/reportService'
+import { getAdminStatistics, getAllUsers, getAllReports, resolveReport as resolveReportApi, manageUser, getUserActions } from '../../services/adminService'
+import type { AdminStatistics, AdminUser as User, Report, ResolveReportRequest, UserManagementRequest, UserAction } from '../../types'
 
 const statistics = ref<AdminStatistics | null>(null)
 const reports = ref<Report[]>([])
@@ -447,11 +446,11 @@ async function openUserDetailsDialog(user: User) {
 }
 
 const warnings = computed(() => {
-  return userActions.value.filter(action => action.actionType === 'WARN')
+  return userActions.value.filter((action: UserAction) => action.actionType === 'WARN')
 })
 
 const nonWarningActions = computed(() => {
-  return userActions.value.filter(action => action.actionType !== 'WARN')
+  return userActions.value.filter((action: UserAction) => action.actionType !== 'WARN')
 })
 
 function getActionVariant(actionType: string) {

@@ -306,7 +306,7 @@
 
 <script setup lang="ts">
 import { ref, computed, onMounted, watch } from 'vue'
-import { Settings, Clock, Search, X, Award, MapPin } from 'lucide-vue-next'
+import { Clock, Search, X, Award, MapPin } from 'lucide-vue-next'
 import Badge from './ui/Badge.vue'
 import Button from './ui/Button.vue'
 import Input from './ui/Input.vue'
@@ -395,10 +395,6 @@ const clearFilters = () => {
   searchQuery.value = ''
   selectedTags.value = []
   selectedBadge.value = 'all'
-}
-
-const viewUserProfile = (userId: string) => {
-  appStore.setSelectedUserId(userId)
 }
 </script>
 
