@@ -447,6 +447,7 @@ onMounted(async () => {
     
     // Load handshakes to check for pending ratings
     if (appStore.currentUser) {
+      await appStore.refreshCurrentUser()
       await handshakeStore.loadHandshakes()
     }
   } catch (error) {
@@ -512,7 +513,7 @@ const openRatingModal = (handshake: Handshake) => {
 }
 
 // Handle rating submitted
-const onRatingSubmitted = async (updatedHandshake: Handshake) => {
+const onRatingSubmitted = async () => {
   ratingModalOpen.value = false
   selectedHandshakeForRating.value = null
   
@@ -520,10 +521,9 @@ const onRatingSubmitted = async (updatedHandshake: Handshake) => {
   try {
     await handshakeStore.loadHandshakes()
     
-    // Also refresh user data to update balance if both rated
-    if (updatedHandshake.status === 'COMPLETED') {
-      await appStore.refreshCurrentUser()
-    }
+    // Also refresh user data
+    await appStore.refreshCurrentUser()
+    
   } catch (error) {
     console.error('Failed to reload handshakes:', error)
   }
