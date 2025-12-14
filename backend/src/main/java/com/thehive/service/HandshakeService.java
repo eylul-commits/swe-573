@@ -74,8 +74,9 @@ public class HandshakeService {
         User seeker = userRepository.findById(seekerId)
                 .orElseThrow(() -> new ResourceNotFoundException("Seeker not found with id: " + seekerId));
 
-        // Check if seeker has enough balance for the service
-        if (seeker.getBalanceHours() < defaultHours) {
+        // Check if seeker has enough balance ONLY for offers (seeker pays for receiving service)
+        // For requests, seeker provides service and earns hours, so no balance check needed
+        if (request.getOfferId() != null && seeker.getBalanceHours() < defaultHours) {
             throw new IllegalStateException(
                 "Insufficient balance to accept this service. Required: " + 
                 defaultHours + " hours, Available: " + seeker.getBalanceHours() + " hours"
@@ -199,10 +200,23 @@ public class HandshakeService {
             handshake.setStatus(HandshakeStatus.COMPLETED);
             handshakeRepository.save(handshake);
             
-            // Create TimeBank transaction: seeker pays provider for the service
+            // Create TimeBank transaction based on service type:
+            // - For OFFERS: seeker receives service, so seeker pays provider
+            // - For REQUESTS: seeker provides service, so provider pays seeker
+            Integer senderId, receiverId;
+            if (handshake.getOffer() != null) {
+                // Offer: seeker pays provider
+                senderId = handshake.getSeeker().getId();
+                receiverId = handshake.getProvider().getId();
+            } else {
+                // Request: provider pays seeker
+                senderId = handshake.getProvider().getId();
+                receiverId = handshake.getSeeker().getId();
+            }
+            
             timebankTransactionService.createTransaction(
-                handshake.getSeeker().getId(),      // sender (pays for service)
-                handshake.getProvider().getId(),    // receiver (gets paid for service)
+                senderId,
+                receiverId,
                 handshake.getId(),
                 handshake.getDurationHours()
             );
