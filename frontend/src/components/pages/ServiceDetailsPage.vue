@@ -658,7 +658,7 @@ const handleAcceptService = async () => {
   try {
     // Create the handshake request (pass either offerId or requestId based on type)
     const handshakeRequest: any = {
-      providerId: parseInt(service.value.poster.id)
+      serviceCreatorId: parseInt(service.value.poster.id)
     }
     
     if (service.value.type === 'OFFER') {

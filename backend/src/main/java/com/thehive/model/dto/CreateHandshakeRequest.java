@@ -15,7 +15,7 @@ public class CreateHandshakeRequest {
     
     private Integer requestId;
     
-    @NotNull(message = "Provider ID is required")
-    private Integer providerId;
+    @NotNull(message = "Service creator ID is required")
+    private Integer serviceCreatorId;
 }
 

@@ -52,7 +52,7 @@
             This date was set by the service creator. You can confirm the handshake with this date.
           </p>
           <p v-else class="text-xs text-gray-500">
-            Only the service creator can select the completion date. Please wait for them to set it.
+            Only the service provider can select the completion date. Please wait for them to set it.
           </p>
         </div>
 
