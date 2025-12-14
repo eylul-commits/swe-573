@@ -9,10 +9,11 @@
       </DialogHeader>
 
       <div class="space-y-6 py-4">
+        <div class="p-4">
         <!-- User Info -->
         <div v-if="otherUser" class="flex items-center gap-3 bg-gray-50 p-4 rounded-lg">
           <Avatar class="w-12 h-12">
-            <AvatarImage :src="otherUser.avatar" :alt="otherUser.name" />
+            <AvatarImage :src="getAvatarUrl(otherUser.avatar, otherUser.name)" :alt="otherUser.name" />
             <AvatarFallback>{{ otherUser.name.charAt(0) }}</AvatarFallback>
           </Avatar>
           <div>
@@ -115,6 +116,7 @@
           {{ error }}
         </div>
       </div>
+      </div>
 
       <DialogFooter>
         <Button
@@ -152,6 +154,7 @@ import AvatarFallback from './ui/AvatarFallback.vue';
 import type { Handshake, AuthorSummary } from '../types';
 import { useHandshakeStore } from '../stores/handshakeStore';
 import { useAppStore } from '../stores/appStore';
+import { getAvatarUrl } from '../utils/avatarUtils';
 
 const props = defineProps<{
   modelValue: boolean;

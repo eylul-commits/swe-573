@@ -124,6 +124,13 @@
               placeholder="e.g., 2"
               required
             />
+            <!-- Show balance warning for requests -->
+            <p v-if="serviceType === 'REQUEST' && appStore.currentUser" class="text-sm mt-1" :class="formData.durationHours > appStore.currentUser.balanceHours ? 'text-red-600' : 'text-gray-500'">
+              Your current balance: {{ appStore.currentUser.balanceHours }} hours
+              <span v-if="formData.durationHours > appStore.currentUser.balanceHours" class="font-semibold">
+                (Insufficient balance)
+              </span>
+            </p>
           </div>
           
           <!-- Dates -->
@@ -296,7 +303,8 @@ import Textarea from '../ui/Textarea.vue'
 import Badge from '../ui/Badge.vue'
 import ImageUpload from '../ui/ImageUpload.vue'
 import { useAppStore } from '../../stores/appStore'
-import { createOffer, createRequest, type CreateOfferPayload, type CreateRequestPayload } from '../../services/marketplaceService'
+import { createOffer, createRequest } from '../../services/marketplaceService'
+import type { CreateOfferPayload, CreateRequestPayload } from '../../types'
 
 // Fix Leaflet default icon issue with bundlers
 delete (L.Icon.Default.prototype as any)._getIconUrl
@@ -533,14 +541,24 @@ async function reverseGeocode(lat: number, lng: number) {
       const address = data.address
       
       // Extract province (state) and district (city/town/municipality)
-      formData.value.province = address.state || address.province || ''
-      formData.value.district = address.city || address.town || address.municipality || address.county || ''
+      // Fallback to user's profile location or "Unknown" if geocoding fails
+      formData.value.province = address.state || address.province || 
+                                appStore.currentUser?.province || 'Unknown'
+      formData.value.district = address.city || address.town || 
+                                address.municipality || address.county || 
+                                appStore.currentUser?.district || 'Unknown'
       
       console.log('Reverse geocode result:', { province: formData.value.province, district: formData.value.district })
+    } else {
+      // Fallback to user's profile location
+      formData.value.province = appStore.currentUser?.province || 'Unknown'
+      formData.value.district = appStore.currentUser?.district || 'Unknown'
     }
   } catch (error) {
     console.error('Reverse geocoding error:', error)
-    // Don't show error to user, province/district are optional
+    // Fallback to user's profile location
+    formData.value.province = appStore.currentUser?.province || 'Unknown'
+    formData.value.district = appStore.currentUser?.district || 'Unknown'
   }
 }
 
@@ -554,6 +572,22 @@ async function handleSubmit() {
   if (!formData.value.geohash) {
     errorMessage.value = 'Please select a location on the map'
     return
+  }
+  
+  // Validate timebank balance for requests
+  if (serviceType.value === 'REQUEST' && appStore.currentUser) {
+    if (formData.value.durationHours > appStore.currentUser.balanceHours) {
+      errorMessage.value = `Insufficient timebank balance. You have ${appStore.currentUser.balanceHours} hours but this request requires ${formData.value.durationHours} hours.`
+      return
+    }
+  }
+  
+  // Ensure province and district have valid values (not empty strings)
+  if (!formData.value.province || formData.value.province.trim() === '') {
+    formData.value.province = appStore.currentUser?.province || 'Unknown'
+  }
+  if (!formData.value.district || formData.value.district.trim() === '') {
+    formData.value.district = appStore.currentUser?.district || 'Unknown'
   }
   
   isSubmitting.value = true

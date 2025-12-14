@@ -180,7 +180,7 @@ import {
   getPostsByTopicId,
   createForumPost
 } from '../../services/forumService'
-import type { ForumTopic, ForumPost } from '../../types/forum'
+import type { ForumTopic, ForumPost } from '../../types'
 
 const appStore = useAppStore()
 

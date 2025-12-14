@@ -1,43 +1,14 @@
 /**
  * Forum-related type definitions
+ * 
+ * NOTE: This file now re-exports from the main types index.
+ * All interfaces have been moved to src/types/index.ts for centralization.
  */
 
-export interface ForumAuthor {
-  id: number;
-  name: string;
-  avatar: string | null;
-  badge: string;
-}
-
-export interface ForumTopic {
-  id: number;
-  title: string;
-  author: ForumAuthor;
-  postCount: number;
-  views: number;
-  likes: number;
-  createdAt: string;
-  updatedAt: string;
-  lastActivity: string;
-  excerpt: string | null;
-  isPinned: boolean;
-}
-
-export interface ForumPost {
-  id: number;
-  topicId: number;
-  author: ForumAuthor;
-  content: string;
-  createdAt: string;
-}
-
-export interface CreateForumTopicRequest {
-  title: string;
-  initialPostContent: string;
-}
-
-export interface CreateForumPostRequest {
-  content: string;
-}
-
-
+export type {
+  ForumAuthor,
+  ForumTopic,
+  ForumPost,
+  CreateForumTopicRequest,
+  CreateForumPostRequest,
+} from './index';

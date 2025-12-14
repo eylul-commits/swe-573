@@ -206,7 +206,7 @@ import DialogDescription from '../ui/DialogDescription.vue'
 import DialogFooter from '../ui/DialogFooter.vue'
 import Textarea from '../ui/Textarea.vue'
 import { getAllForumTopics, filterTopics, createForumTopic } from '../../services/forumService'
-import type { ForumTopic } from '../../types/forum'
+import type { ForumTopic } from '../../types'
 
 const searchQuery = ref('')
 const forumTopics = ref<ForumTopic[]>([])

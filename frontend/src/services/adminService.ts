@@ -1,62 +1,13 @@
 import { api } from '../config/api';
-import type { Report, ReportStatus } from './reportService';
-
-export interface AdminStatistics {
-  totalUsers: number;
-  activeUsers: number;
-  deactivatedUsers: number;
-  totalOffers: number;
-  activeOffers: number;
-  totalRequests: number;
-  activeRequests: number;
-  totalReports: number;
-  openReports: number;
-  resolvedReports: number;
-  totalHandshakes: number;
-  totalMessages: number;
-}
-
-export interface User {
-  id: number;
-  email: string;
-  name: string;
-  bio?: string;
-  avatarUrl?: string;
-  province?: string;
-  district?: string;
-  geohash?: string;
-  role: 'USER' | 'ADMIN';
-  accountStatus: 'ACTIVE' | 'DEACTIVATED' | 'WARNED';
-  warningCount: number;
-  balanceHours: number;
-  hoursGiven?: number;
-  hoursReceived?: number;
-}
-
-export interface UserManagementRequest {
-  userId: number;
-  action: 'WARN' | 'DEACTIVATE' | 'ACTIVATE';
-  reason?: string;
-}
-
-export interface ResolveReportRequest {
-  status: ReportStatus;
-  adminNotes?: string;
-  userId?: number;
-  action?: 'WARN' | 'DEACTIVATE' | 'NO_ACTION';
-}
-
-export interface UserAction {
-  id: number;
-  userId: number;
-  adminId: number;
-  adminName: string;
-  adminEmail: string;
-  actionType: 'WARN' | 'DEACTIVATE' | 'ACTIVATE';
-  reason?: string;
-  reportId?: number;
-  createdAt: string;
-}
+import type {
+  Report,
+  ReportStatus,
+  AdminStatistics,
+  AdminUser,
+  UserManagementRequest,
+  ResolveReportRequest,
+  UserAction,
+} from '../types';
 
 export async function getAdminStatistics(): Promise<AdminStatistics> {
   try {
@@ -67,18 +18,18 @@ export async function getAdminStatistics(): Promise<AdminStatistics> {
   }
 }
 
-export async function getAllUsers(): Promise<User[]> {
+export async function getAllUsers(): Promise<AdminUser[]> {
   try {
-    return await api.get<User[]>('/admin/users');
+    return await api.get<AdminUser[]>('/admin/users');
   } catch (error) {
     console.error('Failed to fetch users:', error);
     throw error;
   }
 }
 
-export async function manageUser(request: UserManagementRequest): Promise<User> {
+export async function manageUser(request: UserManagementRequest): Promise<AdminUser> {
   try {
-    return await api.post<User>('/admin/users/manage', request);
+    return await api.post<AdminUser>('/admin/users/manage', request);
   } catch (error) {
     console.error('Failed to manage user:', error);
     throw error;

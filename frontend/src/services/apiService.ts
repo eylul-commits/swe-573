@@ -11,79 +11,12 @@ import type {
   AuthorSummary,
   ServiceRatingsResponse,
   ServiceQuestion,
+  BackendAuthorDTO,
+  BackendServiceDTO,
+  BackendServiceRatingsResponseDTO,
+  BackendServiceAnswerDTO,
+  BackendServiceQuestionDTO,
 } from '../types';
-
-// Backend DTOs matching the Java backend structure
-interface BackendAuthorDTO {
-  id: number;
-  name: string;
-  avatar: string | null;
-  badge: string | null;
-  bio?: string | null;
-  province?: string | null;
-  district?: string | null;
-  balanceHours?: number | null;
-}
-
-interface BackendServiceDTO {
-  id: number;
-  type: 'OFFER' | 'REQUEST';
-  title: string;
-  description: string;
-  timebank: number; // hours
-  startDate: string | null;
-  endDate: string | null;
-  location: string;
-  province: string | null;
-  district: string | null;
-  geohash: string | null;
-  status: string;
-  createdAt: string;
-  updatedAt: string;
-  poster: BackendAuthorDTO;
-  tags: string[];
-  distance?: string;
-  imageUrls?: string[];
-}
-
-interface BackendServiceRatingDTO {
-  id: number;
-  comment: string | null;
-  createdAt: string;
-  rater: BackendAuthorDTO;
-  punctuality: number | null;
-  friendliness: number | null;
-  communicative: number | null;
-  preparedness: number | null;
-}
-
-interface BackendServiceRatingSummaryDTO {
-  punctuality: number;
-  friendliness: number;
-  communicative: number;
-  preparedness: number;
-  totalReviews: number;
-}
-
-interface BackendServiceRatingsResponseDTO {
-  ratings: BackendServiceRatingDTO[];
-  summary: BackendServiceRatingSummaryDTO;
-}
-
-interface BackendServiceAnswerDTO {
-  id: number;
-  content: string;
-  createdAt: string;
-  responder: BackendAuthorDTO;
-}
-
-interface BackendServiceQuestionDTO {
-  id: number;
-  content: string;
-  createdAt: string;
-  author: BackendAuthorDTO;
-  answer?: BackendServiceAnswerDTO | null;
-}
 
 function createAvatarUrl(name: string | null, avatarUrl?: string | null): string {
   // Use the avatarUrl from database if it exists

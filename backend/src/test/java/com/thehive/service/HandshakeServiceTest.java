@@ -50,6 +50,9 @@ class HandshakeServiceTest {
     @Mock
     private RatingRepository ratingRepository;
 
+    @Mock
+    private TimebankTransactionService timebankTransactionService;
+
     @InjectMocks
     private HandshakeService handshakeService;
 
@@ -154,6 +157,71 @@ class HandshakeServiceTest {
         // Act & Assert
         assertThrows(IllegalStateException.class, 
             () -> handshakeService.createHandshake(request, 1));
+    }
+
+    @Test
+    void createHandshake_InsufficientBalance_ThrowsExceptionForOffer() {
+        // Arrange
+        seeker.setBalanceHours(2); // Not enough for 5-hour service
+        
+        CreateHandshakeRequest request = new CreateHandshakeRequest();
+        request.setOfferId(1);
+        request.setProviderId(2);
+
+        when(offerRepository.findById(1)).thenReturn(Optional.of(offer));
+        when(userRepository.findById(1)).thenReturn(Optional.of(seeker));
+        when(handshakeRepository.findByOfferIdAndSeekerId(1, 1)).thenReturn(Optional.empty());
+
+        // Act & Assert - Should fail because seeker needs balance to accept an offer
+        IllegalStateException exception = assertThrows(
+            IllegalStateException.class, 
+            () -> handshakeService.createHandshake(request, 1)
+        );
+
+        assertTrue(exception.getMessage().contains("Insufficient balance"));
+        verify(handshakeRepository, never()).save(any(Handshake.class));
+    }
+
+    @Test
+    void createHandshake_Request_NoBalanceCheckRequired() {
+        // Arrange
+        seeker.setBalanceHours(0); // Zero balance is OK for accepting requests
+        
+        Request serviceRequest = new Request();
+        serviceRequest.setId(1);
+        serviceRequest.setTitle("Need Help with Math");
+        serviceRequest.setDescription("Looking for math tutor");
+        serviceRequest.setDurationHours(5);
+        serviceRequest.setSeeker(seeker);
+        serviceRequest.setStatus(ItemStatus.ACTIVE);
+        serviceRequest.setTags(new HashSet<>());
+        
+        Handshake requestHandshake = new Handshake();
+        requestHandshake.setId(2);
+        requestHandshake.setRequest(serviceRequest);
+        requestHandshake.setSeeker(seeker);
+        requestHandshake.setProvider(provider);
+        requestHandshake.setStatus(HandshakeStatus.PENDING);
+        requestHandshake.setDurationHours(5);
+        
+        CreateHandshakeRequest request = new CreateHandshakeRequest();
+        request.setRequestId(1);
+        request.setProviderId(2);
+
+        when(requestRepository.findById(1)).thenReturn(Optional.of(serviceRequest));
+        when(userRepository.findById(1)).thenReturn(Optional.of(seeker));
+        when(userRepository.findById(2)).thenReturn(Optional.of(provider));
+        when(handshakeRepository.findByRequestIdAndSeekerId(1, 1)).thenReturn(Optional.empty());
+        when(handshakeRepository.save(any(Handshake.class))).thenReturn(requestHandshake);
+
+        // Act - Should succeed even with zero balance because seeker will earn hours
+        HandshakeDTO result = handshakeService.createHandshake(request, 1);
+
+        // Assert
+        assertNotNull(result);
+        assertEquals(2, result.getId());
+        assertEquals(HandshakeStatus.PENDING, result.getStatus());
+        verify(handshakeRepository).save(any(Handshake.class));
     }
 
     @Test
@@ -391,7 +459,7 @@ class HandshakeServiceTest {
     }
 
     @Test
-    void createRating_BothUsersRated_StatusChangesToCompleted() {
+    void createRating_BothUsersRated_StatusChangesToCompleted_ForOffer() {
         // Arrange
         handshake.setStatus(HandshakeStatus.CONFIRMED);
         handshake.setAgreedDate(LocalDateTime.now().minusDays(1));
@@ -421,9 +489,72 @@ class HandshakeServiceTest {
         // Act
         HandshakeDTO result = handshakeService.createRating(request, 1);
 
-        // Assert
+        // Assert - For offers, seeker pays provider
         verify(ratingRepository).save(any(Rating.class));
         verify(handshakeRepository).save(any(Handshake.class));
+        verify(timebankTransactionService).createTransaction(
+            seeker.getId(),   // seeker pays (receives service)
+            provider.getId(), // provider receives payment
+            handshake.getId(), 
+            handshake.getDurationHours()
+        );
+    }
+
+    @Test
+    void createRating_BothUsersRated_StatusChangesToCompleted_ForRequest() {
+        // Arrange
+        Request serviceRequest = new Request();
+        serviceRequest.setId(1);
+        serviceRequest.setTitle("Need Help with Math");
+        serviceRequest.setDescription("Looking for math tutor");
+        serviceRequest.setDurationHours(5);
+        serviceRequest.setSeeker(seeker);
+        serviceRequest.setStatus(ItemStatus.ACTIVE);
+        serviceRequest.setTags(new HashSet<>());
+        
+        Handshake requestHandshake = new Handshake();
+        requestHandshake.setId(2);
+        requestHandshake.setRequest(serviceRequest);
+        requestHandshake.setSeeker(seeker);
+        requestHandshake.setProvider(provider);
+        requestHandshake.setStatus(HandshakeStatus.CONFIRMED);
+        requestHandshake.setDurationHours(5);
+        requestHandshake.setAgreedDate(LocalDateTime.now().minusDays(1));
+        
+        CreateRatingRequest request = new CreateRatingRequest();
+        request.setHandshakeId(2);
+        request.setRateeId(2);
+        request.setPunctuality(5);
+        request.setFriendliness(5);
+        request.setCommunicative(4);
+        request.setPreparedness(5);
+
+        Rating rating1 = new Rating();
+        Rating rating2 = new Rating();
+
+        when(handshakeRepository.findById(2)).thenReturn(Optional.of(requestHandshake));
+        when(userRepository.findById(2)).thenReturn(Optional.of(provider));
+        when(userRepository.findById(1)).thenReturn(Optional.of(seeker));
+        when(ratingRepository.save(any(Rating.class))).thenReturn(rating1);
+        when(ratingRepository.findByHandshakeId(2)).thenReturn(Arrays.asList(rating1, rating2));
+        when(handshakeRepository.save(any(Handshake.class))).thenAnswer(i -> {
+            Handshake h = i.getArgument(0);
+            h.setStatus(HandshakeStatus.COMPLETED);
+            return h;
+        });
+
+        // Act
+        HandshakeDTO result = handshakeService.createRating(request, 1);
+
+        // Assert - For requests, provider pays seeker (seeker provides service)
+        verify(ratingRepository).save(any(Rating.class));
+        verify(handshakeRepository).save(any(Handshake.class));
+        verify(timebankTransactionService).createTransaction(
+            provider.getId(), // provider pays (requested the service)
+            seeker.getId(),   // seeker receives payment (provided the service)
+            requestHandshake.getId(), 
+            requestHandshake.getDurationHours()
+        );
     }
 
     @Test

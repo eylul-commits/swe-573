@@ -638,4 +638,47 @@ class AuthServiceTest {
         verify(timebankTransactionRepository, never()).findBySenderId(any());
         verify(timebankTransactionRepository, never()).findByReceiverId(any());
     }
+
+    @Test
+    void convertToDTO_WithTransactions_ShouldCalculateHoursCorrectly() {
+        // Arrange
+        Integer userId = 1;
+        
+        // paid for services = received services
+        com.thehive.model.entity.TimebankTransaction sentTransaction1 = new com.thehive.model.entity.TimebankTransaction();
+        sentTransaction1.setAmount(3);
+        
+        com.thehive.model.entity.TimebankTransaction sentTransaction2 = new com.thehive.model.entity.TimebankTransaction();
+        sentTransaction2.setAmount(2);
+        
+        // got paid = gave services
+        com.thehive.model.entity.TimebankTransaction receivedTransaction1 = new com.thehive.model.entity.TimebankTransaction();
+        receivedTransaction1.setAmount(5);
+        
+        com.thehive.model.entity.TimebankTransaction receivedTransaction2 = new com.thehive.model.entity.TimebankTransaction();
+        receivedTransaction2.setAmount(4);
+        
+        when(userRepository.findById(userId)).thenReturn(Optional.of(testUser));
+        when(timebankTransactionRepository.findBySenderId(userId))
+            .thenReturn(List.of(sentTransaction1, sentTransaction2)); // Total: 5 hours sent (paid)
+        when(timebankTransactionRepository.findByReceiverId(userId))
+            .thenReturn(List.of(receivedTransaction1, receivedTransaction2)); // Total: 9 hours received (paid)
+
+        // Act
+        UserDTO result = authService.getCurrentUser(userId);
+
+        // Assert
+        assertNotNull(result);
+        // when you send hours, you received a service -> hoursReceived = 5
+        assertEquals(5, result.getHoursReceived(), 
+            "Hours received should equal hours sent in transactions (user paid for services)");
+        // when you receive hours, you gave a service -> hoursGiven = 9
+        assertEquals(9, result.getHoursGiven(), 
+            "Hours given should equal hours received in transactions (user provided services)");
+
+        // Verify
+        verify(userRepository).findById(userId);
+        verify(timebankTransactionRepository).findBySenderId(userId);
+        verify(timebankTransactionRepository).findByReceiverId(userId);
+    }
 }

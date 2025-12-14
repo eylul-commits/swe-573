@@ -702,6 +702,89 @@ class MarketplaceServiceTest {
         verify(requestRepository, never()).save(any(Request.class));
     }
 
+    @Test
+    void createRequest_ShouldThrowException_WhenInsufficientBalance() {
+        // Arrange
+        User userWithLowBalance = new User();
+        userWithLowBalance.setId(5);
+        userWithLowBalance.setName("Low Balance User");
+        userWithLowBalance.setEmail("lowbalance@example.com");
+        userWithLowBalance.setBalanceHours(2); // User has only 2 hours
+        userWithLowBalance.setUserBadges(new HashSet<>());
+
+        CreateRequestRequest request = new CreateRequestRequest();
+        request.setTitle("Need Expert Help");
+        request.setDescription("Looking for extensive consultation");
+        request.setDurationHours(5); // Request requires 5 hours
+        request.setStartDate(LocalDate.now());
+        request.setEndDate(LocalDate.now().plusDays(7));
+        request.setProvince("Istanbul");
+        request.setDistrict("Kadikoy");
+        request.setGeohash("sxk3uq9");
+        request.setTags(Arrays.asList("Consulting"));
+
+        when(userRepository.findById(5)).thenReturn(Optional.of(userWithLowBalance));
+
+        // Act & Assert
+        IllegalStateException exception = assertThrows(IllegalStateException.class,
+                () -> marketplaceService.createRequest(request, 5));
+
+        assertEquals("Insufficient timebank balance. You have 2 hours but this request requires 5 hours.", 
+                     exception.getMessage());
+        verify(userRepository, times(1)).findById(5);
+        verify(requestRepository, never()).save(any(Request.class));
+    }
+
+    @Test
+    void createRequest_ShouldSucceed_WhenBalanceIsExactlyEnough() {
+        // Arrange
+        User userWithExactBalance = new User();
+        userWithExactBalance.setId(6);
+        userWithExactBalance.setName("Exact Balance User");
+        userWithExactBalance.setEmail("exact@example.com");
+        userWithExactBalance.setBalanceHours(5); // User has exactly 5 hours
+        userWithExactBalance.setUserBadges(new HashSet<>());
+
+        CreateRequestRequest request = new CreateRequestRequest();
+        request.setTitle("Need Help");
+        request.setDescription("Looking for assistance");
+        request.setDurationHours(5); // Request requires exactly 5 hours
+        request.setStartDate(LocalDate.now());
+        request.setEndDate(LocalDate.now().plusDays(7));
+        request.setProvince("Istanbul");
+        request.setDistrict("Kadikoy");
+        request.setGeohash("sxk3uq9");
+        request.setTags(null);
+
+        Request savedRequest = new Request();
+        savedRequest.setId(20);
+        savedRequest.setSeeker(userWithExactBalance);
+        savedRequest.setTitle(request.getTitle());
+        savedRequest.setDescription(request.getDescription());
+        savedRequest.setDurationHours(request.getDurationHours());
+        savedRequest.setStartDate(request.getStartDate());
+        savedRequest.setEndDate(request.getEndDate());
+        savedRequest.setProvince(request.getProvince());
+        savedRequest.setDistrict(request.getDistrict());
+        savedRequest.setGeohash(request.getGeohash());
+        savedRequest.setStatus(ItemStatus.ACTIVE);
+        savedRequest.setCreatedAt(LocalDateTime.now());
+        savedRequest.setUpdatedAt(LocalDateTime.now());
+
+        when(userRepository.findById(6)).thenReturn(Optional.of(userWithExactBalance));
+        when(requestRepository.save(any(Request.class))).thenReturn(savedRequest);
+
+        // Act
+        RequestDTO result = marketplaceService.createRequest(request, 6);
+
+        // Assert
+        assertNotNull(result);
+        assertEquals("Need Help", result.getTitle());
+        assertEquals(5, result.getDurationHours());
+        verify(userRepository, times(1)).findById(6);
+        verify(requestRepository, times(1)).save(any(Request.class));
+    }
+
     // ==================== GET ALL SERVICES TESTS ====================
 
     @Test
