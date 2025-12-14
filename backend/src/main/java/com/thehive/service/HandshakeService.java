@@ -377,6 +377,13 @@ public class HandshakeService {
                 dto.setServiceId(handshake.getRequest().getId());
                 dto.setServiceTitle(handshake.getRequest().getTitle());
             }
+            
+            // Determine if ratee was provider or seeker
+            if (rating.getRatee().getId().equals(handshake.getProvider().getId())) {
+                dto.setRateeRole("PROVIDER");
+            } else if (rating.getRatee().getId().equals(handshake.getSeeker().getId())) {
+                dto.setRateeRole("SEEKER");
+            }
         }
         
         return dto;

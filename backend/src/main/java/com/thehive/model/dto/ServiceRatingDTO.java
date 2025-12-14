@@ -20,6 +20,7 @@ public class ServiceRatingDTO {
     private LocalDateTime createdAt;
     private Integer serviceId;
     private String serviceTitle;
+    private String rateeRole; // "PROVIDER" or "SEEKER"
 }
 
 

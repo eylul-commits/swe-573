@@ -123,6 +123,7 @@ export interface ServiceRating {
   preparedness: number;
   serviceId?: number;
   serviceTitle?: string;
+  rateeRole?: 'PROVIDER' | 'SEEKER';
 }
 
 export interface ServiceRatingSummary {

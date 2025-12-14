@@ -188,6 +188,17 @@
                         </span>
                         <span v-else>{{ rating.serviceTitle }}</span>
                       </div>
+                      <div v-if="rating.rateeRole" class="text-xs text-gray-500 mt-1">
+                        <span class="font-medium">Role: </span>
+                        <Badge 
+                          :class="rating.rateeRole === 'PROVIDER' 
+                            ? 'bg-purple-100 text-purple-700 hover:bg-purple-100' 
+                            : 'bg-blue-100 text-blue-700 hover:bg-blue-100'"
+                          class="text-xs"
+                        >
+                          {{ rating.rateeRole === 'PROVIDER' ? 'Provider' : 'Seeker' }}
+                        </Badge>
+                      </div>
                     </div>
                   </div>
                   
@@ -355,6 +366,7 @@ async function loadProfile() {
         preparedness: rating.preparedness || 0,
         serviceId: rating.serviceId,
         serviceTitle: rating.serviceTitle,
+        rateeRole: rating.rateeRole,
       }))
     } catch (err) {
       console.error('Failed to load user ratings:', err)

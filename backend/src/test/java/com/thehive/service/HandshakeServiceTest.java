@@ -1092,5 +1092,163 @@ class HandshakeServiceTest {
         assertNotNull(dto.getServiceTitle());
         assertEquals("Need Help with Physics", dto.getServiceTitle());
     }
+
+    @Test
+    void getUserRatings_SetsRateeRoleAsProvider_WhenRateeIsHandshakeProvider() {
+        // Arrange
+        Handshake handshakeWithOffer = new Handshake();
+        handshakeWithOffer.setId(1);
+        handshakeWithOffer.setOffer(offer);
+        handshakeWithOffer.setSeeker(seeker);
+        handshakeWithOffer.setProvider(provider);
+        handshakeWithOffer.setStatus(HandshakeStatus.COMPLETED);
+
+        Rating rating = new Rating();
+        rating.setId(1);
+        rating.setRater(seeker);
+        rating.setRatee(provider); // Provider is being rated
+        rating.setHandshake(handshakeWithOffer);
+        rating.setPunctuality(5);
+        rating.setFriendliness(5);
+        rating.setCommunicative(5);
+        rating.setPreparedness(5);
+        rating.setComment("Great provider!");
+        rating.setCreatedAt(LocalDateTime.now());
+
+        when(ratingRepository.findByRateeId(2)).thenReturn(Collections.singletonList(rating));
+
+        // Act
+        List<ServiceRatingDTO> result = handshakeService.getUserRatings(2);
+
+        // Assert
+        assertNotNull(result);
+        assertEquals(1, result.size());
+        ServiceRatingDTO dto = result.get(0);
+        assertNotNull(dto.getRateeRole());
+        assertEquals("PROVIDER", dto.getRateeRole());
+    }
+
+    @Test
+    void getUserRatings_SetsRateeRoleAsSeeker_WhenRateeIsHandshakeSeeker() {
+        // Arrange
+        Handshake handshakeWithOffer = new Handshake();
+        handshakeWithOffer.setId(1);
+        handshakeWithOffer.setOffer(offer);
+        handshakeWithOffer.setSeeker(seeker);
+        handshakeWithOffer.setProvider(provider);
+        handshakeWithOffer.setStatus(HandshakeStatus.COMPLETED);
+
+        Rating rating = new Rating();
+        rating.setId(1);
+        rating.setRater(provider);
+        rating.setRatee(seeker); // Seeker is being rated
+        rating.setHandshake(handshakeWithOffer);
+        rating.setPunctuality(4);
+        rating.setFriendliness(5);
+        rating.setCommunicative(4);
+        rating.setPreparedness(5);
+        rating.setComment("Great seeker!");
+        rating.setCreatedAt(LocalDateTime.now());
+
+        when(ratingRepository.findByRateeId(1)).thenReturn(Collections.singletonList(rating));
+
+        // Act
+        List<ServiceRatingDTO> result = handshakeService.getUserRatings(1);
+
+        // Assert
+        assertNotNull(result);
+        assertEquals(1, result.size());
+        ServiceRatingDTO dto = result.get(0);
+        assertNotNull(dto.getRateeRole());
+        assertEquals("SEEKER", dto.getRateeRole());
+    }
+
+    @Test
+    void getUserRatings_SetsRateeRoleAsProvider_ForRequestHandshake() {
+        // Arrange - In a request, the provider accepts the request
+        Request request = new Request();
+        request.setId(2);
+        request.setTitle("Need Help with Physics");
+        request.setSeeker(seeker);
+        request.setStatus(ItemStatus.ACTIVE);
+        request.setTags(new HashSet<>());
+
+        Handshake handshakeWithRequest = new Handshake();
+        handshakeWithRequest.setId(2);
+        handshakeWithRequest.setRequest(request);
+        handshakeWithRequest.setSeeker(seeker);
+        handshakeWithRequest.setProvider(provider);
+        handshakeWithRequest.setStatus(HandshakeStatus.COMPLETED);
+
+        Rating rating = new Rating();
+        rating.setId(2);
+        rating.setRater(seeker);
+        rating.setRatee(provider); // Provider is being rated
+        rating.setHandshake(handshakeWithRequest);
+        rating.setPunctuality(5);
+        rating.setFriendliness(5);
+        rating.setCommunicative(5);
+        rating.setPreparedness(5);
+        rating.setComment("Excellent provider!");
+        rating.setCreatedAt(LocalDateTime.now());
+
+        when(ratingRepository.findByRateeId(2)).thenReturn(Collections.singletonList(rating));
+
+        // Act
+        List<ServiceRatingDTO> result = handshakeService.getUserRatings(2);
+
+        // Assert
+        assertNotNull(result);
+        assertEquals(1, result.size());
+        ServiceRatingDTO dto = result.get(0);
+        assertNotNull(dto.getRateeRole());
+        assertEquals("PROVIDER", dto.getRateeRole());
+        assertEquals(request.getId(), dto.getServiceId());
+        assertEquals("Need Help with Physics", dto.getServiceTitle());
+    }
+
+    @Test
+    void getUserRatings_SetsRateeRoleAsSeeker_ForRequestHandshake() {
+        // Arrange - In a request, the seeker posted the request
+        Request request = new Request();
+        request.setId(2);
+        request.setTitle("Need Help with Math");
+        request.setSeeker(seeker);
+        request.setStatus(ItemStatus.ACTIVE);
+        request.setTags(new HashSet<>());
+
+        Handshake handshakeWithRequest = new Handshake();
+        handshakeWithRequest.setId(2);
+        handshakeWithRequest.setRequest(request);
+        handshakeWithRequest.setSeeker(seeker);
+        handshakeWithRequest.setProvider(provider);
+        handshakeWithRequest.setStatus(HandshakeStatus.COMPLETED);
+
+        Rating rating = new Rating();
+        rating.setId(2);
+        rating.setRater(provider);
+        rating.setRatee(seeker); // Seeker is being rated
+        rating.setHandshake(handshakeWithRequest);
+        rating.setPunctuality(4);
+        rating.setFriendliness(5);
+        rating.setCommunicative(4);
+        rating.setPreparedness(5);
+        rating.setComment("Excellent seeker!");
+        rating.setCreatedAt(LocalDateTime.now());
+
+        when(ratingRepository.findByRateeId(1)).thenReturn(Collections.singletonList(rating));
+
+        // Act
+        List<ServiceRatingDTO> result = handshakeService.getUserRatings(1);
+
+        // Assert
+        assertNotNull(result);
+        assertEquals(1, result.size());
+        ServiceRatingDTO dto = result.get(0);
+        assertNotNull(dto.getRateeRole());
+        assertEquals("SEEKER", dto.getRateeRole());
+        assertEquals(request.getId(), dto.getServiceId());
+        assertEquals("Need Help with Math", dto.getServiceTitle());
+    }
 }
 
