@@ -34,10 +34,6 @@
             <Calendar class="w-4 h-4" />
             {{ scheduleText }}
           </div>
-          <div class="flex items-center gap-2 text-sm text-gray-600">
-            <Clock class="w-4 h-4" />
-            Flexible scheduling <!-- TODO: Add availability -->
-          </div>
           <div class="text-sm text-gray-500 col-span-2">
             Posted {{ postedTime }}
           </div>

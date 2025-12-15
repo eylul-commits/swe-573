@@ -37,7 +37,7 @@
               <img 
                 :src="service.imageUrls[selectedImageIndex]"
                 :alt="service.title"
-                class="w-full h-64 object-cover cursor-pointer hover:opacity-95 transition-opacity"
+                class="w-full h-96 object-cover cursor-pointer hover:opacity-95 transition-opacity"
                 @click="openImageModal"
               />
             </div>
@@ -94,15 +94,6 @@
               <div class="flex items-center gap-2 text-amber-600">
                 <Clock class="w-4 h-4" />
                 <span>{{ service.timebank }}</span>
-              </div>
-            </div>
-            <div class="space-y-1">
-              <div class="text-sm text-gray-500">Availability</div>
-              <div class="flex items-center gap-2 text-gray-900">
-                <Calendar class="w-4 h-4 text-gray-400" />
-                <span>
-                  {{ getAvailability(serviceId) }}
-                </span>
               </div>
             </div>
             <div class="space-y-1">
@@ -221,10 +212,7 @@
                 <span class="text-blue-600">{{ service.poster.hoursReceived }}h received</span>
               </div>
               <p class="text-sm text-gray-600">
-                {{ serviceId === '9' 
-                  ? 'New to The Hive and excited to share skills and connect with the community!'
-                  : 'Active community member sharing skills and building connections through The Hive.'
-                }}
+                {{ service.poster.bio || 'No bio provided yet.' }}
               </p>
             </div>
           </div>
@@ -463,7 +451,7 @@
 
 <script setup lang="ts">
 import { computed, ref, watch } from 'vue'
-import { MapPin, Clock, Calendar, Star, Send, MessageCircle, ArrowLeft, Flag } from 'lucide-vue-next'
+import { MapPin, Clock, Star, Send, MessageCircle, ArrowLeft, Flag } from 'lucide-vue-next'
 import Card from '../ui/Card.vue'
 import Badge from '../ui/Badge.vue'
 import Button from '../ui/Button.vue'
@@ -538,12 +526,6 @@ const getBadgeEmoji = (badge?: string | { name: string }) => {
     'Champion': '🏆'
   }
   return badgeMap[badgeName || ''] || '🌱'
-}
-
-const getAvailability = (id: string) => {
-  if (id === "9") return "Starting Nov 1, 2025"
-  if (id === "2") return "Weekday evenings"
-  return "Flexible scheduling"
 }
 
 const handleAskQuestion = async () => {

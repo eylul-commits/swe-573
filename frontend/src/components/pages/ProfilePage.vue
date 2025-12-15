@@ -1,7 +1,15 @@
 <template>
   <div class="flex-1 overflow-y-auto bg-gray-50 p-8">
     <div class="max-w-6xl mx-auto">
-      <h1 class="text-gray-900 mb-6">Profile</h1>
+      <div class="flex items-center justify-between mb-6">
+        <h1 class="text-gray-900">Profile</h1>
+        <Button 
+          @click="isEditing = !isEditing"
+          :variant="isEditing ? 'outline' : 'default'"
+        >
+          {{ isEditing ? 'Cancel' : 'Edit Profile' }}
+        </Button>
+      </div>
       
       <!-- User Info Card -->
       <Card class="p-6 mb-6">
@@ -12,10 +20,72 @@
             @error="handleUploadError"
           />
           <div class="flex-1">
-            <div class="text-gray-900 text-xl">{{ appStore.currentUser?.name || 'User' }}</div>
-            <div class="text-gray-600">{{ appStore.currentUser?.location || 'Location not set' }}</div>
-            <div v-if="currentUserBadge" class="mt-2">
-              <BadgeDisplay :badge="currentUserBadge" />
+            <!-- Editing Mode -->
+            <div v-if="isEditing" class="space-y-4">
+              <div>
+                <label class="block text-sm font-medium text-gray-700 mb-1">Name</label>
+                <Input 
+                  v-model="editForm.name" 
+                  placeholder="Enter your name"
+                  class="w-full"
+                />
+              </div>
+              <div>
+                <label class="block text-sm font-medium text-gray-700 mb-1">Bio</label>
+                <Textarea 
+                  v-model="editForm.bio" 
+                  placeholder="Tell us about yourself..."
+                  class="w-full min-h-[80px]"
+                />
+              </div>
+              <div class="grid grid-cols-2 gap-4">
+                <div>
+                  <label class="block text-sm font-medium text-gray-700 mb-1">Province</label>
+                  <Input 
+                    v-model="editForm.province" 
+                    placeholder="e.g., Istanbul"
+                    class="w-full"
+                  />
+                </div>
+                <div>
+                  <label class="block text-sm font-medium text-gray-700 mb-1">District</label>
+                  <Input 
+                    v-model="editForm.district" 
+                    placeholder="e.g., Kadıköy"
+                    class="w-full"
+                  />
+                </div>
+              </div>
+              <div class="flex gap-2">
+                <Button 
+                  @click="handleSaveProfile" 
+                  :disabled="isSaving"
+                  class="flex-1"
+                >
+                  {{ isSaving ? 'Saving...' : 'Save Changes' }}
+                </Button>
+                <Button 
+                  @click="cancelEdit" 
+                  variant="outline"
+                  :disabled="isSaving"
+                >
+                  Cancel
+                </Button>
+              </div>
+            </div>
+            
+            <!-- Display Mode -->
+            <div v-else>
+              <div class="text-gray-900 text-xl">{{ appStore.currentUser?.name || 'User' }}</div>
+              <div class="text-gray-600">
+                {{ displayLocation }}
+              </div>
+              <div v-if="appStore.currentUser?.bio" class="text-gray-700 text-sm mt-2">
+                {{ appStore.currentUser.bio }}
+              </div>
+              <div v-if="currentUserBadge" class="mt-2">
+                <BadgeDisplay :badge="currentUserBadge" />
+              </div>
             </div>
           </div>
         </div>
@@ -92,13 +162,26 @@
                           <h3 class="font-medium text-gray-900 mb-1">{{ service.title }}</h3>
                           <p class="text-sm text-gray-600">{{ service.location }}</p>
                         </div>
-                        <Badge 
-                          :class="service.type === 'OFFER' 
-                            ? 'bg-emerald-100 text-emerald-700 hover:bg-emerald-100' 
-                            : 'bg-blue-100 text-blue-700 hover:bg-blue-100'"
-                        >
-                          {{ service.type }}
-                        </Badge>
+                        <div class="flex items-center gap-2">
+                          <Badge 
+                            :class="service.type === 'OFFER' 
+                              ? 'bg-emerald-100 text-emerald-700 hover:bg-emerald-100' 
+                              : 'bg-blue-100 text-blue-700 hover:bg-blue-100'"
+                          >
+                            {{ service.type }}
+                          </Badge>
+                          <!-- Deactivate Button -->
+                          <Button
+                            v-if="service.status === 'active'"
+                            @click.stop="handleDeactivateService(service)"
+                            variant="outline"
+                            size="sm"
+                            :disabled="deactivatingServices.has(service.id)"
+                            class="text-red-600 hover:text-red-700 hover:bg-red-50 border-red-200 text-xs px-3 py-1"
+                          >
+                            {{ deactivatingServices.has(service.id) ? 'Deactivating...' : 'Deactivate' }}
+                          </Button>
+                        </div>
                       </div>
                       
                       <p class="text-sm text-gray-600 mb-2 line-clamp-2">
@@ -266,6 +349,9 @@ import { ref, onMounted, computed, watch } from 'vue'
 import { Clock, MapPin, ChevronDown, ChevronUp } from 'lucide-vue-next'
 import Card from '../ui/Card.vue'
 import Badge from '../ui/Badge.vue'
+import Button from '../ui/Button.vue'
+import Input from '../ui/Input.vue'
+import Textarea from '../ui/Textarea.vue'
 import Tabs from '../ui/Tabs.vue'
 import TabsContent from '../ui/TabsContent.vue'
 import TabsList from '../ui/TabsList.vue'
@@ -276,7 +362,7 @@ import ImageWithFallback from '../ui/ImageWithFallback.vue'
 import BadgeDisplay from '../BadgeDisplay.vue'
 import { useAppStore } from '../../stores/appStore'
 import { useHandshakeStore } from '../../stores/handshakeStore'
-import { getUserServices } from '../../services/marketplaceService'
+import { getUserServices, deactivateService } from '../../services/marketplaceService'
 import { updateProfile } from '../../services/authService'
 import { getHandshakesByOfferId, getHandshakesByRequestId } from '../../services/handshakeService'
 import { getAvatarUrl } from '../../utils/avatarUtils'
@@ -291,8 +377,32 @@ const loadingHandshakes = ref(false)
 const profilePictureUrl = ref<string | undefined>(appStore.currentUser?.avatarUrl)
 const serviceHandshakes = ref<Map<string, Handshake[]>>(new Map())
 const expandedServices = ref<Set<string>>(new Set())
+const isEditing = ref(false)
+const isSaving = ref(false)
+const deactivatingServices = ref<Set<string>>(new Set())
+
+const editForm = ref({
+  name: '',
+  bio: '',
+  province: '',
+  district: ''
+})
 
 const userHandshakes = computed(() => handshakeStore.handshakes)
+
+const displayLocation = computed(() => {
+  const district = appStore.currentUser?.district
+  const province = appStore.currentUser?.province
+  
+  if (district && province) {
+    return `${district}, ${province}`
+  } else if (province) {
+    return province
+  } else if (district) {
+    return district
+  }
+  return 'Location not set'
+})
 
 // Get the user's current badge (only one badge now)
 const currentUserBadge = computed(() => {
@@ -325,8 +435,70 @@ watch(profilePictureUrl, async (newUrl: string | undefined) => {
   }
 })
 
+// Watch for editing mode changes to initialize form
+watch(isEditing, (editing) => {
+  if (editing) {
+    // Initialize form with current user data
+    editForm.value = {
+      name: appStore.currentUser?.name || '',
+      bio: appStore.currentUser?.bio || '',
+      province: appStore.currentUser?.province || '',
+      district: appStore.currentUser?.district || ''
+    }
+  }
+})
+
 function handleUploadError(error: string) {
   console.error('Upload error:', error)
+}
+
+async function handleSaveProfile() {
+  if (!appStore.currentUser) return
+  
+  isSaving.value = true
+  try {
+    const updatedUser = await updateProfile({
+      name: editForm.value.name || undefined,
+      bio: editForm.value.bio || undefined,
+      province: editForm.value.province || undefined,
+      district: editForm.value.district || undefined
+    })
+    
+    // Update the app store with the new user data
+    if (appStore.currentUser) {
+      appStore.currentUser.name = updatedUser.name
+      appStore.currentUser.bio = updatedUser.bio
+      appStore.currentUser.province = updatedUser.province
+      appStore.currentUser.district = updatedUser.district
+      
+      // Update location field
+      if (updatedUser.district && updatedUser.province) {
+        appStore.currentUser.location = `${updatedUser.district}, ${updatedUser.province}`
+      } else if (updatedUser.province) {
+        appStore.currentUser.location = updatedUser.province
+      } else if (updatedUser.district) {
+        appStore.currentUser.location = updatedUser.district
+      }
+    }
+    
+    isEditing.value = false
+  } catch (error: any) {
+    console.error('Failed to update profile:', error)
+    alert(error.message || 'Failed to update profile. Please try again.')
+  } finally {
+    isSaving.value = false
+  }
+}
+
+function cancelEdit() {
+  isEditing.value = false
+  // Reset form to current user data
+  editForm.value = {
+    name: appStore.currentUser?.name || '',
+    bio: appStore.currentUser?.bio || '',
+    province: appStore.currentUser?.province || '',
+    district: appStore.currentUser?.district || ''
+  }
 }
 
 
@@ -404,6 +576,46 @@ const getHandshakeStatusColor = (status: string): string => {
 
 const viewService = (serviceId: string) => {
   appStore.setSelectedServiceId(serviceId)
+}
+
+async function handleDeactivateService(service: Service) {
+  // Check if service can be deactivated
+  const handshakes = getHandshakesForService(service.id)
+  const hasActiveHandshakes = handshakes.some(h => 
+    h.status !== 'COMPLETED' && h.status !== 'CANCELLED'
+  )
+  
+  if (hasActiveHandshakes) {
+    alert('Cannot deactivate service with pending or confirmed handshakes. Please wait until all handshakes are completed or cancelled.')
+    return
+  }
+  
+  const confirmMessage = handshakes.length > 0
+    ? `Are you sure you want to deactivate "${service.title}"? All handshakes for this service are completed or cancelled.`
+    : `Are you sure you want to deactivate "${service.title}"? This service has no handshakes.`
+  
+  if (!confirm(confirmMessage)) {
+    return
+  }
+  
+  deactivatingServices.value.add(service.id)
+  
+  try {
+    await deactivateService(service.id, service.type)
+    
+    // Update the service status in the local list
+    const serviceIndex = userServices.value.findIndex(s => s.id === service.id)
+    if (serviceIndex !== -1) {
+      userServices.value[serviceIndex].status = 'archived'
+    }
+    
+    alert('Service deactivated successfully!')
+  } catch (error: any) {
+    console.error('Failed to deactivate service:', error)
+    alert(error.message || 'Failed to deactivate service. Please try again.')
+  } finally {
+    deactivatingServices.value.delete(service.id)
+  }
 }
 </script>
 

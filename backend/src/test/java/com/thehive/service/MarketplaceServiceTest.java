@@ -13,7 +13,9 @@ import com.thehive.model.dto.ServiceDTO;
 import com.thehive.model.dto.ServiceQuestionDTO;
 import com.thehive.model.dto.ServiceRatingsResponseDTO;
 import com.thehive.model.entity.*;
+import com.thehive.model.enums.HandshakeStatus;
 import com.thehive.model.enums.ItemStatus;
+import com.thehive.repository.HandshakeRepository;
 import com.thehive.repository.OfferRepository;
 import com.thehive.repository.QuestionRepository;
 import com.thehive.repository.AnswerRepository;
@@ -58,6 +60,9 @@ class MarketplaceServiceTest {
 
     @Mock
     private SemanticTagRepository semanticTagRepository;
+
+    @Mock
+    private HandshakeRepository handshakeRepository;
 
     @InjectMocks
     private MarketplaceService marketplaceService;
@@ -830,8 +835,9 @@ class MarketplaceServiceTest {
         // Verify all returned services are active
         result.forEach(service -> assertEquals("ACTIVE", service.getStatus()));
 
-        verify(offerRepository, times(1)).findByStatus(ItemStatus.ACTIVE);
-        verify(requestRepository, times(1)).findByStatus(ItemStatus.ACTIVE);
+        // Called twice: once in expireOldServices(), once in getActiveServices()
+        verify(offerRepository, times(2)).findByStatus(ItemStatus.ACTIVE);
+        verify(requestRepository, times(2)).findByStatus(ItemStatus.ACTIVE);
     }
 
     // ==================== DTO CONVERSION TESTS ====================
@@ -1266,6 +1272,42 @@ class MarketplaceServiceTest {
         assertNotNull(result);
         assertEquals(0, result.getRatings().size());
         assertEquals(0.0, result.getSummary().getPunctuality());
+    }
+
+    @Test
+    void getRatingsForService_ShouldFilterOutRequestOwnerRatings() {
+        // Create a rating from the request owner (testUserWithBadge)
+        Rating ratingFromOwner = new Rating();
+        ratingFromOwner.setId(1);
+        ratingFromOwner.setRater(testUserWithBadge); // testUserWithBadge is the request owner
+        ratingFromOwner.setPunctuality(5);
+        ratingFromOwner.setFriendliness(5);
+        ratingFromOwner.setCommunicative(5);
+        ratingFromOwner.setPreparedness(5);
+        ratingFromOwner.setCreatedAt(LocalDateTime.now());
+
+        // Create a rating from a provider (not the owner)
+        Rating ratingFromProvider = new Rating();
+        ratingFromProvider.setId(2);
+        ratingFromProvider.setRater(testUser); // testUser is not the owner
+        ratingFromProvider.setPunctuality(4);
+        ratingFromProvider.setFriendliness(4);
+        ratingFromProvider.setCommunicative(4);
+        ratingFromProvider.setPreparedness(4);
+        ratingFromProvider.setCreatedAt(LocalDateTime.now());
+
+        when(offerRepository.existsById(1)).thenReturn(false);
+        when(requestRepository.existsById(1)).thenReturn(true);
+        when(requestRepository.findById(1)).thenReturn(Optional.of(testRequest));
+        when(ratingRepository.findByHandshakeRequestId(1)).thenReturn(Arrays.asList(ratingFromOwner, ratingFromProvider));
+
+        ServiceRatingsResponseDTO result = marketplaceService.getRatingsForService(1);
+
+        // Should only return the rating from the provider, not from the owner
+        assertNotNull(result);
+        assertEquals(1, result.getRatings().size());
+        assertEquals(4.0, result.getSummary().getPunctuality());
+        assertEquals(testUser.getId(), result.getRatings().get(0).getRater().getId());
     }
 
     @Test
@@ -1719,6 +1761,379 @@ class MarketplaceServiceTest {
         verify(questionRepository, never()).findById(any());
         verify(userRepository, never()).findById(any());
         verify(answerRepository, never()).save(any());
+    }
+
+    // ==================== Deactivate Service Tests ====================
+
+    @Test
+    void deactivateOffer_WithNoHandshakes_ShouldSucceed() {
+        // Arrange
+        Integer offerId = 1;
+        Integer userId = 1;
+        
+        when(offerRepository.findById(offerId)).thenReturn(Optional.of(testOffer));
+        when(handshakeRepository.findByOfferId(offerId)).thenReturn(Collections.emptyList());
+        when(offerRepository.save(any(Offer.class))).thenReturn(testOffer);
+        
+        // Act
+        OfferDTO result = marketplaceService.deactivateOffer(offerId, userId);
+        
+        // Assert
+        assertNotNull(result);
+        verify(offerRepository).findById(offerId);
+        verify(handshakeRepository).findByOfferId(offerId);
+        verify(offerRepository).save(any(Offer.class));
+    }
+
+    @Test
+    void deactivateOffer_WithCompletedHandshakes_ShouldSucceed() {
+        // Arrange
+        Integer offerId = 1;
+        Integer userId = 1;
+        
+        Handshake completedHandshake = new Handshake();
+        completedHandshake.setId(1);
+        completedHandshake.setStatus(HandshakeStatus.COMPLETED);
+        
+        when(offerRepository.findById(offerId)).thenReturn(Optional.of(testOffer));
+        when(handshakeRepository.findByOfferId(offerId)).thenReturn(List.of(completedHandshake));
+        when(offerRepository.save(any(Offer.class))).thenReturn(testOffer);
+        
+        // Act
+        OfferDTO result = marketplaceService.deactivateOffer(offerId, userId);
+        
+        // Assert
+        assertNotNull(result);
+        verify(offerRepository).findById(offerId);
+        verify(handshakeRepository).findByOfferId(offerId);
+        verify(offerRepository).save(any(Offer.class));
+    }
+
+    @Test
+    void deactivateOffer_WithCancelledHandshakes_ShouldSucceed() {
+        // Arrange
+        Integer offerId = 1;
+        Integer userId = 1;
+        
+        Handshake cancelledHandshake = new Handshake();
+        cancelledHandshake.setId(1);
+        cancelledHandshake.setStatus(HandshakeStatus.CANCELLED);
+        
+        when(offerRepository.findById(offerId)).thenReturn(Optional.of(testOffer));
+        when(handshakeRepository.findByOfferId(offerId)).thenReturn(List.of(cancelledHandshake));
+        when(offerRepository.save(any(Offer.class))).thenReturn(testOffer);
+        
+        // Act
+        OfferDTO result = marketplaceService.deactivateOffer(offerId, userId);
+        
+        // Assert
+        assertNotNull(result);
+        verify(offerRepository).findById(offerId);
+        verify(handshakeRepository).findByOfferId(offerId);
+        verify(offerRepository).save(any(Offer.class));
+    }
+
+    @Test
+    void deactivateOffer_WithPendingHandshakes_ShouldThrowException() {
+        // Arrange
+        Integer offerId = 1;
+        Integer userId = 1;
+        
+        Handshake pendingHandshake = new Handshake();
+        pendingHandshake.setId(1);
+        pendingHandshake.setStatus(HandshakeStatus.PENDING);
+        
+        when(offerRepository.findById(offerId)).thenReturn(Optional.of(testOffer));
+        when(handshakeRepository.findByOfferId(offerId)).thenReturn(List.of(pendingHandshake));
+        
+        // Act & Assert
+        RuntimeException exception = assertThrows(RuntimeException.class, () -> {
+            marketplaceService.deactivateOffer(offerId, userId);
+        });
+        
+        assertEquals("Cannot deactivate offer with pending or confirmed handshakes", exception.getMessage());
+        verify(offerRepository).findById(offerId);
+        verify(handshakeRepository).findByOfferId(offerId);
+        verify(offerRepository, never()).save(any(Offer.class));
+    }
+
+    @Test
+    void deactivateOffer_WithConfirmedHandshakes_ShouldThrowException() {
+        // Arrange
+        Integer offerId = 1;
+        Integer userId = 1;
+        
+        Handshake confirmedHandshake = new Handshake();
+        confirmedHandshake.setId(1);
+        confirmedHandshake.setStatus(HandshakeStatus.CONFIRMED);
+        
+        when(offerRepository.findById(offerId)).thenReturn(Optional.of(testOffer));
+        when(handshakeRepository.findByOfferId(offerId)).thenReturn(List.of(confirmedHandshake));
+        
+        // Act & Assert
+        RuntimeException exception = assertThrows(RuntimeException.class, () -> {
+            marketplaceService.deactivateOffer(offerId, userId);
+        });
+        
+        assertEquals("Cannot deactivate offer with pending or confirmed handshakes", exception.getMessage());
+        verify(offerRepository).findById(offerId);
+        verify(handshakeRepository).findByOfferId(offerId);
+        verify(offerRepository, never()).save(any(Offer.class));
+    }
+
+    @Test
+    void deactivateOffer_WithUnauthorizedUser_ShouldThrowException() {
+        // Arrange
+        Integer offerId = 1;
+        Integer unauthorizedUserId = 999;
+        
+        when(offerRepository.findById(offerId)).thenReturn(Optional.of(testOffer));
+        
+        // Act & Assert
+        RuntimeException exception = assertThrows(RuntimeException.class, () -> {
+            marketplaceService.deactivateOffer(offerId, unauthorizedUserId);
+        });
+        
+        assertEquals("You are not authorized to deactivate this offer", exception.getMessage());
+        verify(offerRepository).findById(offerId);
+        verify(handshakeRepository, never()).findByOfferId(any());
+        verify(offerRepository, never()).save(any(Offer.class));
+    }
+
+    @Test
+    void deactivateOffer_WithNonExistentOffer_ShouldThrowException() {
+        // Arrange
+        Integer offerId = 999;
+        Integer userId = 1;
+        
+        when(offerRepository.findById(offerId)).thenReturn(Optional.empty());
+        
+        // Act & Assert
+        ResourceNotFoundException exception = assertThrows(ResourceNotFoundException.class, () -> {
+            marketplaceService.deactivateOffer(offerId, userId);
+        });
+        
+        assertEquals("Offer not found with id: 999", exception.getMessage());
+        verify(offerRepository).findById(offerId);
+        verify(handshakeRepository, never()).findByOfferId(any());
+        verify(offerRepository, never()).save(any(Offer.class));
+    }
+
+    @Test
+    void deactivateRequest_WithNoHandshakes_ShouldSucceed() {
+        // Arrange
+        Integer requestId = 1;
+        Integer userId = 2; // testUserWithBadge is the seeker
+        
+        when(requestRepository.findById(requestId)).thenReturn(Optional.of(testRequest));
+        when(handshakeRepository.findByRequestId(requestId)).thenReturn(Collections.emptyList());
+        when(requestRepository.save(any(Request.class))).thenReturn(testRequest);
+        
+        // Act
+        RequestDTO result = marketplaceService.deactivateRequest(requestId, userId);
+        
+        // Assert
+        assertNotNull(result);
+        verify(requestRepository).findById(requestId);
+        verify(handshakeRepository).findByRequestId(requestId);
+        verify(requestRepository).save(any(Request.class));
+    }
+
+    @Test
+    void deactivateRequest_WithPendingHandshakes_ShouldThrowException() {
+        // Arrange
+        Integer requestId = 1;
+        Integer userId = 2; // testUserWithBadge is the seeker
+        
+        Handshake pendingHandshake = new Handshake();
+        pendingHandshake.setId(1);
+        pendingHandshake.setStatus(HandshakeStatus.PENDING);
+        
+        when(requestRepository.findById(requestId)).thenReturn(Optional.of(testRequest));
+        when(handshakeRepository.findByRequestId(requestId)).thenReturn(List.of(pendingHandshake));
+        
+        // Act & Assert
+        RuntimeException exception = assertThrows(RuntimeException.class, () -> {
+            marketplaceService.deactivateRequest(requestId, userId);
+        });
+        
+        assertEquals("Cannot deactivate request with pending or confirmed handshakes", exception.getMessage());
+        verify(requestRepository).findById(requestId);
+        verify(handshakeRepository).findByRequestId(requestId);
+        verify(requestRepository, never()).save(any(Request.class));
+    }
+
+    @Test
+    void deactivateRequest_WithUnauthorizedUser_ShouldThrowException() {
+        // Arrange
+        Integer requestId = 1;
+        Integer unauthorizedUserId = 999;
+        
+        when(requestRepository.findById(requestId)).thenReturn(Optional.of(testRequest));
+        
+        // Act & Assert
+        RuntimeException exception = assertThrows(RuntimeException.class, () -> {
+            marketplaceService.deactivateRequest(requestId, unauthorizedUserId);
+        });
+        
+        assertEquals("You are not authorized to deactivate this request", exception.getMessage());
+        verify(requestRepository).findById(requestId);
+        verify(handshakeRepository, never()).findByRequestId(any());
+        verify(requestRepository, never()).save(any(Request.class));
+    }
+
+    // ==================== Service Expiration Tests ====================
+
+    @Test
+    void getActiveServices_ShouldExpireOffersWithPastEndDate() {
+        // Arrange
+        Offer expiredOffer = new Offer();
+        expiredOffer.setId(1);
+        expiredOffer.setProvider(testUser);
+        expiredOffer.setTitle("Expired Offer");
+        expiredOffer.setEndDate(LocalDate.now().minusDays(1)); // Yesterday
+        expiredOffer.setStatus(ItemStatus.ACTIVE);
+        expiredOffer.setProvince("Istanbul");
+        expiredOffer.setDistrict("Kadikoy");
+        
+        when(offerRepository.findByStatus(ItemStatus.ACTIVE)).thenReturn(List.of(expiredOffer));
+        when(requestRepository.findByStatus(ItemStatus.ACTIVE)).thenReturn(Collections.emptyList());
+        
+        // Act
+        marketplaceService.getActiveServices();
+        
+        // Assert
+        verify(offerRepository, times(2)).findByStatus(ItemStatus.ACTIVE); //called twice: expireOldServices(), getActiveServices() o yüzden patladı
+        verify(offerRepository).save(expiredOffer);
+        assertEquals(ItemStatus.EXPIRED, expiredOffer.getStatus());
+    }
+
+    @Test
+    void getActiveServices_ShouldExpireRequestsWithPastEndDate() {
+        // Arrange
+        Request expiredRequest = new Request();
+        expiredRequest.setId(1);
+        expiredRequest.setSeeker(testUser);
+        expiredRequest.setTitle("Expired Request");
+        expiredRequest.setEndDate(LocalDate.now().minusDays(5)); // 5 days ago
+        expiredRequest.setStatus(ItemStatus.ACTIVE);
+        expiredRequest.setProvince("Ankara");
+        expiredRequest.setDistrict("Cankaya");
+        
+        when(offerRepository.findByStatus(ItemStatus.ACTIVE)).thenReturn(Collections.emptyList());
+        when(requestRepository.findByStatus(ItemStatus.ACTIVE)).thenReturn(List.of(expiredRequest));
+        
+        // Act
+        marketplaceService.getActiveServices();
+        
+        // Assert - called twice: once in expireOldServices(), once in getActiveServices()
+        verify(requestRepository, times(2)).findByStatus(ItemStatus.ACTIVE);
+        verify(requestRepository).save(expiredRequest);
+        assertEquals(ItemStatus.EXPIRED, expiredRequest.getStatus());
+    }
+
+    @Test
+    void getActiveServices_ShouldNotExpireServicesWithFutureEndDate() {
+        // Arrange
+        Offer futureOffer = new Offer();
+        futureOffer.setId(1);
+        futureOffer.setProvider(testUser);
+        futureOffer.setTitle("Future Offer");
+        futureOffer.setEndDate(LocalDate.now().plusDays(10)); // 10 days from now
+        futureOffer.setStatus(ItemStatus.ACTIVE);
+        futureOffer.setProvince("Istanbul");
+        futureOffer.setDistrict("Kadikoy");
+        
+        Request futureRequest = new Request();
+        futureRequest.setId(1);
+        futureRequest.setSeeker(testUser);
+        futureRequest.setTitle("Future Request");
+        futureRequest.setEndDate(LocalDate.now().plusDays(5)); // 5 days from now
+        futureRequest.setStatus(ItemStatus.ACTIVE);
+        futureRequest.setProvince("Ankara");
+        futureRequest.setDistrict("Cankaya");
+        
+        when(offerRepository.findByStatus(ItemStatus.ACTIVE)).thenReturn(List.of(futureOffer));
+        when(requestRepository.findByStatus(ItemStatus.ACTIVE)).thenReturn(List.of(futureRequest));
+        
+        // Act
+        marketplaceService.getActiveServices();
+        
+        // Assert - called twice: once in expireOldServices(), once in getActiveServices()
+        verify(offerRepository, times(2)).findByStatus(ItemStatus.ACTIVE);
+        verify(requestRepository, times(2)).findByStatus(ItemStatus.ACTIVE);
+        verify(offerRepository, never()).save(any(Offer.class));
+        verify(requestRepository, never()).save(any(Request.class));
+        assertEquals(ItemStatus.ACTIVE, futureOffer.getStatus());
+        assertEquals(ItemStatus.ACTIVE, futureRequest.getStatus());
+    }
+
+    @Test
+    void getActiveServices_ShouldNotExpireServicesWithNullEndDate() {
+        // Arrange
+        Offer offerWithoutEndDate = new Offer();
+        offerWithoutEndDate.setId(1);
+        offerWithoutEndDate.setProvider(testUser);
+        offerWithoutEndDate.setTitle("No End Date Offer");
+        offerWithoutEndDate.setEndDate(null);
+        offerWithoutEndDate.setStatus(ItemStatus.ACTIVE);
+        offerWithoutEndDate.setProvince("Istanbul");
+        offerWithoutEndDate.setDistrict("Kadikoy");
+        
+        when(offerRepository.findByStatus(ItemStatus.ACTIVE)).thenReturn(List.of(offerWithoutEndDate));
+        when(requestRepository.findByStatus(ItemStatus.ACTIVE)).thenReturn(Collections.emptyList());
+        
+        // Act
+        marketplaceService.getActiveServices();
+        
+        // Assert - called twice: once in expireOldServices(), once in getActiveServices()
+        verify(offerRepository, times(2)).findByStatus(ItemStatus.ACTIVE);
+        verify(offerRepository, never()).save(any(Offer.class));
+        assertEquals(ItemStatus.ACTIVE, offerWithoutEndDate.getStatus());
+    }
+
+    @Test
+    void getActiveServices_ShouldExpireMultipleServicesAtOnce() {
+        // Arrange
+        Offer expiredOffer1 = new Offer();
+        expiredOffer1.setId(1);
+        expiredOffer1.setProvider(testUser);
+        expiredOffer1.setEndDate(LocalDate.now().minusDays(1));
+        expiredOffer1.setStatus(ItemStatus.ACTIVE);
+        expiredOffer1.setProvince("Istanbul");
+        expiredOffer1.setDistrict("Kadikoy");
+        
+        Offer expiredOffer2 = new Offer();
+        expiredOffer2.setId(2);
+        expiredOffer2.setProvider(testUser);
+        expiredOffer2.setEndDate(LocalDate.now().minusDays(3));
+        expiredOffer2.setStatus(ItemStatus.ACTIVE);
+        expiredOffer2.setProvince("Ankara");
+        expiredOffer2.setDistrict("Cankaya");
+        
+        Request expiredRequest = new Request();
+        expiredRequest.setId(1);
+        expiredRequest.setSeeker(testUser);
+        expiredRequest.setEndDate(LocalDate.now().minusDays(2));
+        expiredRequest.setStatus(ItemStatus.ACTIVE);
+        expiredRequest.setProvince("Izmir");
+        expiredRequest.setDistrict("Bornova");
+        
+        when(offerRepository.findByStatus(ItemStatus.ACTIVE))
+            .thenReturn(List.of(expiredOffer1, expiredOffer2));
+        when(requestRepository.findByStatus(ItemStatus.ACTIVE))
+            .thenReturn(List.of(expiredRequest));
+        
+        // Act
+        marketplaceService.getActiveServices();
+        
+        // Assert
+        verify(offerRepository).save(expiredOffer1);
+        verify(offerRepository).save(expiredOffer2);
+        verify(requestRepository).save(expiredRequest);
+        assertEquals(ItemStatus.EXPIRED, expiredOffer1.getStatus());
+        assertEquals(ItemStatus.EXPIRED, expiredOffer2.getStatus());
+        assertEquals(ItemStatus.EXPIRED, expiredRequest.getStatus());
     }
 }
 

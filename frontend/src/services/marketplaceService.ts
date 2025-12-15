@@ -373,3 +373,15 @@ export async function getUserServices(userId: string): Promise<Service[]> {
     return [];
   }
 }
+
+export async function deactivateService(serviceId: string, serviceType: 'OFFER' | 'REQUEST'): Promise<Service> {
+  try {
+    const service = await api.put<BackendServiceDTO>(
+      `/marketplace/services/${serviceId}/deactivate?type=${serviceType}`
+    );
+    return convertServiceDTOToService(service);
+  } catch (error) {
+    console.error('Failed to deactivate service:', error);
+    throw error;
+  }
+}
