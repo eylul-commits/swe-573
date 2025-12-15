@@ -360,11 +360,19 @@ public class MarketplaceService {
             Request request = requestRepository.findById(serviceId)
                     .orElseThrow(() -> new ResourceNotFoundException("Request not found with id: " + serviceId));
             List<Rating> ratings = ratingRepository.findByHandshakeRequestId(serviceId);
-            List<ServiceRatingDTO> ratingDTOs = ratings.stream()
+            
+            // Filter out ratings where the rater is the request owner (seeker)
+            // Those ratings are for the provider, not for the request service
+            Integer requestOwnerId = request.getSeeker().getId();
+            List<Rating> filteredRatings = ratings.stream()
+                    .filter(rating -> !rating.getRater().getId().equals(requestOwnerId))
+                    .collect(Collectors.toList());
+            
+            List<ServiceRatingDTO> ratingDTOs = filteredRatings.stream()
                     .map(rating -> convertToServiceRatingDTO(rating, request.getId(), request.getTitle()))
                     .collect(Collectors.toList());
 
-            ServiceRatingSummaryDTO summary = calculateRatingSummary(ratings);
+            ServiceRatingSummaryDTO summary = calculateRatingSummary(filteredRatings);
             return new ServiceRatingsResponseDTO(ratingDTOs, summary);
         }
 

@@ -1275,6 +1275,42 @@ class MarketplaceServiceTest {
     }
 
     @Test
+    void getRatingsForService_ShouldFilterOutRequestOwnerRatings() {
+        // Create a rating from the request owner (testUserWithBadge)
+        Rating ratingFromOwner = new Rating();
+        ratingFromOwner.setId(1);
+        ratingFromOwner.setRater(testUserWithBadge); // testUserWithBadge is the request owner
+        ratingFromOwner.setPunctuality(5);
+        ratingFromOwner.setFriendliness(5);
+        ratingFromOwner.setCommunicative(5);
+        ratingFromOwner.setPreparedness(5);
+        ratingFromOwner.setCreatedAt(LocalDateTime.now());
+
+        // Create a rating from a provider (not the owner)
+        Rating ratingFromProvider = new Rating();
+        ratingFromProvider.setId(2);
+        ratingFromProvider.setRater(testUser); // testUser is not the owner
+        ratingFromProvider.setPunctuality(4);
+        ratingFromProvider.setFriendliness(4);
+        ratingFromProvider.setCommunicative(4);
+        ratingFromProvider.setPreparedness(4);
+        ratingFromProvider.setCreatedAt(LocalDateTime.now());
+
+        when(offerRepository.existsById(1)).thenReturn(false);
+        when(requestRepository.existsById(1)).thenReturn(true);
+        when(requestRepository.findById(1)).thenReturn(Optional.of(testRequest));
+        when(ratingRepository.findByHandshakeRequestId(1)).thenReturn(Arrays.asList(ratingFromOwner, ratingFromProvider));
+
+        ServiceRatingsResponseDTO result = marketplaceService.getRatingsForService(1);
+
+        // Should only return the rating from the provider, not from the owner
+        assertNotNull(result);
+        assertEquals(1, result.getRatings().size());
+        assertEquals(4.0, result.getSummary().getPunctuality());
+        assertEquals(testUser.getId(), result.getRatings().get(0).getRater().getId());
+    }
+
+    @Test
     void getRatingsForService_ShouldThrowException_WhenServiceNotFound() {
         when(offerRepository.existsById(999)).thenReturn(false);
         when(requestRepository.existsById(999)).thenReturn(false);
