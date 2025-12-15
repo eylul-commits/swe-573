@@ -59,29 +59,8 @@
         </Select>
       </div>
 
-      <!-- Popular Tags -->
-      <div class="mb-2">
-        <div class="text-xs text-gray-600 mb-2">Filter by tags:</div>
-        <div class="flex flex-wrap gap-2">
-          <Badge
-            v-for="tag in allTags.slice(0, 8)"
-            :key="tag"
-            :variant="selectedTags.includes(tag) ? 'default' : 'outline'"
-            :class="[
-              'cursor-pointer transition-colors',
-              selectedTags.includes(tag)
-                ? 'bg-gray-900 hover:bg-gray-800'
-                : 'hover:bg-gray-100'
-            ]"
-            @click="toggleTag(tag)"
-          >
-            {{ tag }}
-          </Badge>
-        </div>
-      </div>
-
       <!-- Active Filters -->
-      <div v-if="searchQuery || selectedTags.length > 0 || selectedBadge !== 'all'" class="flex items-center gap-2 mt-3">
+      <div v-if="searchQuery || selectedBadge !== 'all'" class="flex items-center gap-2 mt-3">
         <span class="text-xs text-gray-600">
           {{ filteredServices.length }} service{{ filteredServices.length !== 1 ? 's' : '' }} found
         </span>
@@ -320,7 +299,6 @@ import Tabs from './ui/Tabs.vue'
 import TabsContent from './ui/TabsContent.vue'
 import TabsList from './ui/TabsList.vue'
 import TabsTrigger from './ui/TabsTrigger.vue'
-import { getAllTags } from '../services/dataService'
 import { getActiveServices, filterServices } from '../services/marketplaceService'
 import { useAppStore } from '../stores/appStore'
 import type { Service, BadgeName } from '../types'
@@ -340,11 +318,9 @@ const currentUser = computed(() => appStore.currentUser)
 
 // Filter state
 const searchQuery = ref('')
-const selectedTags = ref<string[]>([])
 const selectedBadge = ref<BadgeName | 'all'>('all')
 
 // Data state
-const allTags = ref<string[]>([])
 const allServices = ref<Service[]>([])
 const isLoading = ref(true)
 
@@ -352,11 +328,7 @@ const isLoading = ref(true)
 onMounted(async () => {
   try {
     isLoading.value = true
-    const [tagsData, servicesData] = await Promise.all([
-      getAllTags(),
-      getActiveServices()
-    ])
-    allTags.value = tagsData
+    const servicesData = await getActiveServices()
     allServices.value = servicesData
   } catch (error) {
     console.error('Failed to load data:', error)
@@ -365,30 +337,18 @@ onMounted(async () => {
   }
 })
 
-// Filter services based on search, selected tags, and badge
 const filteredServices = computed(() => {
   return filterServices(allServices.value, {
     searchQuery: searchQuery.value || undefined,
     badge: selectedBadge.value !== 'all' ? selectedBadge.value : undefined,
-    tags: selectedTags.value.length > 0 ? selectedTags.value : undefined,
   })
 })
 
 const offers = computed(() => filteredServices.value.filter((s) => s.type === 'OFFER'))
 const requests = computed(() => filteredServices.value.filter((s) => s.type === 'REQUEST'))
 
-const toggleTag = (tag: string) => {
-  const index = selectedTags.value.indexOf(tag)
-  if (index > -1) {
-    selectedTags.value.splice(index, 1)
-  } else {
-    selectedTags.value.push(tag)
-  }
-}
-
 const clearFilters = () => {
   searchQuery.value = ''
-  selectedTags.value = []
   selectedBadge.value = 'all'
 }
 </script>
