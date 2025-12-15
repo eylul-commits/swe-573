@@ -1,8 +1,6 @@
 import { api } from '../config/api';
 import type {
   Report,
-  ReportType,
-  ReportStatus,
   CreateReportRequest,
 } from '../types';
 

@@ -53,6 +53,9 @@ class HandshakeServiceTest {
     @Mock
     private TimebankTransactionService timebankTransactionService;
 
+    @Mock
+    private BadgeService badgeService;
+
     @InjectMocks
     private HandshakeService handshakeService;
 
@@ -565,6 +568,39 @@ class HandshakeServiceTest {
             handshake.getId(), 
             handshake.getDurationHours()
         );
+    }
+
+    @Test
+    void createRating_BothUsersRated_ShouldCheckAndAwardBadges() {
+        // Arrange
+        handshake.setStatus(HandshakeStatus.CONFIRMED);
+        handshake.setAgreedDate(LocalDateTime.now().minusDays(1));
+
+        CreateRatingRequest request = new CreateRatingRequest();
+        request.setHandshakeId(1);
+        request.setRateeId(2);
+        request.setPunctuality(5);
+        request.setFriendliness(5);
+        request.setCommunicative(4);
+        request.setPreparedness(5);
+
+        Rating rating1 = new Rating();
+        Rating rating2 = new Rating();
+
+        when(handshakeRepository.findById(1)).thenReturn(Optional.of(handshake));
+        when(userRepository.findById(2)).thenReturn(Optional.of(provider));
+        when(userRepository.findById(1)).thenReturn(Optional.of(seeker));
+        when(ratingRepository.save(any(Rating.class))).thenReturn(rating1);
+        when(ratingRepository.findByHandshakeId(1)).thenReturn(Arrays.asList(rating1, rating2));
+        when(handshakeRepository.save(any(Handshake.class))).thenReturn(handshake);
+        doNothing().when(badgeService).checkAndAwardBadges(any(User.class));
+
+        // Act
+        handshakeService.createRating(request, 1);
+
+        // Assert
+        verify(badgeService).checkAndAwardBadges(seeker);
+        verify(badgeService).checkAndAwardBadges(provider);
     }
 
     @Test

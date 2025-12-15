@@ -211,8 +211,8 @@
                   {{ service.poster.name }}
                 </div>
                 <div class="flex items-center gap-1 text-sm">
-                  <span>{{ badge.emoji }}</span>
-                  <span class="text-gray-600">{{ badge.label }}</span>
+                  <span>{{ getBadgeEmoji(service.poster.badge) }}</span>
+                  <span class="text-gray-600">{{ service.poster.badge || 'Newcomer' }}</span>
                 </div>
               </div>
               <div class="flex items-center gap-4 text-sm mb-3">
@@ -527,22 +527,17 @@ const showImageModal = ref(false)
 // Report modal state
 const reportModalOpen = ref(false)
 
-// Helper function to determine user badge
-const getUserBadge = (hoursGiven: number, _hoursReceived: number, balance: number) => {
-  if (hoursGiven >= 40) return { emoji: "🏆", label: "Top Contributor" }
-  if (hoursGiven >= 20) return { emoji: "⭐", label: "Active Member" }
-  if (Math.abs(balance) <= 5 && hoursGiven >= 10) return { emoji: "⚖️", label: "Balanced Exchanger" }
-  return { emoji: "🌱", label: "Newcomer" }
+// Helper function to get badge emoji from badge name
+const getBadgeEmoji = (badgeName?: string) => {
+  const badgeMap: Record<string, string> = {
+    'Newcomer': '🌱',
+    'Community Helper': '🤝',
+    'Active Member': '⭐',
+    'Veteran': '🏅',
+    'Champion': '🏆'
+  }
+  return badgeMap[badgeName || ''] || '🌱'
 }
-
-const badge = computed(() => {
-  if (!service.value) return { emoji: "🌱", label: "Newcomer" }
-  return getUserBadge(
-    service.value.poster.hoursGiven,
-    service.value.poster.hoursReceived,
-    service.value.poster.timebankBalance
-  )
-})
 
 const getAvailability = (id: string) => {
   if (id === "9") return "Starting Nov 1, 2025"

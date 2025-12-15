@@ -38,7 +38,7 @@ function convertBackendAuthorToUser(backendAuthor: BackendAuthorDTO): User {
     hoursGiven: 0,
     hoursReceived: 0,
     timebankBalance: backendAuthor.balanceHours ?? 0,
-    badge: mapBadgeType(backendAuthor.badge),
+    badge: backendAuthor.badge ?? undefined,
     bio: backendAuthor.bio ?? undefined,
     province: backendAuthor.province ?? undefined,
     district: backendAuthor.district ?? undefined,
@@ -53,7 +53,7 @@ function convertBackendAuthorToSummary(backendAuthor: BackendAuthorDTO): AuthorS
     id: backendAuthor.id.toString(),
     name: backendAuthor.name,
     avatar: createAvatarUrl(backendAuthor.name, backendAuthor.avatar),
-    badge: mapBadgeType(backendAuthor.badge),
+    badge: backendAuthor.badge ?? undefined,
     bio: backendAuthor.bio ?? undefined,
     province: backendAuthor.province ?? undefined,
     district: backendAuthor.district ?? undefined,
@@ -82,7 +82,7 @@ function convertBackendServiceToFrontend(backendService: BackendServiceDTO): Ser
     poster: user,
     createdAt: backendService.createdAt,
     updatedAt: backendService.updatedAt,
-    status: mapStatus(backendService.status),
+    status: backendService.status?.toLowerCase(),
     startDate: backendService.startDate ?? undefined,
     endDate: backendService.endDate ?? undefined,
     province: backendService.province ?? undefined,
@@ -90,26 +90,6 @@ function convertBackendServiceToFrontend(backendService: BackendServiceDTO): Ser
     geohash: backendService.geohash ?? undefined,
     imageUrls: backendService.imageUrls || [],
   };
-}
-
-// Map backend badge names to frontend badge types
-function mapBadgeType(backendBadge?: string | null): 'top-contributor' | 'active' | 'newcomer' | 'balanced' {
-  if (!backendBadge) {
-    return 'newcomer';
-  }
-  const badge = backendBadge.toLowerCase();
-  if (badge.includes('top') || badge.includes('contributor')) return 'top-contributor';
-  if (badge.includes('active')) return 'active';
-  if (badge.includes('balanced')) return 'balanced';
-  return 'newcomer';
-}
-
-// Map backend status to frontend status
-function mapStatus(backendStatus: string): 'active' | 'completed' | 'cancelled' {
-  const status = backendStatus.toLowerCase();
-  if (status === 'completed') return 'completed';
-  if (status === 'cancelled') return 'cancelled';
-  return 'active';
 }
 
 /**

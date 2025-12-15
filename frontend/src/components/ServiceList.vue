@@ -50,10 +50,11 @@
           </SelectTrigger>
           <SelectContent>
             <SelectItem value="all">All badges</SelectItem>
-            <SelectItem value="top-contributor">🏆 Top Contributor</SelectItem>
-            <SelectItem value="active">⭐ Active Member</SelectItem>
-            <SelectItem value="newcomer">🌱 Newcomer</SelectItem>
-            <SelectItem value="balanced">⚖️ Balanced Exchanger</SelectItem>
+            <SelectItem value="Newcomer">🌱 Newcomer</SelectItem>
+            <SelectItem value="Community Helper">🤝 Community Helper</SelectItem>
+            <SelectItem value="Active Member">⭐ Active Member</SelectItem>
+            <SelectItem value="Veteran">🏅 Veteran</SelectItem>
+            <SelectItem value="Champion">🏆 Champion</SelectItem>
           </SelectContent>
         </Select>
       </div>
@@ -305,7 +306,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, onMounted, watch } from 'vue'
+import { ref, computed, onMounted } from 'vue'
 import { Clock, Search, X, Award, MapPin } from 'lucide-vue-next'
 import Badge from './ui/Badge.vue'
 import Button from './ui/Button.vue'
@@ -319,9 +320,10 @@ import Tabs from './ui/Tabs.vue'
 import TabsContent from './ui/TabsContent.vue'
 import TabsList from './ui/TabsList.vue'
 import TabsTrigger from './ui/TabsTrigger.vue'
-import { filterServices, getAllTags } from '../services/dataService'
+import { getAllTags } from '../services/dataService'
+import { getActiveServices, filterServices } from '../services/marketplaceService'
 import { useAppStore } from '../stores/appStore'
-import type { Service } from '../types'
+import type { Service, BadgeName } from '../types'
 
 interface Props {
   selectedServiceId?: string | null
@@ -339,11 +341,11 @@ const currentUser = computed(() => appStore.currentUser)
 // Filter state
 const searchQuery = ref('')
 const selectedTags = ref<string[]>([])
-const selectedBadge = ref('all')
+const selectedBadge = ref<BadgeName | 'all'>('all')
 
 // Data state
 const allTags = ref<string[]>([])
-const services = ref<Service[]>([])
+const allServices = ref<Service[]>([])
 const isLoading = ref(true)
 
 // Load initial data
@@ -352,10 +354,10 @@ onMounted(async () => {
     isLoading.value = true
     const [tagsData, servicesData] = await Promise.all([
       getAllTags(),
-      filterServices({})
+      getActiveServices()
     ])
     allTags.value = tagsData
-    services.value = servicesData
+    allServices.value = servicesData
   } catch (error) {
     console.error('Failed to load data:', error)
   } finally {
@@ -363,21 +365,14 @@ onMounted(async () => {
   }
 })
 
-// Watch filter changes and reload services
-watch([searchQuery, selectedTags, selectedBadge], async () => {
-  try {
-    services.value = await filterServices({
-      searchQuery: searchQuery.value,
-      tags: selectedTags.value,
-      badge: selectedBadge.value as any,
-    })
-  } catch (error) {
-    console.error('Failed to filter services:', error)
-  }
-}, { deep: true })
-
 // Filter services based on search, selected tags, and badge
-const filteredServices = computed(() => services.value)
+const filteredServices = computed(() => {
+  return filterServices(allServices.value, {
+    searchQuery: searchQuery.value || undefined,
+    badge: selectedBadge.value !== 'all' ? selectedBadge.value : undefined,
+    tags: selectedTags.value.length > 0 ? selectedTags.value : undefined,
+  })
+})
 
 const offers = computed(() => filteredServices.value.filter((s) => s.type === 'OFFER'))
 const requests = computed(() => filteredServices.value.filter((s) => s.type === 'REQUEST'))

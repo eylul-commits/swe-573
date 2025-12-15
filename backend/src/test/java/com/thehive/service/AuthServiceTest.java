@@ -57,6 +57,9 @@ class AuthServiceTest {
     @Mock
     private StreamChatClient streamChatClient;
 
+    @Mock
+    private BadgeService badgeService;
+
     @InjectMocks
     private AuthService authService;
 
@@ -100,6 +103,7 @@ class AuthServiceTest {
         when(streamChatConfig.isConfigured()).thenReturn(true);
         when(streamChatConfig.generateUserToken(anyString())).thenReturn("stream-chat-token");
         doNothing().when(streamChatClient).upsertUser(any(Integer.class), anyString());
+        doNothing().when(badgeService).awardNewcomerBadge(any(User.class));
 
         // Act
         AuthResponse response = authService.register(registerRequest);
@@ -121,6 +125,27 @@ class AuthServiceTest {
         verify(userRepository).save(any(User.class));
         verify(jwtUtil).generateToken(testUser.getEmail(), testUser.getId());
         verify(streamChatClient).upsertUser(testUser.getId(), testUser.getName());
+    }
+
+    @Test
+    void register_ShouldAwardNewcomerBadge() {
+        // Arrange
+        when(userRepository.existsByEmail(registerRequest.getEmail())).thenReturn(false);
+        when(passwordEncoder.encode(registerRequest.getPassword())).thenReturn("$2a$10$hashedPassword");
+        when(userRepository.save(any(User.class))).thenReturn(testUser);
+        when(jwtUtil.generateToken(anyString(), any(Integer.class))).thenReturn("jwt-token");
+        when(timebankTransactionRepository.findBySenderId(any(Integer.class))).thenReturn(Collections.emptyList());
+        when(timebankTransactionRepository.findByReceiverId(any(Integer.class))).thenReturn(Collections.emptyList());
+        when(streamChatConfig.isConfigured()).thenReturn(true);
+        when(streamChatConfig.generateUserToken(anyString())).thenReturn("stream-chat-token");
+        doNothing().when(streamChatClient).upsertUser(any(Integer.class), anyString());
+        doNothing().when(badgeService).awardNewcomerBadge(any(User.class));
+
+        // Act
+        authService.register(registerRequest);
+
+        // Assert
+        verify(badgeService).awardNewcomerBadge(any(User.class));
     }
 
     @Test

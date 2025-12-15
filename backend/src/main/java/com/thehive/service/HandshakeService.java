@@ -36,6 +36,7 @@ public class HandshakeService {
     private final UserRepository userRepository;
     private final RatingRepository ratingRepository;
     private final TimebankTransactionService timebankTransactionService;
+    private final BadgeService badgeService;
 
     @Transactional
     public HandshakeDTO createHandshake(CreateHandshakeRequest request, Integer acceptingUserId) {
@@ -212,16 +213,16 @@ public class HandshakeService {
             handshake.setStatus(HandshakeStatus.COMPLETED);
             handshakeRepository.save(handshake);
             
-            // Create TimeBank transaction: seeker always pays provider
-            // - For OFFERS: offer owner provides service (provider), acceptor receives service (seeker)
-            // - For REQUESTS: request owner receives service (seeker), acceptor provides service (provider)
-            // In both cases: seeker pays provider
             timebankTransactionService.createTransaction(
                 handshake.getSeeker().getId(),   // seeker pays
                 handshake.getProvider().getId(), // provider receives
                 handshake.getId(),
                 handshake.getDurationHours()
             );
+            
+            // Award badges based on completed exchanges
+            badgeService.checkAndAwardBadges(handshake.getSeeker());
+            badgeService.checkAndAwardBadges(handshake.getProvider());
         }
 
         return convertToDTO(handshake, raterId);

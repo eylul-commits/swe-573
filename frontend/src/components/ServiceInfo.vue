@@ -539,19 +539,7 @@ const posterDescription = computed(() => {
 const posterBalance = computed(() => service.value?.poster?.timebankBalance ?? 0)
 
 const posterBadgeLabel = computed(() => {
-  const badge = service.value?.poster?.badge
-  if (!badge) return 'Newcomer'
-
-  switch (badge) {
-    case 'top-contributor':
-      return 'Top Contributor'
-    case 'active':
-      return 'Active Member'
-    case 'balanced':
-      return 'Balanced Exchanger'
-    default:
-      return 'Newcomer'
-  }
+  return service.value?.poster?.badge || 'Newcomer'
 })
 
 const handleAskQuestion = async () => {

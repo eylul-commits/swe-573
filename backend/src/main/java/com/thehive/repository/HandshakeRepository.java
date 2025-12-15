@@ -33,5 +33,8 @@ public interface HandshakeRepository extends JpaRepository<Handshake, Integer> {
     
     @Query("SELECT h FROM Handshake h WHERE (h.seeker.id = :userId OR h.provider.id = :userId) AND h.status = :status")
     List<Handshake> findByUserIdAndStatus(@Param("userId") Integer userId, @Param("status") HandshakeStatus status);
+    
+    @Query("SELECT COUNT(h) FROM Handshake h WHERE (h.seeker.id = :userId OR h.provider.id = :userId) AND h.status = 'COMPLETED'")
+    long countCompletedHandshakesByUserId(@Param("userId") Integer userId);
 }
 

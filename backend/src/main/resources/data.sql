@@ -90,15 +90,19 @@ ON CONFLICT (id) DO NOTHING;
 -- BADGES
 INSERT INTO badges (id, name, description, icon_url)
 VALUES
-(1, 'New Comer', 'Awarded for joining the community.', 'https://example.com/icons/newcomer.png'),
-(2, 'Experienced User', 'Awarded after completing 3 or more exchanges.', 'https://example.com/icons/experienced.png')
+(1, 'Newcomer', 'Awarded for joining the community.', '🌱'),
+(2, 'Community Helper', 'Awarded after completing 3 exchanges.', '🤝'),
+(3, 'Active Member', 'Awarded after completing 10 exchanges.', '⭐'),
+(4, 'Veteran', 'Awarded after completing 25 exchanges.', '🏅'),
+(5, 'Champion', 'Awarded after completing 50 exchanges.', '🏆')
 ON CONFLICT (id) DO NOTHING;
 
--- USER BADGES
+-- USER BADGES (Only one badge per user - their highest earned)
 INSERT INTO user_badges (user_id, badge_id, earned_at)
 VALUES
-(1, 1, NOW()),   -- Alice is new
-(2, 2, NOW())     -- Bob is experienced
+(1, 2, NOW()),   -- Alice - Community Helper (has 3 completed)
+(2, 2, NOW()),   -- Bob - Community Helper (has 3 completed)
+(3, 2, NOW())    -- Admin - Community Helper (has 3 completed)
 ON CONFLICT DO NOTHING;
 
 -- FORUM TOPICS

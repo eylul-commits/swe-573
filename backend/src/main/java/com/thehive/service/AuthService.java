@@ -34,6 +34,7 @@ public class AuthService {
     private final UserActionRepository userActionRepository;
     private final StreamChatConfig streamChatConfig;
     private final StreamChatClient streamChatClient;
+    private final BadgeService badgeService;
     
     private static final int WARNING_EXPIRATION_DAYS = 30;
 
@@ -52,6 +53,9 @@ public class AuthService {
         user.setBalanceHours(3); // Default starting balance
 
         user = userRepository.save(user);
+
+        // Award newcomer badge to new user
+        badgeService.awardNewcomerBadge(user);
 
         // Upsert user to Stream Chat (create user in Stream Chat system)
         streamChatClient.upsertUser(user.getId(), user.getName());
@@ -226,6 +230,22 @@ public class AuthService {
         
         dto.setHoursGiven(hoursGiven);
         dto.setHoursReceived(hoursReceived);
+        
+        // Convert badges
+        if (user.getUserBadges() != null) {
+            List<com.thehive.model.dto.BadgeDTO> badgeDTOs = user.getUserBadges().stream()
+                    .map(userBadge -> {
+                        com.thehive.model.dto.BadgeDTO badgeDTO = new com.thehive.model.dto.BadgeDTO();
+                        badgeDTO.setId(userBadge.getBadge().getId());
+                        badgeDTO.setName(userBadge.getBadge().getName());
+                        badgeDTO.setDescription(userBadge.getBadge().getDescription());
+                        badgeDTO.setIconUrl(userBadge.getBadge().getIconUrl());
+                        badgeDTO.setEarnedAt(userBadge.getEarnedAt());
+                        return badgeDTO;
+                    })
+                    .toList();
+            dto.setBadges(badgeDTOs);
+        }
         
         return dto;
     }
