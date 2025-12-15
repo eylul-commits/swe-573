@@ -835,8 +835,9 @@ class MarketplaceServiceTest {
         // Verify all returned services are active
         result.forEach(service -> assertEquals("ACTIVE", service.getStatus()));
 
-        verify(offerRepository, times(1)).findByStatus(ItemStatus.ACTIVE);
-        verify(requestRepository, times(1)).findByStatus(ItemStatus.ACTIVE);
+        // Called twice: once in expireOldServices(), once in getActiveServices()
+        verify(offerRepository, times(2)).findByStatus(ItemStatus.ACTIVE);
+        verify(requestRepository, times(2)).findByStatus(ItemStatus.ACTIVE);
     }
 
     // ==================== DTO CONVERSION TESTS ====================
@@ -1943,6 +1944,160 @@ class MarketplaceServiceTest {
         verify(requestRepository).findById(requestId);
         verify(handshakeRepository, never()).findByRequestId(any());
         verify(requestRepository, never()).save(any(Request.class));
+    }
+
+    // ==================== Service Expiration Tests ====================
+
+    @Test
+    void getActiveServices_ShouldExpireOffersWithPastEndDate() {
+        // Arrange
+        Offer expiredOffer = new Offer();
+        expiredOffer.setId(1);
+        expiredOffer.setProvider(testUser);
+        expiredOffer.setTitle("Expired Offer");
+        expiredOffer.setEndDate(LocalDate.now().minusDays(1)); // Yesterday
+        expiredOffer.setStatus(ItemStatus.ACTIVE);
+        expiredOffer.setProvince("Istanbul");
+        expiredOffer.setDistrict("Kadikoy");
+        
+        when(offerRepository.findByStatus(ItemStatus.ACTIVE)).thenReturn(List.of(expiredOffer));
+        when(requestRepository.findByStatus(ItemStatus.ACTIVE)).thenReturn(Collections.emptyList());
+        
+        // Act
+        marketplaceService.getActiveServices();
+        
+        // Assert
+        verify(offerRepository, times(2)).findByStatus(ItemStatus.ACTIVE); //called twice: expireOldServices(), getActiveServices() o yüzden patladı
+        verify(offerRepository).save(expiredOffer);
+        assertEquals(ItemStatus.EXPIRED, expiredOffer.getStatus());
+    }
+
+    @Test
+    void getActiveServices_ShouldExpireRequestsWithPastEndDate() {
+        // Arrange
+        Request expiredRequest = new Request();
+        expiredRequest.setId(1);
+        expiredRequest.setSeeker(testUser);
+        expiredRequest.setTitle("Expired Request");
+        expiredRequest.setEndDate(LocalDate.now().minusDays(5)); // 5 days ago
+        expiredRequest.setStatus(ItemStatus.ACTIVE);
+        expiredRequest.setProvince("Ankara");
+        expiredRequest.setDistrict("Cankaya");
+        
+        when(offerRepository.findByStatus(ItemStatus.ACTIVE)).thenReturn(Collections.emptyList());
+        when(requestRepository.findByStatus(ItemStatus.ACTIVE)).thenReturn(List.of(expiredRequest));
+        
+        // Act
+        marketplaceService.getActiveServices();
+        
+        // Assert - called twice: once in expireOldServices(), once in getActiveServices()
+        verify(requestRepository, times(2)).findByStatus(ItemStatus.ACTIVE);
+        verify(requestRepository).save(expiredRequest);
+        assertEquals(ItemStatus.EXPIRED, expiredRequest.getStatus());
+    }
+
+    @Test
+    void getActiveServices_ShouldNotExpireServicesWithFutureEndDate() {
+        // Arrange
+        Offer futureOffer = new Offer();
+        futureOffer.setId(1);
+        futureOffer.setProvider(testUser);
+        futureOffer.setTitle("Future Offer");
+        futureOffer.setEndDate(LocalDate.now().plusDays(10)); // 10 days from now
+        futureOffer.setStatus(ItemStatus.ACTIVE);
+        futureOffer.setProvince("Istanbul");
+        futureOffer.setDistrict("Kadikoy");
+        
+        Request futureRequest = new Request();
+        futureRequest.setId(1);
+        futureRequest.setSeeker(testUser);
+        futureRequest.setTitle("Future Request");
+        futureRequest.setEndDate(LocalDate.now().plusDays(5)); // 5 days from now
+        futureRequest.setStatus(ItemStatus.ACTIVE);
+        futureRequest.setProvince("Ankara");
+        futureRequest.setDistrict("Cankaya");
+        
+        when(offerRepository.findByStatus(ItemStatus.ACTIVE)).thenReturn(List.of(futureOffer));
+        when(requestRepository.findByStatus(ItemStatus.ACTIVE)).thenReturn(List.of(futureRequest));
+        
+        // Act
+        marketplaceService.getActiveServices();
+        
+        // Assert - called twice: once in expireOldServices(), once in getActiveServices()
+        verify(offerRepository, times(2)).findByStatus(ItemStatus.ACTIVE);
+        verify(requestRepository, times(2)).findByStatus(ItemStatus.ACTIVE);
+        verify(offerRepository, never()).save(any(Offer.class));
+        verify(requestRepository, never()).save(any(Request.class));
+        assertEquals(ItemStatus.ACTIVE, futureOffer.getStatus());
+        assertEquals(ItemStatus.ACTIVE, futureRequest.getStatus());
+    }
+
+    @Test
+    void getActiveServices_ShouldNotExpireServicesWithNullEndDate() {
+        // Arrange
+        Offer offerWithoutEndDate = new Offer();
+        offerWithoutEndDate.setId(1);
+        offerWithoutEndDate.setProvider(testUser);
+        offerWithoutEndDate.setTitle("No End Date Offer");
+        offerWithoutEndDate.setEndDate(null);
+        offerWithoutEndDate.setStatus(ItemStatus.ACTIVE);
+        offerWithoutEndDate.setProvince("Istanbul");
+        offerWithoutEndDate.setDistrict("Kadikoy");
+        
+        when(offerRepository.findByStatus(ItemStatus.ACTIVE)).thenReturn(List.of(offerWithoutEndDate));
+        when(requestRepository.findByStatus(ItemStatus.ACTIVE)).thenReturn(Collections.emptyList());
+        
+        // Act
+        marketplaceService.getActiveServices();
+        
+        // Assert - called twice: once in expireOldServices(), once in getActiveServices()
+        verify(offerRepository, times(2)).findByStatus(ItemStatus.ACTIVE);
+        verify(offerRepository, never()).save(any(Offer.class));
+        assertEquals(ItemStatus.ACTIVE, offerWithoutEndDate.getStatus());
+    }
+
+    @Test
+    void getActiveServices_ShouldExpireMultipleServicesAtOnce() {
+        // Arrange
+        Offer expiredOffer1 = new Offer();
+        expiredOffer1.setId(1);
+        expiredOffer1.setProvider(testUser);
+        expiredOffer1.setEndDate(LocalDate.now().minusDays(1));
+        expiredOffer1.setStatus(ItemStatus.ACTIVE);
+        expiredOffer1.setProvince("Istanbul");
+        expiredOffer1.setDistrict("Kadikoy");
+        
+        Offer expiredOffer2 = new Offer();
+        expiredOffer2.setId(2);
+        expiredOffer2.setProvider(testUser);
+        expiredOffer2.setEndDate(LocalDate.now().minusDays(3));
+        expiredOffer2.setStatus(ItemStatus.ACTIVE);
+        expiredOffer2.setProvince("Ankara");
+        expiredOffer2.setDistrict("Cankaya");
+        
+        Request expiredRequest = new Request();
+        expiredRequest.setId(1);
+        expiredRequest.setSeeker(testUser);
+        expiredRequest.setEndDate(LocalDate.now().minusDays(2));
+        expiredRequest.setStatus(ItemStatus.ACTIVE);
+        expiredRequest.setProvince("Izmir");
+        expiredRequest.setDistrict("Bornova");
+        
+        when(offerRepository.findByStatus(ItemStatus.ACTIVE))
+            .thenReturn(List.of(expiredOffer1, expiredOffer2));
+        when(requestRepository.findByStatus(ItemStatus.ACTIVE))
+            .thenReturn(List.of(expiredRequest));
+        
+        // Act
+        marketplaceService.getActiveServices();
+        
+        // Assert
+        verify(offerRepository).save(expiredOffer1);
+        verify(offerRepository).save(expiredOffer2);
+        verify(requestRepository).save(expiredRequest);
+        assertEquals(ItemStatus.EXPIRED, expiredOffer1.getStatus());
+        assertEquals(ItemStatus.EXPIRED, expiredOffer2.getStatus());
+        assertEquals(ItemStatus.EXPIRED, expiredRequest.getStatus());
     }
 }
 

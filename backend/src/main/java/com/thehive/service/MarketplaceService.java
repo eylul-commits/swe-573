@@ -36,6 +36,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
@@ -215,8 +216,11 @@ public class MarketplaceService {
         return services;
     }
 
-    @Transactional(readOnly = true)
+    @Transactional
     public List<ServiceDTO> getActiveServices() {
+        // Expire old services before fetching active ones
+        expireOldServices();
+        
         List<ServiceDTO> services = new ArrayList<>();
         
         // Get active offers and convert to ServiceDTO
@@ -621,6 +625,28 @@ public class MarketplaceService {
                 .collect(Collectors.toList()));
         
         return services;
+    }
+    
+    private void expireOldServices() {
+        LocalDate today = LocalDate.now();
+        
+        // Expire offers that have passed their end date
+        List<Offer> activeOffers = offerRepository.findByStatus(ItemStatus.ACTIVE);
+        for (Offer offer : activeOffers) {
+            if (offer.getEndDate() != null && offer.getEndDate().isBefore(today)) {
+                offer.setStatus(ItemStatus.EXPIRED);
+                offerRepository.save(offer);
+            }
+        }
+        
+        // Expire requests that have passed their end date
+        List<Request> activeRequests = requestRepository.findByStatus(ItemStatus.ACTIVE);
+        for (Request request : activeRequests) {
+            if (request.getEndDate() != null && request.getEndDate().isBefore(today)) {
+                request.setStatus(ItemStatus.EXPIRED);
+                requestRepository.save(request);
+            }
+        }
     }
 
     @Transactional
