@@ -2,7 +2,16 @@
 
 export type ServiceType = "OFFER" | "REQUEST";
 
-export type BadgeType = "top-contributor" | "active" | "newcomer" | "balanced";
+// New badge names from backend
+export type BadgeName = "Newcomer" | "Community Helper" | "Active Member" | "Veteran" | "Champion";
+
+export interface Badge {
+  id: number;
+  name: string;
+  description: string;
+  iconUrl: string;
+  earnedAt: string;
+}
 
 export interface User {
   id: string;
@@ -11,7 +20,7 @@ export interface User {
   hoursGiven: number;
   hoursReceived: number;
   timebankBalance: number;
-  badge?: BadgeType;
+  currentBadge?: Badge; // Single badge object (for current user)
   bio?: string;
   joinedDate?: string;
   location?: string;
@@ -33,7 +42,7 @@ export interface Service {
   poster: User;
   createdAt?: string;
   updatedAt?: string;
-  status?: "active" | "completed" | "cancelled";
+  status?: string; // Status from backend (ACTIVE, EXPIRED, ARCHIVED)
   participants?: string[]; // User IDs
   maxParticipants?: number;
   startDate?: string;
@@ -49,36 +58,6 @@ export interface Service {
   };
 }
 
-export interface Message {
-  id: string;
-  conversationId: string;
-  senderId: string;
-  senderName: string;
-  senderAvatar: string;
-  content: string;
-  timestamp: string;
-  read: boolean;
-}
-
-export interface Conversation {
-  id: string;
-  participants: User[];
-  lastMessage: Message;
-  unreadCount: number;
-  relatedServiceId?: string;
-}
-
-export interface Request {
-  id: string;
-  serviceId: string;
-  requesterId: string;
-  requesterName: string;
-  requesterAvatar: string;
-  status: "pending" | "accepted" | "declined" | "completed";
-  message?: string;
-  createdAt: string;
-}
-
 export interface CommunityStats {
   activeMembers: number;
   hoursExchanged: number;
@@ -90,7 +69,7 @@ export interface AuthorSummary {
   id: string;
   name: string;
   avatar: string;
-  badge?: BadgeType | string;
+  badge?: BadgeName | string;
   bio?: string;
   province?: string;
   district?: string;
@@ -139,19 +118,12 @@ export interface ServiceRatingsResponse {
   summary: ServiceRatingSummary;
 }
 
-export interface UserProfile extends User {
-  email?: string;
-  phone?: string;
-  servicesOffered: Service[];
-  servicesRequested: Service[];
-}
-
 // Filter types
 export interface ServiceFilters {
   searchQuery?: string;
   tags?: string[];
   location?: string;
-  badge?: BadgeType | "all";
+  badge?: BadgeName | "all";
   type?: ServiceType | "all";
   distance?: number;
 }
@@ -230,6 +202,7 @@ export interface AuthUser {
   hoursGiven?: number;
   hoursReceived?: number;
   location?: string;
+  currentBadge?: Badge; // Helper field for the single badge
 }
 
 export interface LoginRequest {
@@ -441,7 +414,7 @@ export interface BackendAuthorDTO {
   id: number;
   name: string;
   avatar: string | null;
-  badge: string | null;
+  badge: Badge | null;
   bio?: string | null;
   province?: string | null;
   district?: string | null;
@@ -508,3 +481,39 @@ export interface BackendServiceQuestionDTO {
   answer?: BackendServiceAnswerDTO | null;
 }
 
+//Marketplace DTOs
+export interface OfferDTO {
+  id: number;
+  title: string;
+  description: string;
+  durationHours: number;
+  startDate: string;
+  endDate: string;
+  province: string;
+  district: string;
+  geohash: string;
+  status: string;
+  createdAt: string;
+  updatedAt: string;
+  provider: BackendAuthorDTO;
+  tags: string[];
+  imageUrls?: string[];
+}
+
+export interface RequestDTO {
+  id: number;
+  title: string;
+  description: string;
+  durationHours: number;
+  startDate: string;
+  endDate: string;
+  province: string;
+  district: string;
+  geohash: string;
+  status: string;
+  createdAt: string;
+  updatedAt: string;
+  seeker: BackendAuthorDTO;
+  tags: string[];
+  imageUrls?: string[];
+}

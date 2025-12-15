@@ -4,73 +4,13 @@ import type {
   User,
   CreateOfferPayload,
   CreateRequestPayload,
+  BackendAuthorDTO,
+  BackendServiceDTO,
+  OfferDTO,
+  RequestDTO
 } from '../types';
 
-interface AuthorDTO {
-  id: number;
-  name: string;
-  avatar: string | null;
-  badge: string;
-}
-
-interface ServiceDTO {
-  id: number;
-  type: 'OFFER' | 'REQUEST';
-  title: string;
-  description: string;
-  timebank: number; // hours
-  startDate: string;
-  endDate: string;
-  location: string;
-  province: string;
-  district: string;
-  geohash: string;
-  status: string;
-  createdAt: string;
-  updatedAt: string;
-  poster: AuthorDTO;
-  tags: string[];
-  imageUrls?: string[];
-  distance?: string;
-}
-
-interface OfferDTO {
-  id: number;
-  title: string;
-  description: string;
-  durationHours: number;
-  startDate: string;
-  endDate: string;
-  province: string;
-  district: string;
-  geohash: string;
-  status: string;
-  createdAt: string;
-  updatedAt: string;
-  provider: AuthorDTO;
-  tags: string[];
-  imageUrls?: string[];
-}
-
-interface RequestDTO {
-  id: number;
-  title: string;
-  description: string;
-  durationHours: number;
-  startDate: string;
-  endDate: string;
-  province: string;
-  district: string;
-  geohash: string;
-  status: string;
-  createdAt: string;
-  updatedAt: string;
-  seeker: AuthorDTO;
-  tags: string[];
-  imageUrls?: string[];
-}
-
-function convertAuthorToUser(author: AuthorDTO): User {
+function convertAuthorToUser(author: BackendAuthorDTO): User {
   return {
     id: author.id.toString(),
     name: author.name,
@@ -78,11 +18,11 @@ function convertAuthorToUser(author: AuthorDTO): User {
     timebankBalance: 0, // Not available in this DTO
     hoursGiven: 0,
     hoursReceived: 0,
-    badge: author.badge as any || 'newcomer',
+    currentBadge: author.badge ?? undefined,
   };
 }
 
-function convertServiceDTOToService(dto: ServiceDTO): Service {
+function convertServiceDTOToService(dto: BackendServiceDTO): Service {
   return {
     id: dto.id.toString(),
     type: dto.type,
@@ -95,16 +35,16 @@ function convertServiceDTOToService(dto: ServiceDTO): Service {
     poster: convertAuthorToUser(dto.poster),
     createdAt: dto.createdAt,
     status: dto.status.toLowerCase() as any || 'active',
-    province: dto.province,
-    district: dto.district,
-    geohash: dto.geohash,
+    province: dto.province ?? undefined,
+    district: dto.district ?? undefined,
+    geohash: dto.geohash ?? undefined,
     imageUrls: dto.imageUrls || [],
   };
 }
 
 export async function getAllServices(): Promise<Service[]> {
   try {
-    const services = await api.get<ServiceDTO[]>('/marketplace/services');
+    const services = await api.get<BackendServiceDTO[]>('/marketplace/services');
     return services.map(convertServiceDTOToService);
   } catch (error) {
     console.error('Failed to fetch services:', error);
@@ -114,7 +54,7 @@ export async function getAllServices(): Promise<Service[]> {
 
 export async function getActiveServices(): Promise<Service[]> {
   try {
-    const services = await api.get<ServiceDTO[]>('/marketplace/services/active');
+    const services = await api.get<BackendServiceDTO[]>('/marketplace/services/active');
     return services.map(convertServiceDTOToService);
   } catch (error) {
     console.error('Failed to fetch active services:', error);
@@ -262,7 +202,7 @@ export function filterServices(
 
     // Badge filter
     if (filters.badge && filters.badge !== 'all') {
-      const matchesBadge = service.poster.badge === filters.badge;
+      const matchesBadge = service.poster.currentBadge?.name === filters.badge;
       if (!matchesBadge) return false;
     }
 
@@ -310,7 +250,7 @@ export async function getCommunityStats(): Promise<{
 
 export async function getNearbyServices(limit: number = 6): Promise<Service[]> {
   try {
-    const services = await api.get<ServiceDTO[]>(`/marketplace/services/nearby?limit=${limit}`);
+    const services = await api.get<BackendServiceDTO[]>(`/marketplace/services/nearby?limit=${limit}`);
     return services.map(convertServiceDTOToService);
   } catch (error) {
     console.error('Failed to fetch nearby services:', error);
@@ -320,7 +260,7 @@ export async function getNearbyServices(limit: number = 6): Promise<Service[]> {
 
 export async function getRecommendedServices(limit: number = 3): Promise<Service[]> {
   try {
-    const services = await api.get<ServiceDTO[]>(`/marketplace/services/recommended?limit=${limit}`);
+    const services = await api.get<BackendServiceDTO[]>(`/marketplace/services/recommended?limit=${limit}`);
     return services.map(convertServiceDTOToService);
   } catch (error) {
     console.error('Failed to fetch recommended services:', error);
@@ -426,7 +366,7 @@ export async function getUserRequests(userId: string): Promise<Service[]> {
 
 export async function getUserServices(userId: string): Promise<Service[]> {
   try {
-    const services = await api.get<ServiceDTO[]>(`/marketplace/services/user/${userId}`);
+    const services = await api.get<BackendServiceDTO[]>(`/marketplace/services/user/${userId}`);
     return services.map(convertServiceDTOToService);
   } catch (error) {
     console.error('Failed to fetch user services:', error);
