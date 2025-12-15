@@ -131,13 +131,23 @@ const minDate = computed(() => {
   return today.toISOString().slice(0, 16);
 });
 
+// Helper function to convert Date to local datetime-local format
+function formatDateForInput(date: Date): string {
+  const year = date.getFullYear();
+  const month = String(date.getMonth() + 1).padStart(2, '0');
+  const day = String(date.getDate()).padStart(2, '0');
+  const hours = String(date.getHours()).padStart(2, '0');
+  const minutes = String(date.getMinutes()).padStart(2, '0');
+  return `${year}-${month}-${day}T${hours}:${minutes}`;
+}
+
 // Reset form when modal opens
 watch(() => props.modelValue, (newValue) => {
   if (newValue) {
     // If there's already an agreed date, use it (for both creator and non-creator)
     if (props.handshake?.agreedDate) {
       const date = new Date(props.handshake.agreedDate);
-      formDate.value = date.toISOString().slice(0, 16);
+      formDate.value = formatDateForInput(date);
     } else {
       formDate.value = '';
     }
@@ -150,7 +160,7 @@ watch(() => props.modelValue, (newValue) => {
 watch(() => props.handshake?.agreedDate, (newAgreedDate) => {
   if (props.modelValue && newAgreedDate) {
     const date = new Date(newAgreedDate);
-    formDate.value = date.toISOString().slice(0, 16);
+    formDate.value = formatDateForInput(date);
   } else if (props.modelValue && !newAgreedDate && !isServiceCreator.value) {
     formDate.value = '';
   }
