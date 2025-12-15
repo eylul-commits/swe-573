@@ -37,7 +37,7 @@
               <img 
                 :src="service.imageUrls[selectedImageIndex]"
                 :alt="service.title"
-                class="w-full h-64 object-cover cursor-pointer hover:opacity-95 transition-opacity"
+                class="w-full h-96 object-cover cursor-pointer hover:opacity-95 transition-opacity"
                 @click="openImageModal"
               />
             </div>
@@ -212,10 +212,7 @@
                 <span class="text-blue-600">{{ service.poster.hoursReceived }}h received</span>
               </div>
               <p class="text-sm text-gray-600">
-                {{ serviceId === '9' 
-                  ? 'New to The Hive and excited to share skills and connect with the community!'
-                  : 'Active community member sharing skills and building connections through The Hive.'
-                }}
+                {{ service.poster.bio || 'No bio provided yet.' }}
               </p>
             </div>
           </div>
@@ -454,7 +451,7 @@
 
 <script setup lang="ts">
 import { computed, ref, watch } from 'vue'
-import { MapPin, Clock, Calendar, Star, Send, MessageCircle, ArrowLeft, Flag } from 'lucide-vue-next'
+import { MapPin, Clock, Star, Send, MessageCircle, ArrowLeft, Flag } from 'lucide-vue-next'
 import Card from '../ui/Card.vue'
 import Badge from '../ui/Badge.vue'
 import Button from '../ui/Button.vue'
