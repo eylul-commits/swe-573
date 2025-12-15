@@ -97,6 +97,13 @@
               </div>
             </div>
             <div class="space-y-1">
+              <div class="text-sm text-gray-500">Schedule</div>
+              <div class="flex items-center gap-2 text-gray-900">
+                <Calendar class="w-4 h-4 text-gray-400" />
+                <span>{{ scheduleText }}</span>
+              </div>
+            </div>
+            <div class="space-y-1">
               <div class="text-sm text-gray-500">Posted</div>
               <div class="text-gray-900">
                 {{ service?.createdAt ? formatDistanceToNow(service.createdAt) : 'Unknown' }}
@@ -206,11 +213,6 @@
                   <span class="text-gray-600">{{ service.poster.currentBadge || 'Newcomer' }}</span>
                 </div>
               </div>
-              <div class="flex items-center gap-4 text-sm mb-3">
-                <span class="text-emerald-600">{{ service.poster.hoursGiven }}h given</span>
-                <span class="text-gray-300">•</span>
-                <span class="text-blue-600">{{ service.poster.hoursReceived }}h received</span>
-              </div>
               <p class="text-sm text-gray-600">
                 {{ service.poster.bio || 'No bio provided yet.' }}
               </p>
@@ -278,7 +280,7 @@
                           {{ q.author.name }}
                         </div>
                         <span class="text-xs text-gray-400">•</span>
-                        <div class="text-xs text-gray-500">{{ q.createdAt }}</div>
+                        <div class="text-xs text-gray-500">{{ formatDate(q.createdAt) }}</div>
                       </div>
                       <p class="text-sm text-gray-700">{{ q.content }}</p>
                       
@@ -341,7 +343,7 @@
                           {{ rating.rater.name }}
                         </div>
                         <span class="text-xs text-gray-400">•</span>
-                        <div class="text-xs text-gray-500">{{ rating.createdAt }}</div>
+                        <div class="text-xs text-gray-500">{{ formatDate(rating.createdAt) }}</div>
                       </div>
                       
                       <!-- Individual ratings -->
@@ -451,7 +453,7 @@
 
 <script setup lang="ts">
 import { computed, ref, watch } from 'vue'
-import { MapPin, Clock, Star, Send, MessageCircle, ArrowLeft, Flag } from 'lucide-vue-next'
+import { MapPin, Clock, Calendar, Star, Send, MessageCircle, ArrowLeft, Flag } from 'lucide-vue-next'
 import Card from '../ui/Card.vue'
 import Badge from '../ui/Badge.vue'
 import Button from '../ui/Button.vue'
@@ -467,7 +469,7 @@ import { createHandshake } from '../../services/handshakeService'
 import { createHandshakeChannel, isStreamChatInitialized } from '../../clients/streamChatClient'
 import { useAppStore } from '../../stores/appStore'
 import ReportContentModal from '../ReportContentModal.vue'
-import { formatDistanceToNow } from '../../utils/dateUtils'
+import { formatDistanceToNow, formatDate } from '../../utils/dateUtils'
 import type { Service, ServiceQuestion, ServiceRatingsResponse } from '../../types'
 
 const appStore = useAppStore()
@@ -500,6 +502,29 @@ watch(() => appStore.selectedServiceId, async (newId) => {
 
 const reviewCount = computed(() => ratings.value?.summary.totalReviews || 0)
 const serviceRatings = computed(() => ratings.value?.ratings || [])
+
+const scheduleText = computed(() => {
+  const start = service.value?.startDate
+  const end = service.value?.endDate
+
+  if (start && end) {
+    if (start === end) {
+      return `Scheduled for ${formatDate(start)}`
+    }
+    return `Available from ${formatDate(start)} to ${formatDate(end)}`
+  }
+
+  if (start) {
+    return `Available from ${formatDate(start)}`
+  }
+
+  if (end) {
+    return `Expires on ${formatDate(end)}`
+  }
+
+  return 'Schedule not specified'
+
+})
 
 const questionText = ref('')
 const isAskingQuestion = ref(false)
