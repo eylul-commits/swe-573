@@ -285,7 +285,7 @@ import { getUserById } from '../../services/authService'
 import { getUserServices } from '../../services/marketplaceService'
 import { getUserRatings } from '../../services/handshakeService'
 import { getAvatarUrl } from '../../utils/avatarUtils'
-import type { User, Service, ServiceRating } from '../../types'
+import type { User, Service, ServiceRating, Badge as BadgeType } from '../../types'
 
 const props = defineProps<{
   userId: string
@@ -294,6 +294,7 @@ const props = defineProps<{
 const appStore = useAppStore()
 
 const userProfile = ref<User | null>(null)
+const userProfileBadgeObject = ref<BadgeType | null>(null)
 const userServices = ref<Service[]>([])
 const userRatings = ref<ServiceRating[]>([])
 const loading = ref(false)
@@ -303,10 +304,7 @@ const error = ref<string | null>(null)
 
 // Get the user's current badge (only one badge now)
 const userProfileBadge = computed(() => {
-  if (userProfile.value?.currentBadge) {
-    return userProfile.value.currentBadge
-  }
-  return null
+  return userProfileBadgeObject.value
 })
 
 function formatDate(dateString: string): string {
@@ -332,7 +330,11 @@ async function loadProfile() {
     // Load user profile
     const user = await getUserById(userIdNum)
     
+    // Store the badge object separately for BadgeDisplay component
+    userProfileBadgeObject.value = user.badges && user.badges.length > 0 ? user.badges[0] : null
+    
     // Convert to User type (matching frontend User interface)
+    // Note: user.badges contains full Badge objects, but User.currentBadge expects just the name string
     userProfile.value = {
       id: user.id.toString(),
       name: user.name,
@@ -340,7 +342,7 @@ async function loadProfile() {
       hoursGiven: user.hoursGiven || 0,
       hoursReceived: user.hoursReceived || 0,
       timebankBalance: user.timebankBalance || user.balanceHours || 0,
-      currentBadge: user.badges && user.badges.length > 0 ? user.badges[0] : undefined,
+      currentBadge: user.badges && user.badges.length > 0 ? user.badges[0].name : undefined,
       bio: user.bio,
       location: user.location || (user.district ? `${user.district}${user.province ? `, ${user.province}` : ''}` : undefined),
       province: user.province,

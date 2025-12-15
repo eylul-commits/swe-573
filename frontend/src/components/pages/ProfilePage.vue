@@ -409,7 +409,8 @@ const currentUserBadge = computed(() => {
   if (appStore.currentUser?.badges && appStore.currentUser.badges.length > 0) {
     return appStore.currentUser.badges[0]
   }
-  return appStore.currentUser?.currentBadge || null
+
+  return null
 })
 
 // Watch for changes in currentUser avatarUrl and update profilePictureUrl

@@ -536,7 +536,7 @@ const posterBalance = computed(() => service.value?.poster?.timebankBalance ?? 0
 
 const posterBadgeLabel = computed(() => {
   const badge = service.value?.poster?.currentBadge
-  return badge?.name || 'Newcomer'
+  return badge || 'Newcomer'
 })
 
 const handleAskQuestion = async () => {

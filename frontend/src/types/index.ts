@@ -23,7 +23,7 @@ export interface User {
   hoursGiven: number;
   hoursReceived: number;
   timebankBalance: number;
-  currentBadge?: Badge; // Single badge object (for current user)
+  currentBadge?: string; // Badge name as string from backend
   bio?: string;
   joinedDate?: string;
   location?: string;
@@ -418,7 +418,7 @@ export interface BackendAuthorDTO {
   id: number;
   name: string;
   avatar: string | null;
-  badge: Badge | null;
+  badge: string | null;  // Badge name as string from backend
   bio?: string | null;
   province?: string | null;
   district?: string | null;

@@ -202,7 +202,7 @@ export function filterServices(
 
     // Badge filter
     if (filters.badge && filters.badge !== 'all') {
-      const matchesBadge = service.poster.currentBadge?.name === filters.badge;
+      const matchesBadge = service.poster.currentBadge === filters.badge;
       if (!matchesBadge) return false;
     }
 

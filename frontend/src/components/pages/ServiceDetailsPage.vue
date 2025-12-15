@@ -203,7 +203,7 @@
                 </div>
                 <div class="flex items-center gap-1 text-sm">
                   <span>{{ getBadgeEmoji(service.poster.currentBadge) }}</span>
-                  <span class="text-gray-600">{{ typeof service.poster.currentBadge === 'string' ? service.poster.currentBadge : (service.poster.currentBadge?.name || 'Newcomer') }}</span>
+                  <span class="text-gray-600">{{ service.poster.currentBadge || 'Newcomer' }}</span>
                 </div>
               </div>
               <div class="flex items-center gap-4 text-sm mb-3">
@@ -516,8 +516,7 @@ const showImageModal = ref(false)
 const reportModalOpen = ref(false)
 
 // Helper function to get badge emoji from badge name or Badge object
-const getBadgeEmoji = (badge?: string | { name: string }) => {
-  const badgeName = typeof badge === 'string' ? badge : badge?.name
+const getBadgeEmoji = (badge?: string) => {
   const badgeMap: Record<string, string> = {
     'Newcomer': '🌱',
     'Community Helper': '🤝',
@@ -525,7 +524,7 @@ const getBadgeEmoji = (badge?: string | { name: string }) => {
     'Veteran': '🏅',
     'Champion': '🏆'
   }
-  return badgeMap[badgeName || ''] || '🌱'
+  return badgeMap[badge || ''] || '🌱'
 }
 
 const handleAskQuestion = async () => {
