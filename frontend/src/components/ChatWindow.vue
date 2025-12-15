@@ -5,7 +5,6 @@
       <div class="flex items-center gap-3">
         <Avatar class="w-10 h-10">
           <AvatarImage :src="getAvatarUrl(otherUser?.avatar, otherUser?.name)" :alt="otherUser?.name" />
-          <AvatarFallback>{{ otherUser?.name?.charAt(0) || '?' }}</AvatarFallback>
         </Avatar>
         <div>
           <h3 class="font-semibold">{{ otherUser?.name || 'Loading...' }}</h3>
@@ -152,7 +151,6 @@
 import { ref, computed, onMounted, nextTick, watch, onUnmounted } from 'vue';
 import Avatar from './ui/Avatar.vue';
 import AvatarImage from './ui/AvatarImage.vue';
-import AvatarFallback from './ui/AvatarFallback.vue';
 import Button from './ui/Button.vue';
 import Input from './ui/Input.vue';
 import type { Handshake, AuthorSummary } from '../types';

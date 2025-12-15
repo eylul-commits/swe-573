@@ -63,7 +63,6 @@
                 <div class="relative">
                   <Avatar class="w-12 h-12">
                     <AvatarImage :src="getAvatarUrl(getOtherUser(handshake).avatar, getOtherUser(handshake).name)" :alt="getOtherUser(handshake).name" />
-                    <AvatarFallback>{{ getOtherUser(handshake).name.charAt(0) }}</AvatarFallback>
                   </Avatar>
                   <!-- Status Indicator -->
                   <div 
@@ -176,7 +175,6 @@ import { storeToRefs } from 'pinia';
 import { MessageSquare, ArrowLeft, RefreshCw, Handshake as HandshakeIcon, Eye, EyeOff } from 'lucide-vue-next';
 import Avatar from '../ui/Avatar.vue';
 import AvatarImage from '../ui/AvatarImage.vue';
-import AvatarFallback from '../ui/AvatarFallback.vue';
 import Button from '../ui/Button.vue';
 import Badge from '../ui/Badge.vue';
 import ScrollArea from '../ui/ScrollArea.vue';
