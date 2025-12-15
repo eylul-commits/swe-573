@@ -488,7 +488,7 @@ const pendingRatings = computed(() => {
 // Get the other user in a handshake
 const getOtherUser = (handshake: Handshake) => {
   const currentUserId = appStore.currentUser?.id.toString()
-  return handshake.seeker.id === currentUserId 
+  return handshake.seeker.id == currentUserId 
     ? handshake.provider 
     : handshake.seeker
 }
