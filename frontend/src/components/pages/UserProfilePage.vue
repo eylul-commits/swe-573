@@ -21,7 +21,6 @@
                 :src="getAvatarUrl(userProfile.avatar, userProfile.name)" 
                 :alt="userProfile.name" 
               />
-              <AvatarFallback>{{ userProfile.name.charAt(0) }}</AvatarFallback>
             </Avatar>
             <div class="flex-1">
               <div class="text-gray-900 text-xl mb-1">{{ userProfile.name }}</div>
@@ -174,7 +173,6 @@
                         :src="getAvatarUrl(rating.rater.avatar, rating.rater.name)" 
                         :alt="rating.rater.name" 
                       />
-                      <AvatarFallback>{{ rating.rater.name.charAt(0) }}</AvatarFallback>
                     </Avatar>
                     <div class="flex-1">
                       <div 
@@ -277,7 +275,6 @@ import TabsList from '../ui/TabsList.vue'
 import TabsTrigger from '../ui/TabsTrigger.vue'
 import Avatar from '../ui/Avatar.vue'
 import AvatarImage from '../ui/AvatarImage.vue'
-import AvatarFallback from '../ui/AvatarFallback.vue'
 import ImageWithFallback from '../ui/ImageWithFallback.vue'
 import BadgeDisplay from '../BadgeDisplay.vue'
 import { useAppStore } from '../../stores/appStore'

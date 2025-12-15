@@ -14,7 +14,6 @@
         <div v-if="otherUser" class="flex items-center gap-3 bg-gray-50 p-4 rounded-lg">
           <Avatar class="w-12 h-12">
             <AvatarImage :src="getAvatarUrl(otherUser.avatar, otherUser.name)" :alt="otherUser.name" />
-            <AvatarFallback>{{ otherUser.name.charAt(0) }}</AvatarFallback>
           </Avatar>
           <div>
             <h3 class="font-semibold text-gray-900">{{ otherUser.name }}</h3>
@@ -150,7 +149,6 @@ import Button from './ui/Button.vue';
 import Textarea from './ui/Textarea.vue';
 import Avatar from './ui/Avatar.vue';
 import AvatarImage from './ui/AvatarImage.vue';
-import AvatarFallback from './ui/AvatarFallback.vue';
 import type { Handshake, AuthorSummary } from '../types';
 import { useHandshakeStore } from '../stores/handshakeStore';
 import { useAppStore } from '../stores/appStore';

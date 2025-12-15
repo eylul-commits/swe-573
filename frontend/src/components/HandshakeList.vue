@@ -42,7 +42,6 @@
               @click="viewUserProfile(handshake.provider.id)"
             >
               <AvatarImage :src="getAvatarUrl(handshake.provider.avatar, handshake.provider.name)" :alt="handshake.provider.name" />
-              <AvatarFallback>{{ handshake.provider.name.charAt(0) }}</AvatarFallback>
             </Avatar>
             <div class="flex-1 min-w-0">
               <p 
@@ -63,7 +62,6 @@
               @click="viewUserProfile(handshake.seeker.id)"
             >
               <AvatarImage :src="getAvatarUrl(handshake.seeker.avatar, handshake.seeker.name)" :alt="handshake.seeker.name" />
-              <AvatarFallback>{{ handshake.seeker.name.charAt(0) }}</AvatarFallback>
             </Avatar>
             <div class="flex-1 min-w-0">
               <p 
@@ -110,7 +108,6 @@ import Badge from './ui/Badge.vue';
 import Button from './ui/Button.vue';
 import Avatar from './ui/Avatar.vue';
 import AvatarImage from './ui/AvatarImage.vue';
-import AvatarFallback from './ui/AvatarFallback.vue';
 import type { Handshake } from '../types';
 import { getAvatarUrl } from '../utils/avatarUtils';
 import { useAppStore } from '../stores/appStore';
