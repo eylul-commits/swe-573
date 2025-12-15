@@ -5,6 +5,7 @@
  */
 
 import { api } from '../config/api';
+import { getAvatarUrl } from '../utils/avatarUtils';
 import type {
   Service,
   User,
@@ -18,23 +19,11 @@ import type {
   BackendServiceQuestionDTO,
 } from '../types';
 
-function createAvatarUrl(name: string | null, avatarUrl?: string | null): string {
-  // Use the avatarUrl from database if it exists
-  if (avatarUrl && avatarUrl.trim().length > 0) {
-    return avatarUrl;
-  }
-
-  // Fall back to generated avatar based on name
-  const baseName = name && name.trim().length > 0 ? name : 'Community Member';
-  const encoded = encodeURIComponent(baseName);
-  return `https://ui-avatars.com/api/?name=${encoded}&background=E2E8F0&color=1F2937&size=256`;
-}
-
 function convertBackendAuthorToUser(backendAuthor: BackendAuthorDTO): User {
   return {
     id: backendAuthor.id.toString(),
     name: backendAuthor.name,
-    avatar: createAvatarUrl(backendAuthor.name, backendAuthor.avatar),
+    avatar: getAvatarUrl(backendAuthor.avatar, backendAuthor.name),
     hoursGiven: 0,
     hoursReceived: 0,
     timebankBalance: backendAuthor.balanceHours ?? 0,
@@ -55,7 +44,7 @@ function convertBackendAuthorToSummary(backendAuthor: BackendAuthorDTO): AuthorS
   return {
     id: backendAuthor.id.toString(),
     name: backendAuthor.name,
-    avatar: createAvatarUrl(backendAuthor.name, backendAuthor.avatar),
+    avatar: getAvatarUrl(backendAuthor.avatar, backendAuthor.name),
     badge: badgeValue,
     bio: backendAuthor.bio ?? undefined,
     province: backendAuthor.province ?? undefined,

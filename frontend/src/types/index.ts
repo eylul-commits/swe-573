@@ -170,20 +170,6 @@ export interface CreateRatingRequest {
   comment?: string;
 }
 
-export interface ServiceRequest {
-  id: string;
-  serviceId: string;
-  service: Service;
-  requester: Omit<User, 'badge'> & {
-    badge: { emoji: string; label: string };
-  };
-  proposedDate: string;
-  proposedTime: string;
-  timestamp: string;
-  status: "pending" | "accepted" | "declined";
-  message?: string;
-}
-
 // =============================================================================
 // AUTH SERVICE TYPES
 // =============================================================================
