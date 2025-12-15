@@ -49,8 +49,8 @@ function convertBackendAuthorToUser(backendAuthor: BackendAuthorDTO): User {
 }
 
 function convertBackendAuthorToSummary(backendAuthor: BackendAuthorDTO): AuthorSummary {
-  // Convert Badge object to string badge name for AuthorSummary
-  const badgeValue = backendAuthor.badge ? backendAuthor.badge.name : undefined;
+  // Badge is already a string from backend
+  const badgeValue = backendAuthor.badge ?? undefined;
   
   return {
     id: backendAuthor.id.toString(),
