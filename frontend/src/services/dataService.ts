@@ -1,6 +1,5 @@
 import {
   Service,
-  ServiceFilters,
   ServiceRatingsResponse,
   ServiceQuestion,
 } from "../types";
