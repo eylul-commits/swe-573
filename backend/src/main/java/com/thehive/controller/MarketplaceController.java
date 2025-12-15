@@ -160,5 +160,28 @@ public class MarketplaceController {
         List<ServiceDTO> services = marketplaceService.getUserServices(userId);
         return ResponseEntity.ok(services);
     }
+
+    @PutMapping("/services/{id}/deactivate")
+    public ResponseEntity<ServiceDTO> deactivateService(
+            @PathVariable Integer id,
+            @RequestParam String type) {
+        Integer userId = (Integer) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
+        ServiceDTO service = marketplaceService.deactivateService(id, type, userId);
+        return ResponseEntity.ok(service);
+    }
+
+    @PutMapping("/offers/{id}/deactivate")
+    public ResponseEntity<OfferDTO> deactivateOffer(@PathVariable Integer id) {
+        Integer userId = (Integer) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
+        OfferDTO offer = marketplaceService.deactivateOffer(id, userId);
+        return ResponseEntity.ok(offer);
+    }
+
+    @PutMapping("/requests/{id}/deactivate")
+    public ResponseEntity<RequestDTO> deactivateRequest(@PathVariable Integer id) {
+        Integer userId = (Integer) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
+        RequestDTO request = marketplaceService.deactivateRequest(id, userId);
+        return ResponseEntity.ok(request);
+    }
 }
 

@@ -162,13 +162,26 @@
                           <h3 class="font-medium text-gray-900 mb-1">{{ service.title }}</h3>
                           <p class="text-sm text-gray-600">{{ service.location }}</p>
                         </div>
-                        <Badge 
-                          :class="service.type === 'OFFER' 
-                            ? 'bg-emerald-100 text-emerald-700 hover:bg-emerald-100' 
-                            : 'bg-blue-100 text-blue-700 hover:bg-blue-100'"
-                        >
-                          {{ service.type }}
-                        </Badge>
+                        <div class="flex items-center gap-2">
+                          <Badge 
+                            :class="service.type === 'OFFER' 
+                              ? 'bg-emerald-100 text-emerald-700 hover:bg-emerald-100' 
+                              : 'bg-blue-100 text-blue-700 hover:bg-blue-100'"
+                          >
+                            {{ service.type }}
+                          </Badge>
+                          <!-- Deactivate Button -->
+                          <Button
+                            v-if="service.status === 'active'"
+                            @click.stop="handleDeactivateService(service)"
+                            variant="outline"
+                            size="sm"
+                            :disabled="deactivatingServices.has(service.id)"
+                            class="text-red-600 hover:text-red-700 hover:bg-red-50 border-red-200 text-xs px-3 py-1"
+                          >
+                            {{ deactivatingServices.has(service.id) ? 'Deactivating...' : 'Deactivate' }}
+                          </Button>
+                        </div>
                       </div>
                       
                       <p class="text-sm text-gray-600 mb-2 line-clamp-2">
@@ -349,7 +362,7 @@ import ImageWithFallback from '../ui/ImageWithFallback.vue'
 import BadgeDisplay from '../BadgeDisplay.vue'
 import { useAppStore } from '../../stores/appStore'
 import { useHandshakeStore } from '../../stores/handshakeStore'
-import { getUserServices } from '../../services/marketplaceService'
+import { getUserServices, deactivateService } from '../../services/marketplaceService'
 import { updateProfile } from '../../services/authService'
 import { getHandshakesByOfferId, getHandshakesByRequestId } from '../../services/handshakeService'
 import { getAvatarUrl } from '../../utils/avatarUtils'
@@ -366,6 +379,7 @@ const serviceHandshakes = ref<Map<string, Handshake[]>>(new Map())
 const expandedServices = ref<Set<string>>(new Set())
 const isEditing = ref(false)
 const isSaving = ref(false)
+const deactivatingServices = ref<Set<string>>(new Set())
 
 const editForm = ref({
   name: '',
@@ -562,6 +576,46 @@ const getHandshakeStatusColor = (status: string): string => {
 
 const viewService = (serviceId: string) => {
   appStore.setSelectedServiceId(serviceId)
+}
+
+async function handleDeactivateService(service: Service) {
+  // Check if service can be deactivated
+  const handshakes = getHandshakesForService(service.id)
+  const hasActiveHandshakes = handshakes.some(h => 
+    h.status !== 'COMPLETED' && h.status !== 'CANCELLED'
+  )
+  
+  if (hasActiveHandshakes) {
+    alert('Cannot deactivate service with pending or confirmed handshakes. Please wait until all handshakes are completed or cancelled.')
+    return
+  }
+  
+  const confirmMessage = handshakes.length > 0
+    ? `Are you sure you want to deactivate "${service.title}"? All handshakes for this service are completed or cancelled.`
+    : `Are you sure you want to deactivate "${service.title}"? This service has no handshakes.`
+  
+  if (!confirm(confirmMessage)) {
+    return
+  }
+  
+  deactivatingServices.value.add(service.id)
+  
+  try {
+    await deactivateService(service.id, service.type)
+    
+    // Update the service status in the local list
+    const serviceIndex = userServices.value.findIndex(s => s.id === service.id)
+    if (serviceIndex !== -1) {
+      userServices.value[serviceIndex].status = 'archived'
+    }
+    
+    alert('Service deactivated successfully!')
+  } catch (error: any) {
+    console.error('Failed to deactivate service:', error)
+    alert(error.message || 'Failed to deactivate service. Please try again.')
+  } finally {
+    deactivatingServices.value.delete(service.id)
+  }
 }
 </script>
 

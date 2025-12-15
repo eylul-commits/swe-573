@@ -14,6 +14,7 @@ import com.thehive.model.dto.ServiceQuestionDTO;
 import com.thehive.model.dto.ServiceRatingDTO;
 import com.thehive.model.dto.ServiceRatingSummaryDTO;
 import com.thehive.model.dto.ServiceRatingsResponseDTO;
+import com.thehive.model.entity.Handshake;
 import com.thehive.model.entity.Offer;
 import com.thehive.model.entity.Request;
 import com.thehive.model.entity.SemanticTag;
@@ -21,7 +22,9 @@ import com.thehive.model.entity.Answer;
 import com.thehive.model.entity.Question;
 import com.thehive.model.entity.Rating;
 import com.thehive.model.entity.User;
+import com.thehive.model.enums.HandshakeStatus;
 import com.thehive.model.enums.ItemStatus;
+import com.thehive.repository.HandshakeRepository;
 import com.thehive.repository.OfferRepository;
 import com.thehive.repository.RequestRepository;
 import com.thehive.repository.QuestionRepository;
@@ -44,6 +47,7 @@ public class MarketplaceService {
 
     private final OfferRepository offerRepository;
     private final RequestRepository requestRepository;
+    private final HandshakeRepository handshakeRepository;
     private final QuestionRepository questionRepository;
     private final AnswerRepository answerRepository;
     private final RatingRepository ratingRepository;
@@ -617,6 +621,125 @@ public class MarketplaceService {
                 .collect(Collectors.toList()));
         
         return services;
+    }
+
+    @Transactional
+    public ServiceDTO deactivateService(Integer serviceId, String serviceType, Integer userId) {
+        if ("OFFER".equalsIgnoreCase(serviceType)) {
+            Offer offer = offerRepository.findById(serviceId)
+                    .orElseThrow(() -> new ResourceNotFoundException("Offer not found with id: " + serviceId));
+            
+            // Verify user is the owner
+            if (!offer.getProvider().getId().equals(userId)) {
+                throw new RuntimeException("You are not authorized to deactivate this offer");
+            }
+            
+            // Check if offer can be deactivated
+            if (!canDeactivateOffer(serviceId)) {
+                throw new RuntimeException("Cannot deactivate offer with pending or confirmed handshakes");
+            }
+            
+            // Set status to ARCHIVED
+            offer.setStatus(ItemStatus.ARCHIVED);
+            offer = offerRepository.save(offer);
+            
+            return convertOfferToServiceDTO(offer);
+            
+        } else if ("REQUEST".equalsIgnoreCase(serviceType)) {
+            Request request = requestRepository.findById(serviceId)
+                    .orElseThrow(() -> new ResourceNotFoundException("Request not found with id: " + serviceId));
+            
+            // Verify user is the owner
+            if (!request.getSeeker().getId().equals(userId)) {
+                throw new RuntimeException("You are not authorized to deactivate this request");
+            }
+            
+            // Check if request can be deactivated
+            if (!canDeactivateRequest(serviceId)) {
+                throw new RuntimeException("Cannot deactivate request with pending or confirmed handshakes");
+            }
+            
+            // Set status to ARCHIVED
+            request.setStatus(ItemStatus.ARCHIVED);
+            request = requestRepository.save(request);
+            
+            return convertRequestToServiceDTO(request);
+            
+        } else {
+            throw new IllegalArgumentException("Invalid service type: " + serviceType);
+        }
+    }
+
+    @Transactional
+    public OfferDTO deactivateOffer(Integer offerId, Integer userId) {
+        Offer offer = offerRepository.findById(offerId)
+                .orElseThrow(() -> new ResourceNotFoundException("Offer not found with id: " + offerId));
+        
+        // Verify user is the owner
+        if (!offer.getProvider().getId().equals(userId)) {
+            throw new RuntimeException("You are not authorized to deactivate this offer");
+        }
+        
+        // Check if offer can be deactivated
+        if (!canDeactivateOffer(offerId)) {
+            throw new RuntimeException("Cannot deactivate offer with pending or confirmed handshakes");
+        }
+        
+        // Set status to ARCHIVED
+        offer.setStatus(ItemStatus.ARCHIVED);
+        offer = offerRepository.save(offer);
+        
+        return convertToOfferDTO(offer);
+    }
+
+    @Transactional
+    public RequestDTO deactivateRequest(Integer requestId, Integer userId) {
+        Request request = requestRepository.findById(requestId)
+                .orElseThrow(() -> new ResourceNotFoundException("Request not found with id: " + requestId));
+        
+        // Verify user is the owner
+        if (!request.getSeeker().getId().equals(userId)) {
+            throw new RuntimeException("You are not authorized to deactivate this request");
+        }
+        
+        // Check if request can be deactivated
+        if (!canDeactivateRequest(requestId)) {
+            throw new RuntimeException("Cannot deactivate request with pending or confirmed handshakes");
+        }
+        
+        // Set status to ARCHIVED
+        request.setStatus(ItemStatus.ARCHIVED);
+        request = requestRepository.save(request);
+        
+        return convertToRequestDTO(request);
+    }
+
+    private boolean canDeactivateOffer(Integer offerId) {
+        List<Handshake> handshakes = handshakeRepository.findByOfferId(offerId);
+        
+        // Check if all handshakes are completed or cancelled
+        for (Handshake handshake : handshakes) {
+            HandshakeStatus status = handshake.getStatus();
+            if (status != HandshakeStatus.COMPLETED && status != HandshakeStatus.CANCELLED) {
+                return false;
+            }
+        }
+        
+        return true;
+    }
+
+    private boolean canDeactivateRequest(Integer requestId) {
+        List<Handshake> handshakes = handshakeRepository.findByRequestId(requestId);
+        
+        // Check if all handshakes are completed or cancelled
+        for (Handshake handshake : handshakes) {
+            HandshakeStatus status = handshake.getStatus();
+            if (status != HandshakeStatus.COMPLETED && status != HandshakeStatus.CANCELLED) {
+                return false;
+            }
+        }
+        
+        return true;
     }
 }
 

@@ -13,7 +13,9 @@ import com.thehive.model.dto.ServiceDTO;
 import com.thehive.model.dto.ServiceQuestionDTO;
 import com.thehive.model.dto.ServiceRatingsResponseDTO;
 import com.thehive.model.entity.*;
+import com.thehive.model.enums.HandshakeStatus;
 import com.thehive.model.enums.ItemStatus;
+import com.thehive.repository.HandshakeRepository;
 import com.thehive.repository.OfferRepository;
 import com.thehive.repository.QuestionRepository;
 import com.thehive.repository.AnswerRepository;
@@ -58,6 +60,9 @@ class MarketplaceServiceTest {
 
     @Mock
     private SemanticTagRepository semanticTagRepository;
+
+    @Mock
+    private HandshakeRepository handshakeRepository;
 
     @InjectMocks
     private MarketplaceService marketplaceService;
@@ -1719,6 +1724,225 @@ class MarketplaceServiceTest {
         verify(questionRepository, never()).findById(any());
         verify(userRepository, never()).findById(any());
         verify(answerRepository, never()).save(any());
+    }
+
+    // ==================== Deactivate Service Tests ====================
+
+    @Test
+    void deactivateOffer_WithNoHandshakes_ShouldSucceed() {
+        // Arrange
+        Integer offerId = 1;
+        Integer userId = 1;
+        
+        when(offerRepository.findById(offerId)).thenReturn(Optional.of(testOffer));
+        when(handshakeRepository.findByOfferId(offerId)).thenReturn(Collections.emptyList());
+        when(offerRepository.save(any(Offer.class))).thenReturn(testOffer);
+        
+        // Act
+        OfferDTO result = marketplaceService.deactivateOffer(offerId, userId);
+        
+        // Assert
+        assertNotNull(result);
+        verify(offerRepository).findById(offerId);
+        verify(handshakeRepository).findByOfferId(offerId);
+        verify(offerRepository).save(any(Offer.class));
+    }
+
+    @Test
+    void deactivateOffer_WithCompletedHandshakes_ShouldSucceed() {
+        // Arrange
+        Integer offerId = 1;
+        Integer userId = 1;
+        
+        Handshake completedHandshake = new Handshake();
+        completedHandshake.setId(1);
+        completedHandshake.setStatus(HandshakeStatus.COMPLETED);
+        
+        when(offerRepository.findById(offerId)).thenReturn(Optional.of(testOffer));
+        when(handshakeRepository.findByOfferId(offerId)).thenReturn(List.of(completedHandshake));
+        when(offerRepository.save(any(Offer.class))).thenReturn(testOffer);
+        
+        // Act
+        OfferDTO result = marketplaceService.deactivateOffer(offerId, userId);
+        
+        // Assert
+        assertNotNull(result);
+        verify(offerRepository).findById(offerId);
+        verify(handshakeRepository).findByOfferId(offerId);
+        verify(offerRepository).save(any(Offer.class));
+    }
+
+    @Test
+    void deactivateOffer_WithCancelledHandshakes_ShouldSucceed() {
+        // Arrange
+        Integer offerId = 1;
+        Integer userId = 1;
+        
+        Handshake cancelledHandshake = new Handshake();
+        cancelledHandshake.setId(1);
+        cancelledHandshake.setStatus(HandshakeStatus.CANCELLED);
+        
+        when(offerRepository.findById(offerId)).thenReturn(Optional.of(testOffer));
+        when(handshakeRepository.findByOfferId(offerId)).thenReturn(List.of(cancelledHandshake));
+        when(offerRepository.save(any(Offer.class))).thenReturn(testOffer);
+        
+        // Act
+        OfferDTO result = marketplaceService.deactivateOffer(offerId, userId);
+        
+        // Assert
+        assertNotNull(result);
+        verify(offerRepository).findById(offerId);
+        verify(handshakeRepository).findByOfferId(offerId);
+        verify(offerRepository).save(any(Offer.class));
+    }
+
+    @Test
+    void deactivateOffer_WithPendingHandshakes_ShouldThrowException() {
+        // Arrange
+        Integer offerId = 1;
+        Integer userId = 1;
+        
+        Handshake pendingHandshake = new Handshake();
+        pendingHandshake.setId(1);
+        pendingHandshake.setStatus(HandshakeStatus.PENDING);
+        
+        when(offerRepository.findById(offerId)).thenReturn(Optional.of(testOffer));
+        when(handshakeRepository.findByOfferId(offerId)).thenReturn(List.of(pendingHandshake));
+        
+        // Act & Assert
+        RuntimeException exception = assertThrows(RuntimeException.class, () -> {
+            marketplaceService.deactivateOffer(offerId, userId);
+        });
+        
+        assertEquals("Cannot deactivate offer with pending or confirmed handshakes", exception.getMessage());
+        verify(offerRepository).findById(offerId);
+        verify(handshakeRepository).findByOfferId(offerId);
+        verify(offerRepository, never()).save(any(Offer.class));
+    }
+
+    @Test
+    void deactivateOffer_WithConfirmedHandshakes_ShouldThrowException() {
+        // Arrange
+        Integer offerId = 1;
+        Integer userId = 1;
+        
+        Handshake confirmedHandshake = new Handshake();
+        confirmedHandshake.setId(1);
+        confirmedHandshake.setStatus(HandshakeStatus.CONFIRMED);
+        
+        when(offerRepository.findById(offerId)).thenReturn(Optional.of(testOffer));
+        when(handshakeRepository.findByOfferId(offerId)).thenReturn(List.of(confirmedHandshake));
+        
+        // Act & Assert
+        RuntimeException exception = assertThrows(RuntimeException.class, () -> {
+            marketplaceService.deactivateOffer(offerId, userId);
+        });
+        
+        assertEquals("Cannot deactivate offer with pending or confirmed handshakes", exception.getMessage());
+        verify(offerRepository).findById(offerId);
+        verify(handshakeRepository).findByOfferId(offerId);
+        verify(offerRepository, never()).save(any(Offer.class));
+    }
+
+    @Test
+    void deactivateOffer_WithUnauthorizedUser_ShouldThrowException() {
+        // Arrange
+        Integer offerId = 1;
+        Integer unauthorizedUserId = 999;
+        
+        when(offerRepository.findById(offerId)).thenReturn(Optional.of(testOffer));
+        
+        // Act & Assert
+        RuntimeException exception = assertThrows(RuntimeException.class, () -> {
+            marketplaceService.deactivateOffer(offerId, unauthorizedUserId);
+        });
+        
+        assertEquals("You are not authorized to deactivate this offer", exception.getMessage());
+        verify(offerRepository).findById(offerId);
+        verify(handshakeRepository, never()).findByOfferId(any());
+        verify(offerRepository, never()).save(any(Offer.class));
+    }
+
+    @Test
+    void deactivateOffer_WithNonExistentOffer_ShouldThrowException() {
+        // Arrange
+        Integer offerId = 999;
+        Integer userId = 1;
+        
+        when(offerRepository.findById(offerId)).thenReturn(Optional.empty());
+        
+        // Act & Assert
+        ResourceNotFoundException exception = assertThrows(ResourceNotFoundException.class, () -> {
+            marketplaceService.deactivateOffer(offerId, userId);
+        });
+        
+        assertEquals("Offer not found with id: 999", exception.getMessage());
+        verify(offerRepository).findById(offerId);
+        verify(handshakeRepository, never()).findByOfferId(any());
+        verify(offerRepository, never()).save(any(Offer.class));
+    }
+
+    @Test
+    void deactivateRequest_WithNoHandshakes_ShouldSucceed() {
+        // Arrange
+        Integer requestId = 1;
+        Integer userId = 2; // testUserWithBadge is the seeker
+        
+        when(requestRepository.findById(requestId)).thenReturn(Optional.of(testRequest));
+        when(handshakeRepository.findByRequestId(requestId)).thenReturn(Collections.emptyList());
+        when(requestRepository.save(any(Request.class))).thenReturn(testRequest);
+        
+        // Act
+        RequestDTO result = marketplaceService.deactivateRequest(requestId, userId);
+        
+        // Assert
+        assertNotNull(result);
+        verify(requestRepository).findById(requestId);
+        verify(handshakeRepository).findByRequestId(requestId);
+        verify(requestRepository).save(any(Request.class));
+    }
+
+    @Test
+    void deactivateRequest_WithPendingHandshakes_ShouldThrowException() {
+        // Arrange
+        Integer requestId = 1;
+        Integer userId = 2; // testUserWithBadge is the seeker
+        
+        Handshake pendingHandshake = new Handshake();
+        pendingHandshake.setId(1);
+        pendingHandshake.setStatus(HandshakeStatus.PENDING);
+        
+        when(requestRepository.findById(requestId)).thenReturn(Optional.of(testRequest));
+        when(handshakeRepository.findByRequestId(requestId)).thenReturn(List.of(pendingHandshake));
+        
+        // Act & Assert
+        RuntimeException exception = assertThrows(RuntimeException.class, () -> {
+            marketplaceService.deactivateRequest(requestId, userId);
+        });
+        
+        assertEquals("Cannot deactivate request with pending or confirmed handshakes", exception.getMessage());
+        verify(requestRepository).findById(requestId);
+        verify(handshakeRepository).findByRequestId(requestId);
+        verify(requestRepository, never()).save(any(Request.class));
+    }
+
+    @Test
+    void deactivateRequest_WithUnauthorizedUser_ShouldThrowException() {
+        // Arrange
+        Integer requestId = 1;
+        Integer unauthorizedUserId = 999;
+        
+        when(requestRepository.findById(requestId)).thenReturn(Optional.of(testRequest));
+        
+        // Act & Assert
+        RuntimeException exception = assertThrows(RuntimeException.class, () -> {
+            marketplaceService.deactivateRequest(requestId, unauthorizedUserId);
+        });
+        
+        assertEquals("You are not authorized to deactivate this request", exception.getMessage());
+        verify(requestRepository).findById(requestId);
+        verify(handshakeRepository, never()).findByRequestId(any());
+        verify(requestRepository, never()).save(any(Request.class));
     }
 }
 
