@@ -5,6 +5,9 @@ export type ServiceType = "OFFER" | "REQUEST";
 // New badge names from backend
 export type BadgeName = "Newcomer" | "Community Helper" | "Active Member" | "Veteran" | "Champion";
 
+// Alias for BadgeName for backward compatibility
+export type BadgeType = BadgeName;
+
 export interface Badge {
   id: number;
   name: string;
@@ -202,6 +205,7 @@ export interface AuthUser {
   hoursGiven?: number;
   hoursReceived?: number;
   location?: string;
+  badges?: Badge[]; // Array of badges
   currentBadge?: Badge; // Helper field for the single badge
 }
 

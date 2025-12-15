@@ -38,7 +38,7 @@ function convertBackendAuthorToUser(backendAuthor: BackendAuthorDTO): User {
     hoursGiven: 0,
     hoursReceived: 0,
     timebankBalance: backendAuthor.balanceHours ?? 0,
-    badge: backendAuthor.badge ?? undefined,
+    currentBadge: backendAuthor.badge ?? undefined,
     bio: backendAuthor.bio ?? undefined,
     province: backendAuthor.province ?? undefined,
     district: backendAuthor.district ?? undefined,
@@ -49,11 +49,14 @@ function convertBackendAuthorToUser(backendAuthor: BackendAuthorDTO): User {
 }
 
 function convertBackendAuthorToSummary(backendAuthor: BackendAuthorDTO): AuthorSummary {
+  // Convert Badge object to string badge name for AuthorSummary
+  const badgeValue = backendAuthor.badge ? backendAuthor.badge.name : undefined;
+  
   return {
     id: backendAuthor.id.toString(),
     name: backendAuthor.name,
     avatar: createAvatarUrl(backendAuthor.name, backendAuthor.avatar),
-    badge: backendAuthor.badge ?? undefined,
+    badge: badgeValue,
     bio: backendAuthor.bio ?? undefined,
     province: backendAuthor.province ?? undefined,
     district: backendAuthor.district ?? undefined,

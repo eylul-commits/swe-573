@@ -212,7 +212,7 @@
                 </div>
                 <div class="flex items-center gap-1 text-sm">
                   <span>{{ getBadgeEmoji(service.poster.badge) }}</span>
-                  <span class="text-gray-600">{{ service.poster.badge || 'Newcomer' }}</span>
+                  <span class="text-gray-600">{{ typeof service.poster.badge === 'string' ? service.poster.badge : (service.poster.badge?.name || service.poster.currentBadge?.name || 'Newcomer') }}</span>
                 </div>
               </div>
               <div class="flex items-center gap-4 text-sm mb-3">
@@ -527,8 +527,9 @@ const showImageModal = ref(false)
 // Report modal state
 const reportModalOpen = ref(false)
 
-// Helper function to get badge emoji from badge name
-const getBadgeEmoji = (badgeName?: string) => {
+// Helper function to get badge emoji from badge name or Badge object
+const getBadgeEmoji = (badge?: string | { name: string }) => {
+  const badgeName = typeof badge === 'string' ? badge : badge?.name
   const badgeMap: Record<string, string> = {
     'Newcomer': '🌱',
     'Community Helper': '🤝',
