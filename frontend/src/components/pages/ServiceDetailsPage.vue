@@ -211,8 +211,8 @@
                   {{ service.poster.name }}
                 </div>
                 <div class="flex items-center gap-1 text-sm">
-                  <span>{{ getBadgeEmoji(service.poster.badge) }}</span>
-                  <span class="text-gray-600">{{ typeof service.poster.badge === 'string' ? service.poster.badge : (service.poster.badge?.name || service.poster.currentBadge?.name || 'Newcomer') }}</span>
+                  <span>{{ getBadgeEmoji(service.poster.currentBadge) }}</span>
+                  <span class="text-gray-600">{{ typeof service.poster.currentBadge === 'string' ? service.poster.currentBadge : (service.poster.currentBadge?.name || 'Newcomer') }}</span>
                 </div>
               </div>
               <div class="flex items-center gap-4 text-sm mb-3">
