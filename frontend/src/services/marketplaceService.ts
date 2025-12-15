@@ -239,6 +239,7 @@ export function filterServices(
     location?: string;
     badge?: string;
     type?: string;
+    tags?: string[];
   }
 ): Service[] {
   return services.filter(service => {

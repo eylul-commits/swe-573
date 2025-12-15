@@ -178,10 +178,11 @@
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value="all">All badges</SelectItem>
-                <SelectItem value="top-contributor">🏆 Top Contributor</SelectItem>
-                <SelectItem value="active">⭐ Active Member</SelectItem>
-                <SelectItem value="newcomer">🌱 Newcomer</SelectItem>
-                <SelectItem value="balanced">⚖️ Balanced Exchanger</SelectItem>
+                <SelectItem value="Newcomer">🌱 Newcomer</SelectItem>
+                <SelectItem value="Community Helper">🤝 Community Helper</SelectItem>
+                <SelectItem value="Active Member">⭐ Active Member</SelectItem>
+                <SelectItem value="Veteran">🏅 Veteran</SelectItem>
+                <SelectItem value="Champion">🏆 Champion</SelectItem>
               </SelectContent>
             </Select>
           </div>
@@ -392,7 +393,7 @@ import RatingModal from '../RatingModal.vue'
 import { getActiveServices, getAllTags, getCommunityStats, filterServices, getNearbyServices, getRecommendedServices } from '../../services/marketplaceService'
 import { useAppStore } from '../../stores/appStore'
 import { useHandshakeStore } from '../../stores/handshakeStore'
-import type { BadgeType, Service, CommunityStats, Handshake } from '../../types'
+import type { BadgeType, BadgeName, Service, CommunityStats, Handshake } from '../../types'
 
 const appStore = useAppStore()
 const handshakeStore = useHandshakeStore()
@@ -421,7 +422,7 @@ const loading = ref(true)
 const filters = reactive<{
   searchQuery: string
   location: string
-  badge: BadgeType | 'all' | ''
+  badge: BadgeType | BadgeName | 'all' | ''
 }>({
   searchQuery: '',
   location: '',
