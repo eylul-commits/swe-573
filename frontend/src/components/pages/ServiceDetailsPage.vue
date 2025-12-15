@@ -97,15 +97,6 @@
               </div>
             </div>
             <div class="space-y-1">
-              <div class="text-sm text-gray-500">Availability</div>
-              <div class="flex items-center gap-2 text-gray-900">
-                <Calendar class="w-4 h-4 text-gray-400" />
-                <span>
-                  {{ getAvailability(serviceId) }}
-                </span>
-              </div>
-            </div>
-            <div class="space-y-1">
               <div class="text-sm text-gray-500">Posted</div>
               <div class="text-gray-900">
                 {{ service?.createdAt ? formatDistanceToNow(service.createdAt) : 'Unknown' }}
@@ -538,12 +529,6 @@ const getBadgeEmoji = (badge?: string | { name: string }) => {
     'Champion': '🏆'
   }
   return badgeMap[badgeName || ''] || '🌱'
-}
-
-const getAvailability = (id: string) => {
-  if (id === "9") return "Starting Nov 1, 2025"
-  if (id === "2") return "Weekday evenings"
-  return "Flexible scheduling"
 }
 
 const handleAskQuestion = async () => {
