@@ -116,48 +116,102 @@ INSERT INTO request_tags (request_id, tag_id) VALUES (1000004, 21) ON CONFLICT D
 INSERT INTO request_tags (request_id, tag_id) VALUES (1000004, 22) ON CONFLICT DO NOTHING; -- Dog Training
 
 -- HANDSHAKES
-INSERT INTO handshakes (id, offer_id, request_id, seeker_id, provider_id, status, duration_hours, created_at, agreed_at)
+INSERT INTO handshakes
+(id, offer_id, request_id, seeker_id, provider_id, status, duration_hours, created_at, agreed_at)
 VALUES
-(1, 1, NULL, 3, 1, 'COMPLETED', 3, NOW() - INTERVAL '7 days', NOW() - INTERVAL '6 days'),
-(2, NULL, 1000000, 3, 5, 'COMPLETED', 1, NOW() - INTERVAL '5 days', NOW() - INTERVAL '4 days'),
+-- 1. Alice's kite making offer ↔ Deniz (nature / outdoors)
+(1, 1, NULL, 4, 1, 'COMPLETED', 3, NOW() - INTERVAL '7 days', NOW() - INTERVAL '6 days'),
+-- 2. Bob shows Pokémon cards ↔ Ceren (nostalgia / curiosity)
+(2, 2, NULL, 3, 2, 'COMPLETED', 1, NOW() - INTERVAL '6 days', NOW() - INTERVAL '5 days'),
+-- 3. Ceren street photography offer ↔ Alice
 (3, 3, NULL, 1, 3, 'COMPLETED', 2, NOW() - INTERVAL '8 days', NOW() - INTERVAL '7 days'),
+-- 4. Deniz bird watching offer ↔ Bob
 (4, 4, NULL, 2, 4, 'COMPLETED', 2, NOW() - INTERVAL '6 days', NOW() - INTERVAL '5 days'),
+-- 5. Bob mushroom walk offer ↔ Alice
 (5, 5, NULL, 1, 2, 'COMPLETED', 3, NOW() - INTERVAL '9 days', NOW() - INTERVAL '8 days'),
-(6, 6, NULL, 4, 1, 'COMPLETED', 2, NOW() - INTERVAL '4 days', NOW() - INTERVAL '3 days'),
-(7, NULL, 1000001, 4, 2, 'COMPLETED', 2, NOW() - INTERVAL '7 days', NOW() - INTERVAL '6 days'),
-(8, NULL, 1000002, 1, 3, 'COMPLETED', 2, NOW() - INTERVAL '10 days', NOW() - INTERVAL '9 days'),
-(9, NULL, 1000003, 5, 4, 'COMPLETED', 2, NOW() - INTERVAL '3 days', NOW() - INTERVAL '2 days'),
-(10, NULL, 1000004, 2, 1, 'COMPLETED', 1, NOW() - INTERVAL '6 days', NOW() - INTERVAL '5 days')
+-- 6. Meryem sewing offer ↔ Deniz
+(6, 6, NULL, 4, 5, 'COMPLETED', 2, NOW() - INTERVAL '4 days', NOW() - INTERVAL '3 days'),
+-- 7. Ceren's English conversation request ↔ Alice
+(7, NULL, 1000000, 3, 1, 'COMPLETED', 1, NOW() - INTERVAL '7 days', NOW() - INTERVAL '6 days'),
+-- 8. Deniz wants to learn kısır ↔ Meryem
+(8, NULL, 1000001, 4, 5, 'COMPLETED', 2, NOW() - INTERVAL '6 days', NOW() - INTERVAL '5 days'),
+-- 9. Alice needs math support ↔ Ceren
+(9, NULL, 1000002, 1, 3, 'COMPLETED', 2, NOW() - INTERVAL '10 days', NOW() - INTERVAL '9 days'),
+-- 10. Meryem learning to ride a bicycle ↔ Deniz
+(10, NULL, 1000003, 5, 4, 'COMPLETED', 2, NOW() - INTERVAL '3 days', NOW() - INTERVAL '2 days')
 ON CONFLICT (id) DO NOTHING;
 
 -- TIMEBANK TRANSACTIONS
-INSERT INTO timebank_transactions (id, sender_id, receiver_id, handshake_id, amount, description, created_at)
+INSERT INTO timebank_transactions
+(id, sender_id, receiver_id, handshake_id, amount, description, created_at)
 VALUES
-(1, 3, 1, 1, 3, 'Time exchange for kite making', NOW() - INTERVAL '6 days'),
-(2, 5, 3, 2, 1, 'Time exchange for English conversation', NOW() - INTERVAL '4 days'),
+-- 1. Kite making: Deniz → Alice
+(1, 4, 1, 1, 3, 'Time exchange for kite making', NOW() - INTERVAL '6 days'),
+-- 2. Pokémon cards: Ceren → Bob
+(2, 3, 2, 2, 1, 'Time exchange for Pokémon card sharing', NOW() - INTERVAL '5 days'),
+-- 3. Street photography: Alice → Ceren
 (3, 1, 3, 3, 2, 'Time exchange for street photography walk', NOW() - INTERVAL '7 days'),
+-- 4. Bird watching: Bob → Deniz
 (4, 2, 4, 4, 2, 'Time exchange for bird watching', NOW() - INTERVAL '5 days'),
+-- 5. Mushroom walk: Alice → Bob
 (5, 1, 2, 5, 3, 'Time exchange for mushroom picking walk', NOW() - INTERVAL '8 days'),
-(6, 4, 1, 6, 2, 'Time exchange for sewing basics', NOW() - INTERVAL '3 days'),
-(7, 2, 4, 7, 2, 'Time exchange for learning kısır', NOW() - INTERVAL '6 days'),
-(8, 3, 1, 8, 2, 'Time exchange for math tutoring', NOW() - INTERVAL '9 days'),
-(9, 4, 5, 9, 2, 'Time exchange for bicycle learning', NOW() - INTERVAL '2 days'),
-(10, 1, 2, 10, 1, 'Time exchange for dog training help', NOW() - INTERVAL '5 days')
+-- 6. Sewing basics: Deniz → Meryem
+(6, 4, 5, 6, 2, 'Time exchange for basic sewing', NOW() - INTERVAL '3 days'),
+-- 7. English conversation: Ceren → Alice
+(7, 3, 1, 7, 1, 'Time exchange for English conversation practice', NOW() - INTERVAL '6 days'),
+-- 8. Learning kısır: Deniz → Meryem
+(8, 4, 5, 8, 2, 'Time exchange for learning kısır', NOW() - INTERVAL '5 days'),
+-- 9. Math support: Alice → Ceren
+(9, 1, 3, 9, 2, 'Time exchange for math support', NOW() - INTERVAL '9 days'),
+-- 10. Bicycle learning: Meryem → Deniz
+(10, 5, 4, 10, 2, 'Time exchange for bicycle learning', NOW() - INTERVAL '2 days')
 ON CONFLICT (id) DO NOTHING;
 
 -- RATINGS
-INSERT INTO ratings (id, handshake_id, rater_id, ratee_id, punctuality, friendliness, communicative, preparedness, comment, created_at)
+INSERT INTO ratings
+(id, handshake_id, rater_id, ratee_id, punctuality, friendliness, communicative, preparedness, comment, created_at)
 VALUES
-(1, 1, 3, 1, 4, 5, 4, 3, 'The kite-making session felt very warm and personal. We took our time, and I enjoyed hearing the story behind it. We did struggle a bit with materials, but that was part of the experience. I left feeling calmer than when I arrived.', NOW() - INTERVAL '6 days'),
-(2, 2, 3, 5, 5, 5, 5, 3, 'I felt safe making mistakes and taking pauses. Sometimes we lost structure, but honestly that helped my confidence. This was more about comfort than language rules, and that worked for me.', NOW() - INTERVAL '4 days'),
-(3, 3, 1, 3, 5, 4, 4, 4, 'The walk was inspiring and I appreciated the honest feedback. At times I wished for a bit more direction, but the shared learning approach made sense. I would do this again with clearer goals next time.', NOW() - INTERVAL '7 days'),
-(4, 4, 2, 4, 5, 5, 4, 5, 'This was exactly what I needed. The pace was slow, explanations were gentle, and silence was respected. I learned without feeling rushed or overwhelmed.', NOW() - INTERVAL '5 days'),
-(5, 5, 1, 2, 4, 4, 3, 3, 'The walk itself was enjoyable, but I felt a bit unsure about identifying mushrooms. I would have appreciated clearer safety boundaries. Still, I value the intention and the respect for nature.', NOW() - INTERVAL '8 days'),
-(6, 6, 4, 1, 5, 5, 4, 5, 'I finally fixed clothes I had avoided for months. The explanations were slow and clear, without making me feel incompetent. It felt empowering in a very quiet way.', NOW() - INTERVAL '3 days'),
-(7, 7, 4, 2, 4, 5, 4, 3, 'I learned things you never find in recipes. The process was a bit messy, but that made it feel real. I now understand what I was doing wrong before.', NOW() - INTERVAL '6 days'),
-(8, 8, 1, 3, 5, 4, 3, 4, 'They were patient and never made me feel stupid. Sometimes explanations moved a bit fast for me, but when I asked to slow down, they adjusted. That mattered more than perfect clarity.', NOW() - INTERVAL '9 days'),
-(9, 9, 5, 4, 5, 5, 5, 4, 'I was scared at first and embarrassed about my age. That fear was handled with respect and patience. I didn''t fully learn to ride yet, but I now believe I can.', NOW() - INTERVAL '2 days'),
-(10, 10, 2, 1, 4, 4, 3, 3, 'The session helped, but I realized I needed more consistency than a single meeting. The approach was kind, though sometimes unclear. Still a positive step for me and my dog.', NOW() - INTERVAL '5 days')
+-- 1. Kite making (Deniz → Alice)
+(1, 1, 4, 1, 4, 5, 4, 3,
+ 'The kite-making session felt very warm and personal. We took our time, and I enjoyed hearing the story behind it. We did struggle a bit with materials, but that was part of the experience. I left feeling calmer than when I arrived.',
+ NOW() - INTERVAL '6 days'),
+-- 2. English conversation (Ceren → Alice)
+(2, 7, 3, 1, 5, 5, 5, 3,
+ 'I felt safe making mistakes and taking pauses. Sometimes we lost structure, but honestly that helped my confidence. This was more about comfort than language rules, and that worked for me.',
+ NOW() - INTERVAL '4 days'),
+-- 3. Street photography (Alice → Ceren)
+(3, 3, 1, 3, 5, 4, 4, 4,
+ 'The walk was inspiring and I appreciated the honest feedback. At times I wished for a bit more direction, but the shared learning approach made sense. I would do this again with clearer goals next time.',
+ NOW() - INTERVAL '7 days'),
+-- 4. Bird watching (Bob → Deniz)
+(4, 4, 2, 4, 5, 5, 4, 5,
+ 'This was exactly what I needed. The pace was slow, explanations were gentle, and silence was respected. I learned without feeling rushed or overwhelmed.',
+ NOW() - INTERVAL '5 days'),
+-- 5. Mushroom walk (Alice → Bob)
+(5, 5, 1, 2, 4, 4, 3, 3,
+ 'The walk itself was enjoyable, but I felt a bit unsure about identifying mushrooms. I would have appreciated clearer safety boundaries. Still, I value the intention and the respect for nature.',
+ NOW() - INTERVAL '8 days'),
+-- 6. Sewing basics (Deniz → Meryem)
+(6, 6, 4, 5, 5, 5, 4, 5,
+ 'I finally fixed clothes I had avoided for months. The explanations were slow and clear, without making me feel incompetent. It felt empowering in a very quiet way.',
+ NOW() - INTERVAL '3 days'),
+-- 7. Learning kısır (Deniz → Meryem)
+(7, 8, 4, 5, 4, 5, 4, 3,
+ 'I learned things you never find in recipes. The process was a bit messy, but that made it feel real. I now understand what I was doing wrong before.',
+ NOW() - INTERVAL '6 days'),
+-- 8. Math support (Alice → Ceren)
+(8, 9, 1, 3, 5, 4, 3, 4,
+ 'They were patient and never made me feel stupid. Sometimes explanations moved a bit fast for me, but when I asked to slow down, they adjusted. That mattered more than perfect clarity.',
+ NOW() - INTERVAL '9 days'),
+
+-- 9. Bicycle learning (Meryem → Deniz)
+(9, 10, 5, 4, 5, 5, 5, 4,
+ 'I was scared at first and embarrassed about my age. That fear was handled with respect and patience. I didn''t fully learn to ride yet, but I now believe I can.',
+ NOW() - INTERVAL '2 days'),
+-- 10. Pokémon cards (Ceren → Bob)
+(10, 2, 3, 2, 4, 4, 3, 3,
+ 'The session helped, but I realized I needed more consistency than a single meeting. The approach was kind, though sometimes unclear. Still a positive step for me and my dog.',
+ NOW() - INTERVAL '5 days')
 ON CONFLICT (id) DO NOTHING;
 
 -- BADGES
